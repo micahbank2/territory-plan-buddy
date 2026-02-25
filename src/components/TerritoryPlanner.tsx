@@ -1,136 +1,54 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   STAGES,
-  PRIORITIES,
   INDUSTRIES,
-  STORAGE_KEY,
-  SEED,
+  COMPETITORS,
+  TIERS,
   scoreProspect,
-  initProspect,
   type Prospect,
   type EnrichedProspect,
 } from "@/data/prospects";
-
-function Fld({
-  l,
-  v,
-  c,
-  t = "text",
-  o,
-}: {
-  l: string;
-  v: string | number;
-  c: (v: string) => void;
-  t?: string;
-  o?: string[];
-}) {
-  const s: React.CSSProperties = {
-    width: "100%",
-    padding: "4px 6px",
-    borderRadius: 4,
-    border: "1px solid #1e293b",
-    background: "#1e293b",
-    color: "#e2e8f0",
-    fontSize: 11,
-    outline: "none",
-    boxSizing: "border-box",
-  };
-  return (
-    <div>
-      <div
-        style={{
-          fontSize: 8,
-          color: "#64748b",
-          marginBottom: 2,
-          textTransform: "uppercase",
-          letterSpacing: ".04em",
-        }}
-      >
-        {l}
-      </div>
-      {t === "select" ? (
-        <select value={v} onChange={(e) => c(e.target.value)} style={s}>
-          {o!.map((x) => (
-            <option key={x} value={x}>
-              {x || "-- Select --"}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <input
-          type={t}
-          value={v}
-          onChange={(e) => c(e.target.value)}
-          style={s}
-        />
-      )}
-    </div>
-  );
-}
+import { useProspects } from "@/hooks/useProspects";
+import { MultiSelect } from "@/components/MultiSelect";
+import { cn } from "@/lib/utils";
+import {
+  Search,
+  SlidersHorizontal,
+  RotateCcw,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  MapPin,
+  Flame,
+  Thermometer,
+  AlertTriangle,
+  Building2,
+  ExternalLink,
+} from "lucide-react";
 
 export default function TerritoryPlanner() {
-  const [data, setData] = useState<Prospect[]>([]);
-  const [ok, setOk] = useState(false);
-  const [view, setView] = useState("dashboard");
-  const [sel, setSel] = useState<Prospect | null>(null);
+  const { data, ok, reset } = useProspects();
+  const navigate = useNavigate();
+  const [view, setView] = useState<"dashboard" | "table">("dashboard");
   const [q, setQ] = useState("");
-  const [fI, setFI] = useState("");
-  const [fO, setFO] = useState("");
-  const [fP, setFP] = useState("");
-  const [fW, setFW] = useState("");
-  const [fM, setFM] = useState("");
-  const [sK, setSK2] = useState<string>("ps");
+  const [sf, setSF] = useState(true);
+  const [fIndustry, setFIndustry] = useState<string[]>([]);
+  const [fStatus, setFStatus] = useState<string[]>([]);
+  const [fCompetitor, setFCompetitor] = useState<string[]>([]);
+  const [fTier, setFTier] = useState<string[]>([]);
+  const [fMinLocs, setFMinLocs] = useState("");
+  const [fOutreach, setFOutreach] = useState<string[]>([]);
+  const [sK, setSK] = useState<string>("ps");
   const [sD, setSD] = useState<"asc" | "desc">("desc");
-  const [sf, setSF] = useState(false);
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const p = JSON.parse(raw);
-        if (Array.isArray(p) && p.length > 0) {
-          setData(p);
-          setOk(true);
-          return;
-        }
-      }
-    } catch {}
-    setData(SEED);
-    setOk(true);
-  }, []);
-
-  useEffect(() => {
-    if (!ok || !data.length) return;
-    const t = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      } catch {}
-    }, 500);
-    return () => clearTimeout(t);
-  }, [data, ok]);
-
-  const upd = useCallback((id: number, u: Partial<Prospect>) => {
-    const ts = new Date().toISOString().split("T")[0];
-    setData((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...u, lastTouched: ts } : p))
-    );
-    setSel((prev) =>
-      prev && prev.id === id ? { ...prev, ...u, lastTouched: ts } : prev
-    );
-  }, []);
-
-  const owners = useMemo(
-    () =>
-      [...new Set(data.map((p) => p.transitionOwner).filter(Boolean))].sort(),
-    [data]
-  );
   const enriched = useMemo<EnrichedProspect[]>(
     () => data.map((p) => ({ ...p, ps: scoreProspect(p) })),
     [data]
   );
 
   const filtered = useMemo(() => {
-    let r = enriched as (EnrichedProspect & Record<string, any>)[];
+    let r = [...enriched] as (EnrichedProspect & Record<string, any>)[];
     if (q) {
       const s = q.toLowerCase();
       r = r.filter(
@@ -140,46 +58,28 @@ export default function TerritoryPlanner() {
           (p.notes || "").toLowerCase().includes(s)
       );
     }
-    if (fI) r = r.filter((p) => p.industry === fI);
-    if (fO) r = r.filter((p) => p.outreach === fO);
-    if (fP) r = r.filter((p) => p.priority === fP);
-    if (fW) r = r.filter((p) => p.transitionOwner === fW);
-    if (fM)
-      r = r.filter((p) => p.locationCount && p.locationCount >= parseInt(fM));
+    if (fIndustry.length) r = r.filter((p) => fIndustry.includes(p.industry));
+    if (fOutreach.length) r = r.filter((p) => fOutreach.includes(p.outreach));
+    if (fStatus.length) r = r.filter((p) => fStatus.includes(p.status));
+    if (fCompetitor.length) r = r.filter((p) => fCompetitor.includes(p.competitor));
+    if (fTier.length) r = r.filter((p) => fTier.includes(p.tier));
+    if (fMinLocs) r = r.filter((p) => p.locationCount && p.locationCount >= parseInt(fMinLocs));
     r.sort((a, b) => {
-      let av = a[sK],
-        bv = b[sK];
+      let av = a[sK], bv = b[sK];
       if (av == null) av = sD === "desc" ? -Infinity : Infinity;
       if (bv == null) bv = sD === "desc" ? -Infinity : Infinity;
-      if (typeof av === "string") {
-        av = av.toLowerCase();
-        bv = (bv || "").toLowerCase();
-      }
-      return sD === "asc"
-        ? av < bv
-          ? -1
-          : av > bv
-          ? 1
-          : 0
-        : av > bv
-        ? -1
-        : av < bv
-        ? 1
-        : 0;
+      if (typeof av === "string") { av = av.toLowerCase(); bv = (bv || "").toLowerCase(); }
+      return sD === "asc" ? (av < bv ? -1 : av > bv ? 1 : 0) : (av > bv ? -1 : av < bv ? 1 : 0);
     });
     return r;
-  }, [enriched, q, fI, fO, fP, fW, fM, sK, sD]);
+  }, [enriched, q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fMinLocs, sK, sD]);
 
   const stats = useMemo(() => {
     const wl = data.filter((p) => p.locationCount && p.locationCount > 0);
     const bo: Record<string, number> = {};
-    STAGES.forEach((s) => {
-      bo[s] = data.filter((p) => p.outreach === s).length;
-    });
+    STAGES.forEach((s) => { bo[s] = data.filter((p) => p.outreach === s).length; });
     const bi: Record<string, number> = {};
-    data.forEach((p) => {
-      if (p.industry) bi[p.industry] = (bi[p.industry] || 0) + 1;
-    });
+    data.forEach((p) => { if (p.industry) bi[p.industry] = (bi[p.industry] || 0) + 1; });
     return {
       t: data.length,
       o50: wl.filter((p) => p.locationCount! >= 50).length,
@@ -188,955 +88,312 @@ export default function TerritoryPlanner() {
       hot: data.filter((p) => p.priority === "Hot").length,
       warm: data.filter((p) => p.priority === "Warm").length,
       ch: data.filter((p) => p.status === "Churned").length,
+      prospects: data.filter((p) => p.status === "Prospect").length,
       tl: wl.reduce((s, p) => s + p.locationCount!, 0),
-      bo,
-      bi,
+      bo, bi,
     };
   }, [data]);
 
   const doSort = (f: string) => {
     if (sK === f) setSD((d) => (d === "asc" ? "desc" : "asc"));
-    else {
-      setSK2(f);
-      setSD("desc");
-    }
+    else { setSK(f); setSD("desc"); }
   };
+
   const clr = () => {
-    setQ("");
-    setFI("");
-    setFO("");
-    setFP("");
-    setFW("");
-    setFM("");
+    setQ(""); setFIndustry([]); setFOutreach([]); setFStatus([]); setFCompetitor([]); setFTier([]); setFMinLocs("");
   };
-  const reset = () => {
-    if (confirm("Reset ALL data?")) {
-      localStorage.removeItem(STORAGE_KEY);
-      setData(SEED.map((p) => ({ ...p })));
-      setSel(null);
-    }
+
+  const hasFilters = fIndustry.length || fOutreach.length || fStatus.length || fCompetitor.length || fTier.length || fMinLocs;
+
+  const handleStatClick = (filterFn: () => void) => {
+    filterFn();
+    setView("table");
+    setSF(true);
   };
+
+  const SortIcon = ({ f }: { f: string }) =>
+    sK !== f ? (
+      <ArrowUpDown className="w-3 h-3 text-muted-foreground/40" />
+    ) : sD === "asc" ? (
+      <ArrowUp className="w-3 h-3 text-primary" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-primary" />
+    );
 
   if (!ok)
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-          background: "#0a0f1a",
-          color: "#94a3b8",
-          fontFamily: "system-ui",
-        }}
-      >
+      <div className="flex items-center justify-center h-screen bg-background text-muted-foreground">
         Loading...
       </div>
     );
 
-  const Arrow = ({ f }: { f: string }) =>
-    sK !== f ? (
-      <span style={{ opacity: 0.25, marginLeft: 3, fontSize: 8 }}>
-        &#8597;
-      </span>
-    ) : (
-      <span style={{ marginLeft: 3, fontSize: 8, color: "#60a5fa" }}>
-        {sD === "asc" ? "\u25B2" : "\u25BC"}
-      </span>
-    );
-  const pcol = (
-    p: string
-  ): [string, string] =>
-    p === "Hot"
-      ? ["#dc2626", "#fff"]
-      : p === "Warm"
-      ? ["#f59e0b", "#000"]
-      : p === "Cold"
-      ? ["#3b82f6", "#fff"]
-      : p === "Dead"
-      ? ["#4b5563", "#9ca3af"]
-      : ["transparent", "#64748b"];
-  const ocol = (s: string) =>
-    ({
-      "Not Started": "#475569",
-      Researching: "#1e3a5f",
-      Contacted: "#2563eb",
-      "Meeting Set": "#7c3aed",
-      "Proposal Sent": "#c026d3",
-      Negotiating: "#ea580c",
-      "Closed Won": "#16a34a",
-      "Closed Lost": "#dc2626",
-      "On Hold": "#64748b",
-    })[s] || "#475569";
-
-  const c = {
-    bg: "#0a0f1a",
-    card: "#111827",
-    bdr: "#1e293b",
-    t1: "#f1f5f9",
-    t2: "#94a3b8",
-    t3: "#64748b",
-  };
-
   return (
-    <div
-      style={{
-        background: c.bg,
-        minHeight: "100vh",
-        color: "#e2e8f0",
-        fontFamily: "system-ui, -apple-system, sans-serif",
-        fontSize: 13,
-      }}
-    >
+    <div className="bg-background min-h-screen text-foreground">
       {/* Header */}
-      <div
-        style={{
-          borderBottom: `1px solid ${c.bdr}`,
-          padding: "10px 16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          background: "#0d1424",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 6,
-              background: "linear-gradient(135deg,#3b82f6,#8b5cf6)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 800,
-              fontSize: 12,
-              color: "#fff",
-            }}
-          >
-            TP
+      <header className="border-b border-border px-6 py-3 flex items-center justify-between bg-card">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            <Building2 className="w-4 h-4 text-primary-foreground" />
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: c.t1 }}>
-              Territory Planner
-            </div>
-            <div style={{ fontSize: 10, color: c.t3 }}>
-              Micah Bank, FY2026
-            </div>
+            <h1 className="font-semibold text-sm text-foreground tracking-tight">Territory Planner</h1>
+            <p className="text-[10px] text-muted-foreground">Micah Bank · FY2026</p>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 3 }}>
+        <div className="flex items-center gap-1">
           {(["dashboard", "table"] as const).map((v) => (
             <button
               key={v}
               onClick={() => setView(v)}
-              style={{
-                padding: "5px 12px",
-                borderRadius: 5,
-                border: "none",
-                cursor: "pointer",
-                fontSize: 11,
-                fontWeight: 600,
-                background: view === v ? "#1e40af" : "transparent",
-                color: view === v ? "#fff" : c.t2,
-              }}
+              className={cn(
+                "px-4 py-1.5 rounded-md text-xs font-medium transition-colors",
+                view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
+              )}
             >
-              {v === "dashboard" ? "Dashboard" : "Prospects"}
+              {v === "dashboard" ? "Dashboard" : "All Prospects"}
             </button>
           ))}
           <button
-            onClick={reset}
-            style={{
-              padding: "5px 8px",
-              borderRadius: 5,
-              border: `1px solid ${c.bdr}`,
-              background: "transparent",
-              color: c.t3,
-              cursor: "pointer",
-              fontSize: 10,
-              marginLeft: 6,
-            }}
+            onClick={() => { if (confirm("Reset ALL data?")) reset(); }}
+            className="ml-2 p-1.5 rounded-md text-muted-foreground hover:bg-accent transition-colors"
+            title="Reset data"
           >
-            Reset
+            <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Dashboard */}
       {view === "dashboard" && (
-        <div style={{ padding: 16, maxWidth: 1000, margin: "0 auto" }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-              gap: 8,
-              marginBottom: 14,
-            }}
-          >
-            {(
-              [
-                ["Total", stats.t, "#3b82f6"],
-                ["50+ Locs", stats.o50, "#10b981"],
-                ["100+ Locs", stats.o100, "#8b5cf6"],
-                ["500+ Locs", stats.o500, "#f59e0b"],
-                ["Hot", stats.hot, "#ef4444"],
-                ["Warm", stats.warm, "#f59e0b"],
-                ["Churned", stats.ch, "#64748b"],
-                ["Total Locs", stats.tl.toLocaleString(), "#06b6d4"],
-              ] as [string, string | number, string][]
-            ).map(([l, v, col], i) => (
-              <div
+        <div className="p-6 max-w-5xl mx-auto space-y-4">
+          {/* Stat cards */}
+          <div className="grid grid-cols-4 lg:grid-cols-8 gap-3">
+            {([
+              ["Total", stats.t, "text-primary", () => { clr(); }],
+              ["50+ Locs", stats.o50, "text-emerald-600", () => { clr(); setFMinLocs("50"); }],
+              ["100+ Locs", stats.o100, "text-violet-600", () => { clr(); setFMinLocs("100"); }],
+              ["500+ Locs", stats.o500, "text-amber-600", () => { clr(); setFMinLocs("500"); }],
+              ["Hot", stats.hot, "text-red-600", () => { clr(); }],
+              ["Warm", stats.warm, "text-amber-500", () => { clr(); }],
+              ["Prospects", stats.prospects, "text-primary", () => { clr(); setFStatus(["Prospect"]); }],
+              ["Churned", stats.ch, "text-muted-foreground", () => { clr(); setFStatus(["Churned"]); }],
+            ] as [string, number, string, () => void][]).map(([label, value, color, fn], i) => (
+              <button
                 key={i}
-                style={{
-                  background: c.card,
-                  borderRadius: 8,
-                  padding: "10px 12px",
-                  border: `1px solid ${c.bdr}`,
-                }}
+                onClick={() => handleStatClick(fn)}
+                className="bg-card rounded-xl p-3 border border-border hover:border-primary/30 hover:shadow-sm transition-all text-left group cursor-pointer"
               >
-                <div
-                  style={{
-                    fontSize: 9,
-                    color: c.t3,
-                    marginBottom: 2,
-                    textTransform: "uppercase",
-                    letterSpacing: ".05em",
-                  }}
-                >
-                  {l}
-                </div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: col }}>
-                  {v}
-                </div>
-              </div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{label}</div>
+                <div className={cn("text-xl font-bold", color)}>{value}</div>
+              </button>
             ))}
           </div>
 
-          <div
-            style={{
-              background: c.card,
-              borderRadius: 8,
-              padding: 12,
-              border: `1px solid ${c.bdr}`,
-              marginBottom: 10,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: c.t2,
-                marginBottom: 8,
-                textTransform: "uppercase",
-                letterSpacing: ".05em",
-              }}
-            >
-              Pipeline
-            </div>
-            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+          {/* Pipeline */}
+          <div className="bg-card rounded-xl p-4 border border-border">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Pipeline Stages</h3>
+            <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2">
               {STAGES.map((s) => {
                 const n = stats.bo[s] || 0;
                 return (
-                  <div
+                  <button
                     key={s}
-                    onClick={() => {
-                      setView("table");
-                      setFO(s);
-                    }}
-                    style={{
-                      flex: 1,
-                      minWidth: 75,
-                      background: ocol(s) + "22",
-                      border: `1px solid ${ocol(s)}44`,
-                      borderRadius: 6,
-                      padding: "7px 4px",
-                      cursor: "pointer",
-                      textAlign: "center",
-                    }}
+                    onClick={() => { clr(); setFOutreach([s]); setView("table"); setSF(true); }}
+                    className="rounded-lg border border-border p-2 text-center hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
                   >
-                    <div
-                      style={{
-                        fontSize: 15,
-                        fontWeight: 700,
-                        color: ocol(s),
-                        filter: "brightness(1.5)",
-                      }}
-                    >
-                      {n}
-                    </div>
-                    <div style={{ fontSize: 8, color: c.t2, marginTop: 1 }}>
-                      {s}
-                    </div>
-                  </div>
+                    <div className="text-lg font-bold text-foreground">{n}</div>
+                    <div className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{s}</div>
+                  </button>
                 );
               })}
             </div>
           </div>
 
-          <div
-            style={{
-              background: c.card,
-              borderRadius: 8,
-              padding: 12,
-              border: `1px solid ${c.bdr}`,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: c.t2,
-                marginBottom: 8,
-                textTransform: "uppercase",
-                letterSpacing: ".05em",
-              }}
-            >
-              Industries
+          {/* Industries */}
+          <div className="bg-card rounded-xl p-4 border border-border">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Industry Distribution</h3>
+            <div className="space-y-1.5">
+              {Object.entries(stats.bi)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 12)
+                .map(([ind, n]) => (
+                  <div key={ind} className="flex items-center gap-3">
+                    <div className="w-28 text-[11px] text-muted-foreground text-right truncate shrink-0">{ind}</div>
+                    <div className="flex-1 h-5 bg-muted rounded overflow-hidden">
+                      <div
+                        className="h-full bg-primary/20 rounded"
+                        style={{ width: `${(n / Math.max(...Object.values(stats.bi))) * 100}%` }}
+                      />
+                    </div>
+                    <div className="text-[11px] text-muted-foreground w-6 text-right">{n}</div>
+                  </div>
+                ))}
             </div>
-            {Object.entries(stats.bi)
-              .sort((a, b) => b[1] - a[1])
-              .slice(0, 10)
-              .map(([ind, n]) => (
-                <div
-                  key={ind}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    marginBottom: 3,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 100,
-                      fontSize: 9,
-                      color: c.t2,
-                      textAlign: "right",
-                      flexShrink: 0,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {ind}
-                  </div>
-                  <div
-                    style={{
-                      flex: 1,
-                      height: 14,
-                      background: c.bdr,
-                      borderRadius: 3,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: "100%",
-                        width: `${
-                          (n / Math.max(...Object.values(stats.bi))) * 100
-                        }%`,
-                        background:
-                          "linear-gradient(90deg,#3b82f6,#8b5cf6)",
-                        borderRadius: 3,
-                      }}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 9,
-                      color: c.t3,
-                      width: 18,
-                      textAlign: "right",
-                    }}
-                  >
-                    {n}
-                  </div>
-                </div>
-              ))}
           </div>
         </div>
       )}
 
       {/* Table View */}
       {view === "table" && (
-        <div style={{ display: "flex", height: "calc(100vh - 49px)" }}>
-          <div
-            style={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
-          >
-            {/* Search bar */}
-            <div
-              style={{
-                padding: "7px 12px",
-                borderBottom: `1px solid ${c.bdr}`,
-                background: "#0d1424",
-                display: "flex",
-                gap: 6,
-                alignItems: "center",
-                flexWrap: "wrap",
-              }}
-            >
+        <div className="flex flex-col h-[calc(100vh-53px)]">
+          {/* Filters bar */}
+          <div className="px-4 py-2.5 border-b border-border bg-card flex items-center gap-3 flex-wrap">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search..."
-                style={{
-                  padding: "5px 10px",
-                  borderRadius: 5,
-                  border: `1px solid ${c.bdr}`,
-                  background: "#1e293b",
-                  color: "#e2e8f0",
-                  fontSize: 11,
-                  width: 170,
-                  outline: "none",
-                }}
+                placeholder="Search accounts..."
+                className="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring w-48"
               />
-              <button
-                onClick={() => setSF(!sf)}
-                style={{
-                  padding: "5px 10px",
-                  borderRadius: 5,
-                  border: `1px solid ${c.bdr}`,
-                  background: sf ? "#1e40af" : "#1e293b",
-                  color: sf ? "#fff" : c.t2,
-                  fontSize: 10,
-                  cursor: "pointer",
-                  fontWeight: 600,
-                }}
-              >
-                Filters{fI || fO || fP || fW || fM ? " \u25CF" : ""}
-              </button>
-              {(fI || fO || fP || fW || fM) && (
-                <button
-                  onClick={clr}
-                  style={{
-                    padding: "3px 8px",
-                    borderRadius: 4,
-                    border: "none",
-                    background: "#dc2626",
-                    color: "#fff",
-                    fontSize: 9,
-                    cursor: "pointer",
-                  }}
-                >
-                  Clear
-                </button>
-              )}
-              <div style={{ marginLeft: "auto", fontSize: 10, color: c.t3 }}>
-                {filtered.length}/{data.length}
-              </div>
             </div>
 
-            {sf && (
-              <div
-                style={{
-                  padding: "5px 12px",
-                  borderBottom: `1px solid ${c.bdr}`,
-                  background: c.card,
-                  display: "flex",
-                  gap: 5,
-                  flexWrap: "wrap",
-                }}
-              >
-                {(
-                  [
-                    [fI, setFI, "Industry", INDUSTRIES],
-                    [fO, setFO, "Outreach", ["", ...STAGES]],
-                    [fP, setFP, "Priority", PRIORITIES],
-                  ] as [string, (v: string) => void, string, string[]][]
-                ).map(([v, fn, l, opts]) => (
-                  <select
-                    key={l}
-                    value={v}
-                    onChange={(e) => fn(e.target.value)}
-                    style={{
-                      padding: "3px 6px",
-                      borderRadius: 4,
-                      border: `1px solid ${c.bdr}`,
-                      background: "#1e293b",
-                      color: "#e2e8f0",
-                      fontSize: 10,
-                    }}
-                  >
-                    <option value="">All {l}</option>
-                    {opts.filter(Boolean).map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </select>
-                ))}
-                <select
-                  value={fW}
-                  onChange={(e) => setFW(e.target.value)}
-                  style={{
-                    padding: "3px 6px",
-                    borderRadius: 4,
-                    border: `1px solid ${c.bdr}`,
-                    background: "#1e293b",
-                    color: "#e2e8f0",
-                    fontSize: 10,
-                  }}
-                >
-                  <option value="">All Owners</option>
-                  {owners.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  value={fM}
-                  onChange={(e) => setFM(e.target.value)}
-                  placeholder="Min locs"
-                  type="number"
-                  style={{
-                    padding: "3px 6px",
-                    borderRadius: 4,
-                    border: `1px solid ${c.bdr}`,
-                    background: "#1e293b",
-                    color: "#e2e8f0",
-                    fontSize: 10,
-                    width: 70,
-                  }}
-                />
-              </div>
+            <MultiSelect options={INDUSTRIES} selected={fIndustry} onChange={setFIndustry} placeholder="Industry" />
+            <MultiSelect options={STAGES} selected={fOutreach} onChange={setFOutreach} placeholder="Outreach" />
+            <MultiSelect options={["Prospect", "Churned"]} selected={fStatus} onChange={setFStatus} placeholder="Status" />
+            <MultiSelect options={COMPETITORS.filter(Boolean)} selected={fCompetitor} onChange={setFCompetitor} placeholder="Competitor" />
+            <MultiSelect options={TIERS.filter(Boolean)} selected={fTier} onChange={setFTier} placeholder="Tier" />
+
+            <div className="relative">
+              <MapPin className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={fMinLocs}
+                onChange={(e) => setFMinLocs(e.target.value)}
+                placeholder="Min locs"
+                type="number"
+                className="pl-7 pr-2 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring w-20"
+              />
+            </div>
+
+            {hasFilters && (
+              <button onClick={clr} className="px-2 py-1 text-[10px] font-medium rounded bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
+                Clear All
+              </button>
             )}
 
-            {/* Table */}
-            <div style={{ flex: 1, overflow: "auto" }}>
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  fontSize: 11,
-                }}
-              >
-                <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
-                  <tr style={{ background: c.card }}>
-                    {(
-                      [
-                        ["ps", "Score", 42],
-                        ["name", "Account", null],
-                        ["locationCount", "Locs", 48],
-                        ["industry", "Industry", 100],
-                        ["outreach", "Outreach", 88],
-                        ["priority", "Priority", 60],
-                        ["transitionOwner", "Owner", 95],
-                      ] as [string, string, number | null][]
-                    ).map(([k, l, w]) => (
-                      <th
-                        key={k}
-                        onClick={() => doSort(k)}
-                        style={{
-                          padding: "6px 4px",
-                          textAlign: "left",
-                          color: c.t3,
-                          fontWeight: 600,
-                          fontSize: 9,
-                          textTransform: "uppercase",
-                          letterSpacing: ".04em",
-                          borderBottom: `1px solid ${c.bdr}`,
-                          cursor: "pointer",
-                          width: w || "auto",
-                          whiteSpace: "nowrap",
-                          userSelect: "none",
-                        }}
-                      >
-                        {l}
-                        <Arrow f={k} />
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((p, i) => {
-                    const [pbg, ptx] = pcol(p.priority);
-                    const isSel = sel?.id === p.id;
-                    return (
-                      <tr
-                        key={p.id}
-                        onClick={() => setSel(p)}
-                        style={{
-                          background: isSel
-                            ? "#1e293b"
-                            : i % 2
-                            ? "#0d1424"
-                            : "transparent",
-                          cursor: "pointer",
-                          borderBottom: `1px solid ${c.bdr}11`,
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isSel)
-                            e.currentTarget.style.background = "#1e293b55";
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isSel)
-                            e.currentTarget.style.background = i % 2
-                              ? "#0d1424"
-                              : "transparent";
-                        }}
-                      >
-                        <td
-                          style={{
-                            padding: "5px 4px",
-                            textAlign: "center",
-                            fontWeight: 700,
-                            fontSize: 10,
-                            color:
-                              p.ps >= 40
-                                ? "#10b981"
-                                : p.ps >= 20
-                                ? "#60a5fa"
-                                : "#475569",
-                          }}
-                        >
-                          {p.ps}
-                        </td>
-                        <td style={{ padding: "5px 4px" }}>
-                          <div
-                            style={{
-                              fontWeight: 600,
-                              color: c.t1,
-                              fontSize: 11,
-                            }}
-                          >
-                            {p.name}
-                          </div>
-                          {p.notes && (
-                            <div
-                              style={{
-                                fontSize: 9,
-                                color: c.t3,
-                                marginTop: 1,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                                maxWidth: 200,
-                              }}
-                            >
-                              {p.notes}
-                            </div>
-                          )}
-                        </td>
-                        <td
-                          style={{
-                            padding: "5px 4px",
-                            textAlign: "center",
-                            fontWeight: 700,
-                            fontSize: 10,
-                            color:
-                              (p.locationCount ?? 0) >= 100
-                                ? "#10b981"
-                                : (p.locationCount ?? 0) >= 50
-                                ? "#60a5fa"
-                                : (p.locationCount ?? 0) > 0
-                                ? c.t2
-                                : "#334155",
-                          }}
-                        >
-                          {p.locationCount || "--"}
-                        </td>
-                        <td
-                          style={{
-                            padding: "5px 4px",
-                            fontSize: 10,
-                            color: c.t2,
-                          }}
-                        >
-                          {p.industry}
-                        </td>
-                        <td style={{ padding: "5px 4px" }}>
-                          <span
-                            style={{
-                              padding: "1px 6px",
-                              borderRadius: 3,
-                              fontSize: 9,
-                              fontWeight: 600,
-                              background: ocol(p.outreach) + "33",
-                              color: ocol(p.outreach),
-                              filter: "brightness(1.5)",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {p.outreach}
-                          </span>
-                        </td>
-                        <td style={{ padding: "5px 4px" }}>
-                          {p.priority && (
-                            <span
-                              style={{
-                                padding: "1px 6px",
-                                borderRadius: 3,
-                                fontSize: 9,
-                                fontWeight: 700,
-                                background: pbg,
-                                color: ptx,
-                              }}
-                            >
-                              {p.priority}
-                            </span>
-                          )}
-                        </td>
-                        <td
-                          style={{
-                            padding: "5px 4px",
-                            fontSize: 10,
-                            color: c.t2,
-                          }}
-                        >
-                          {p.transitionOwner}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="ml-auto text-xs text-muted-foreground">
+              {filtered.length} of {data.length}
             </div>
           </div>
 
-          {/* Detail Panel */}
-          {sel && (
-            <div
-              style={{
-                width: 290,
-                borderLeft: `1px solid ${c.bdr}`,
-                background: c.card,
-                overflow: "auto",
-                flexShrink: 0,
-              }}
-            >
-              <div style={{ padding: 12 }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "start",
-                    marginBottom: 10,
-                  }}
-                >
-                  <div>
-                    <div
-                      style={{ fontSize: 13, fontWeight: 700, color: c.t1 }}
+          {/* Table */}
+          <div className="flex-1 overflow-auto">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
+                <tr>
+                  {([
+                    ["ps", "Score", "w-14"],
+                    ["name", "Account", ""],
+                    ["locationCount", "Locations", "w-20"],
+                    ["industry", "Industry", "w-32"],
+                    ["tier", "Tier", "w-16"],
+                    ["outreach", "Stage", "w-28"],
+                    ["priority", "Priority", "w-20"],
+                    ["status", "Status", "w-20"],
+                    ["competitor", "Competitor", "w-24"],
+                  ] as [string, string, string][]).map(([k, l, w]) => (
+                    <th
+                      key={k}
+                      onClick={() => doSort(k)}
+                      className={cn(
+                        "px-3 py-2.5 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors",
+                        w
+                      )}
                     >
-                      {sel.name}
-                    </div>
-                    <a
-                      href={`https://${sel.website}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        fontSize: 10,
-                        color: "#60a5fa",
-                        textDecoration: "none",
-                      }}
-                    >
-                      {sel.website}
-                    </a>
-                  </div>
-                  <button
-                    onClick={() => setSel(null)}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: c.t3,
-                      cursor: "pointer",
-                      fontSize: 16,
-                      padding: 0,
-                    }}
-                  >
-                    &times;
-                  </button>
-                </div>
-
-                <div
-                  style={{
-                    background: c.bg,
-                    borderRadius: 6,
-                    padding: 8,
-                    marginBottom: 10,
-                    textAlign: "center",
-                    border: `1px solid ${c.bdr}`,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 8,
-                      color: c.t3,
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Score
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 24,
-                      fontWeight: 800,
-                      color:
-                        scoreProspect(sel) >= 40
-                          ? "#10b981"
-                          : scoreProspect(sel) >= 20
-                          ? "#60a5fa"
-                          : c.t3,
-                    }}
-                  >
-                    {scoreProspect(sel)}
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 7,
-                  }}
-                >
-                  <Fld
-                    l="Locations"
-                    t="number"
-                    v={sel.locationCount || ""}
-                    c={(v) =>
-                      upd(sel.id, {
-                        locationCount: v ? parseInt(v) : null,
-                      })
-                    }
-                  />
-                  <Fld
-                    l="Industry"
-                    t="select"
-                    o={INDUSTRIES}
-                    v={sel.industry || ""}
-                    c={(v) => upd(sel.id, { industry: v })}
-                  />
-                  <Fld
-                    l="Outreach"
-                    t="select"
-                    o={STAGES}
-                    v={sel.outreach}
-                    c={(v) => upd(sel.id, { outreach: v })}
-                  />
-                  <Fld
-                    l="Priority"
-                    t="select"
-                    o={PRIORITIES}
-                    v={sel.priority || ""}
-                    c={(v) => upd(sel.id, { priority: v })}
-                  />
-                  <Fld
-                    l="Contact"
-                    v={sel.contactName || ""}
-                    c={(v) => upd(sel.id, { contactName: v })}
-                  />
-                  <Fld
-                    l="Email"
-                    v={sel.contactEmail || ""}
-                    c={(v) => upd(sel.id, { contactEmail: v })}
-                  />
-                  <Fld
-                    l="Est. Revenue ($)"
-                    t="number"
-                    v={sel.estimatedRevenue || ""}
-                    c={(v) =>
-                      upd(sel.id, {
-                        estimatedRevenue: v ? parseInt(v) : null,
-                      })
-                    }
-                  />
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 8,
-                        color: c.t3,
-                        marginBottom: 2,
-                        textTransform: "uppercase",
-                        letterSpacing: ".04em",
-                      }}
-                    >
-                      Notes
-                    </div>
-                    <textarea
-                      value={sel.notes || ""}
-                      onChange={(e) =>
-                        upd(sel.id, { notes: e.target.value })
-                      }
-                      rows={3}
-                      style={{
-                        width: "100%",
-                        padding: "4px 6px",
-                        borderRadius: 4,
-                        border: `1px solid ${c.bdr}`,
-                        background: "#1e293b",
-                        color: "#e2e8f0",
-                        fontSize: 11,
-                        resize: "vertical",
-                        outline: "none",
-                        boxSizing: "border-box",
-                      }}
-                      placeholder="Notes..."
-                    />
-                  </div>
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 8,
-                        color: c.t3,
-                        marginBottom: 2,
-                        textTransform: "uppercase",
-                        letterSpacing: ".04em",
-                      }}
-                    >
-                      Location Source
-                    </div>
-                    <textarea
-                      value={sel.locationNotes || ""}
-                      onChange={(e) =>
-                        upd(sel.id, { locationNotes: e.target.value })
-                      }
-                      rows={2}
-                      style={{
-                        width: "100%",
-                        padding: "4px 6px",
-                        borderRadius: 4,
-                        border: `1px solid ${c.bdr}`,
-                        background: "#1e293b",
-                        color: "#e2e8f0",
-                        fontSize: 11,
-                        resize: "vertical",
-                        outline: "none",
-                        boxSizing: "border-box",
-                      }}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      borderTop: `1px solid ${c.bdr}`,
-                      paddingTop: 6,
-                      marginTop: 2,
-                    }}
-                  >
-                    <div style={{ fontSize: 9, color: "#475569" }}>
-                      Owner: {sel.transitionOwner}
-                    </div>
-                    <div style={{ fontSize: 9, color: "#475569" }}>
-                      Status: {sel.status}
-                    </div>
-                    <div style={{ fontSize: 9, color: "#475569" }}>
-                      Modified: {sel.lastModified}
-                    </div>
-                    {sel.lastTouched && (
-                      <div style={{ fontSize: 9, color: "#475569" }}>
-                        Touched: {sel.lastTouched}
+                      <div className="flex items-center gap-1">
+                        {l}
+                        <SortIcon f={k} />
                       </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filtered.map((p) => (
+                  <tr
+                    key={p.id}
+                    onClick={() => navigate(`/prospect/${p.id}`)}
+                    className="hover:bg-accent/50 cursor-pointer transition-colors group"
+                  >
+                    <td className="px-3 py-2.5">
+                      <span className={cn(
+                        "text-xs font-bold",
+                        p.ps >= 40 ? "text-emerald-600" : p.ps >= 20 ? "text-primary" : "text-muted-foreground"
+                      )}>
+                        {p.ps}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-foreground group-hover:text-primary transition-colors">{p.name}</span>
+                        {p.status === "Churned" && (
+                          <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-red-100 text-red-700 uppercase">Churned</span>
+                        )}
+                        {p.competitor && (
+                          <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-100 text-amber-800">
+                            w/ {p.competitor}
+                          </span>
+                        )}
+                        {p.tier && (
+                          <span className={cn(
+                            "px-1.5 py-0.5 text-[9px] font-semibold rounded",
+                            p.tier === "Tier 1" ? "bg-primary/10 text-primary" :
+                            p.tier === "Tier 2" ? "bg-violet-100 text-violet-700" :
+                            p.tier === "Tier 3" ? "bg-muted text-muted-foreground" :
+                            "bg-muted text-muted-foreground/60"
+                          )}>
+                            {p.tier}
+                          </span>
+                        )}
+                      </div>
+                      {p.notes && (
+                        <div className="text-[10px] text-muted-foreground mt-0.5 truncate max-w-xs">{p.notes}</div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5 text-center">
+                      <span className={cn(
+                        "font-semibold",
+                        (p.locationCount ?? 0) >= 100 ? "text-emerald-600" :
+                        (p.locationCount ?? 0) >= 50 ? "text-primary" :
+                        (p.locationCount ?? 0) > 0 ? "text-foreground" : "text-muted-foreground/40"
+                      )}>
+                        {p.locationCount || "—"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-muted-foreground">{p.industry || "—"}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground text-[10px]">{p.tier || "—"}</td>
+                    <td className="px-3 py-2.5">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-accent text-accent-foreground">
+                        {p.outreach}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {p.priority && (
+                        <span className={cn(
+                          "px-2 py-0.5 rounded-full text-[10px] font-bold",
+                          p.priority === "Hot" ? "bg-red-100 text-red-700" :
+                          p.priority === "Warm" ? "bg-amber-100 text-amber-700" :
+                          p.priority === "Cold" ? "bg-blue-100 text-blue-700" :
+                          "bg-muted text-muted-foreground"
+                        )}>
+                          {p.priority}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className={cn(
+                        "text-[10px] font-medium",
+                        p.status === "Churned" ? "text-red-600" : "text-emerald-600"
+                      )}>
+                        {p.status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-muted-foreground text-[10px]">{p.competitor || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

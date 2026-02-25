@@ -12,19 +12,23 @@ export const STAGES = [
 
 export const PRIORITIES = ["", "Hot", "Warm", "Cold", "Dead"];
 
+export const TIERS = ["", "Tier 1", "Tier 2", "Tier 3", "Tier 4"];
+
 export const INDUSTRIES = [
-  "",
+  "Retail",
+  "Food & Bev",
+  "Storage",
+  "Daycare/Tutoring",
+  "Gas Stations",
+  "Grocery",
   "QSR/Fast Casual",
-  "Grocery/Supermarket",
   "Casual Dining",
   "Fine Dining",
-  "Convenience Store/Gas",
   "Fashion Retail",
   "Office Supply Retail",
   "Hospitality/Hotels",
   "Auto Dealerships",
   "Healthcare",
-  "Childcare/Education",
   "Non-Profit Retail/Thrift",
   "Commercial Real Estate",
   "Multifamily REIT",
@@ -39,6 +43,37 @@ export const INDUSTRIES = [
   "Government/Utility",
   "Other",
 ];
+
+export const INTERACTION_TYPES = ["Email", "Call", "LinkedIn Message"];
+
+export const COMPETITORS = [
+  "",
+  "SOCi",
+  "Yext",
+  "Birdeye",
+  "Podium",
+  "Reputation.com",
+  "Uberall",
+  "Rio SEO",
+  "Chatmeter",
+  "Other",
+];
+
+export interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  title: string;
+  notes: string;
+}
+
+export interface InteractionLog {
+  id: string;
+  type: string;
+  date: string;
+  notes: string;
+}
 
 export interface Prospect {
   id: number;
@@ -57,11 +92,15 @@ export interface Prospect {
   contactName: string;
   contactEmail: string;
   estimatedRevenue: number | null;
+  competitor: string;
+  tier: string;
+  contacts: Contact[];
+  interactions: InteractionLog[];
 }
 
 export type EnrichedProspect = Prospect & { ps: number };
 
-export const STORAGE_KEY = "tp-data-v3";
+export const STORAGE_KEY = "tp-data-v4";
 
 export function scoreProspect(p: Prospect): number {
   let s = 0;
@@ -73,9 +112,9 @@ export function scoreProspect(p: Prospect): number {
   if (
     [
       "QSR/Fast Casual",
-      "Grocery/Supermarket",
+      "Grocery",
       "Casual Dining",
-      "Convenience Store/Gas",
+      "Gas Stations",
       "Hospitality/Hotels",
       "Healthcare",
       "Car Wash Chain",
@@ -107,6 +146,10 @@ export function initProspect(p: Partial<Prospect> & { id: number; name: string }
     contactName: "",
     contactEmail: "",
     estimatedRevenue: null,
+    competitor: "",
+    tier: "",
+    contacts: [],
+    interactions: [],
     ...p,
     outreach: p.outreach || "Not Started",
     priority:
@@ -146,9 +189,9 @@ const RAW_SEED: Array<Partial<Prospect> & { id: number; name: string }> = [
   {id:23,name:"The Shops at Columbus Circle",website:"seenet.com",transitionOwner:"Matthew Steen",status:"Churned"},
   {id:24,name:"Frambrills",website:"frambrills.com",transitionOwner:"Sean Loughery",status:"Prospect"},
   {id:25,name:"Club Champion",website:"clubchampionsgolf.com",transitionOwner:"Robbie Hassett",status:"Prospect"},
-  {id:26,name:"Columbus Zoo and Aquarium",website:"columbuszoo.org",locationCount:1,transitionOwner:"Max Ratee",status:"Prospect",industry:"Attractions/Zoo",locationNotes:"Single location"},
+  {id:26,name:"Columbus Zoo and Aquarium",website:"columbuszoo.org",locationCount:1,transitionOwner:"Max Ratee",status:"Prospect",industry:"Other",locationNotes:"Single location"},
   {id:27,name:"GAP Management Corp",website:"gmpmanagement.com",transitionOwner:"Lauren Goldman",status:"Prospect"},
-  {id:28,name:"Quality Oil Company",website:"qualityoilco.com",locationCount:80,transitionOwner:"Micah Bank(ENS)",status:"Prospect",industry:"Convenience Store/Gas",locationNotes:"Quality Oil: ~80 convenience stores in NC/VA"},
+  {id:28,name:"Quality Oil Company",website:"qualityoilco.com",locationCount:80,transitionOwner:"Micah Bank(ENS)",status:"Prospect",industry:"Gas Stations",locationNotes:"Quality Oil: ~80 convenience stores in NC/VA"},
   {id:29,name:"Aspen Holdings Inc.",website:"aspenholh.com",transitionOwner:"Brady Gonzalez",status:"Prospect"},
   {id:30,name:"The New Jersey Transit Corporation",website:"njtransit.com",locationCount:165,transitionOwner:"Lauren Goldman",status:"Prospect",industry:"Public Transportation",locationNotes:"165 rail stations + 62 light rail + 19,000+ bus stops"},
   {id:31,name:"Raymund Consolidated Corporation",website:"raymundcc.com",transitionOwner:"Lauren Goldman",status:"Prospect"},
@@ -159,10 +202,10 @@ const RAW_SEED: Array<Partial<Prospect> & { id: number; name: string }> = [
   {id:36,name:"The Tom Club",website:"jonocols.net",transitionOwner:"Doug Miller",status:"Prospect"},
   {id:37,name:"South Mount Nobles LLC",website:"southmountnoblees.com",transitionOwner:"Matthew Steen",status:"Prospect"},
   {id:38,name:"ANZ Cleaning",website:"anzcleaning.com",transitionOwner:"Luca Filadelli",status:"Prospect"},
-  {id:39,name:"F.K.K. Supermarkets, LLC D/B/A Foodtown",website:"foodtown.com",locationCount:65,transitionOwner:"Michelle Luongo",status:"Prospect",industry:"Grocery/Supermarket",locationNotes:"~65 Foodtown stores in NJ, NY, CT, PA"},
+  {id:39,name:"F.K.K. Supermarkets, LLC D/B/A Foodtown",website:"foodtown.com",locationCount:65,transitionOwner:"Michelle Luongo",status:"Prospect",industry:"Grocery",locationNotes:"~65 Foodtown stores in NJ, NY, CT, PA"},
   {id:40,name:"Premises Management Company Inc.",website:"premises.com",transitionOwner:"Lauren Suskind",status:"Prospect"},
   {id:41,name:"Cat Park Metropics, Inc.",website:"catparkmetroparticade.net",transitionOwner:"Thomas Clements",status:"Prospect"},
-  {id:42,name:"Empire Office, Inc.",website:"empireoffice.com",locationCount:10,transitionOwner:"Lauren Suskind",status:"Prospect",industry:"Office Furniture",locationNotes:"~10 locations; B2B office furniture dealer"},
+  {id:42,name:"Empire Office, Inc.",website:"empireoffice.com",locationCount:10,transitionOwner:"Lauren Suskind",status:"Prospect",industry:"Other",locationNotes:"~10 locations; B2B office furniture dealer"},
   {id:43,name:"Amalg Steel Beverages USA Inc.",website:"amalgroup.com",transitionOwner:"Gregory Goldberg",status:"Prospect"},
   {id:44,name:"Oubit Services, Inc.",website:"qubitserviceinc.com",transitionOwner:"Sean Loughery",status:"Prospect"},
   {id:45,name:"Hapevo, LLC",website:"hapevo.com",transitionOwner:"Lauren Goldman",status:"Prospect"},
@@ -257,7 +300,7 @@ const RAW_SEED: Array<Partial<Prospect> & { id: number; name: string }> = [
   {id:134,name:"rKnights",website:"rknflag.com",transitionOwner:"Lauren Goldman",status:"Prospect"},
   {id:135,name:"PazeLuPage Niagara Real Estate Centre",website:"rightspot.com",transitionOwner:"Lauren Goldman",status:"Prospect"},
   {id:136,name:"Diamond Parking Ltd",website:"diamondparking.com",transitionOwner:"Greg Dagit",status:"Prospect"},
-  {id:137,name:"Whole Foods Market Canada Inc.",website:"wholefoodsmarket.com",locationCount:500,transitionOwner:"Max Ratee",status:"Prospect",industry:"Grocery/Supermarket",locationNotes:"Whole Foods: 500+ stores (Amazon-owned); Canadian ops"},
+  {id:137,name:"Whole Foods Market Canada Inc.",website:"wholefoodsmarket.com",locationCount:500,transitionOwner:"Max Ratee",status:"Prospect",industry:"Grocery",locationNotes:"Whole Foods: 500+ stores (Amazon-owned); Canadian ops"},
   {id:138,name:"Fenix Ceramic Inc.",website:"fenixceramic.ca",transitionOwner:"Brady Gonzalez",status:"Prospect"},
   {id:139,name:"Joybirth Telephones",website:"jobc.com",transitionOwner:"Lauren Suskind",status:"Prospect"},
   {id:140,name:"Eagle Up Grill",website:"eagleupgrill.com",transitionOwner:"Lauren Goldman",status:"Prospect"},
@@ -299,7 +342,7 @@ const RAW_SEED: Array<Partial<Prospect> & { id: number; name: string }> = [
   {id:176,name:"Alex Tally Medifuns",website:"alextallyk.com",transitionOwner:"Micah Bank(ENS)",status:"Churned"},
   {id:177,name:"Home-X Energy Corporation",website:"homehenergy.com",transitionOwner:"Shay Minor",status:"Prospect"},
   {id:178,name:"Spartan's Marketing Concepts LLC",website:"spartansalesglobes.com",transitionOwner:"Brady Gonzalez",status:"Churned"},
-  {id:179,name:"The Learning Experience",website:"thelearningexperience.com",locationCount:400,transitionOwner:"Lauren Goldman",status:"Churned",industry:"Childcare/Education",locationNotes:"400+ centers in 30+ states"},
+  {id:179,name:"The Learning Experience",website:"thelearningexperience.com",locationCount:400,transitionOwner:"Lauren Goldman",status:"Churned",industry:"Daycare/Tutoring",locationNotes:"400+ centers in 30+ states"},
   {id:180,name:"Lagos Findery",website:"agrofindery.com",transitionOwner:"Sean Loughery",status:"Prospect"},
   {id:181,name:"The Sugar one IRON",website:"sugaroneiron.com",transitionOwner:"Sean Loughery",status:"Prospect"},
   {id:182,name:"Kovars' Mini Acres",website:"kovarsclub.com",transitionOwner:"Lauren Goldman",status:"Churned"},
@@ -348,7 +391,7 @@ const RAW_SEED: Array<Partial<Prospect> & { id: number; name: string }> = [
   {id:225,name:"Oliver Ane me marketing Storage",website:"teraxop.com",transitionOwner:"Matthew Steen",status:"Prospect"},
   {id:226,name:"KXM Advertising Services, Inc. (dba Hair Club)",website:"hairclubl.com",transitionOwner:"Lauren Goldman",status:"Prospect"},
   {id:227,name:"US Lawns",website:"uslawns.com",locationCount:250,transitionOwner:"Lauren Goldman",status:"Prospect",industry:"Commercial Landscaping",locationNotes:"250+ franchise locations across US"},
-  {id:228,name:"MAPCO Express, Inc.",website:"mapcoexpress.com",locationCount:340,transitionOwner:"Elissa Pappas",status:"Prospect",industry:"Convenience Store/Gas",locationNotes:"~340 c-stores across TN, AL, GA, AR, KY, MS, VA"},
+  {id:228,name:"MAPCO Express, Inc.",website:"mapcoexpress.com",locationCount:340,transitionOwner:"Elissa Pappas",status:"Prospect",industry:"Gas Stations",locationNotes:"~340 c-stores across TN, AL, GA, AR, KY, MS, VA"},
   {id:229,name:"Holland of America, LLC",website:"holster.com",transitionOwner:"Raymond Kriss",status:"Churned"},
   {id:230,name:"Platire",website:"retitire.com",transitionOwner:"Michael Flores",status:"Prospect"},
   {id:231,name:"Ruby Tuesday",website:"rubytuesday.com",locationCount:100,transitionOwner:"Scott Zeller",status:"Churned",industry:"Casual Dining",locationNotes:"Ruby Tuesday: ~100 remaining US locations"},
@@ -357,14 +400,14 @@ const RAW_SEED: Array<Partial<Prospect> & { id: number; name: string }> = [
   {id:234,name:"Cather's, Inc",website:"cathers.com",transitionOwner:"Shay Minor",status:"Prospect"},
   {id:235,name:"Desigual USA",website:"desigual.com",locationCount:50,transitionOwner:"Max Ratee",status:"Prospect",industry:"Fashion Retail",locationNotes:"~50 US retail stores; 500+ worldwide"},
   {id:236,name:"Kimberly's",website:"kimberlys.com",transitionOwner:"Elissa Pappas",status:"Prospect"},
-  {id:237,name:"Piggly Wiggly",website:"pigglywiggly.com",locationCount:493,transitionOwner:"Charles Tousifountas",status:"Churned",industry:"Grocery/Supermarket",locationNotes:"~493 stores across 18 states"},
+  {id:237,name:"Piggly Wiggly",website:"pigglywiggly.com",locationCount:493,transitionOwner:"Charles Tousifountas",status:"Churned",industry:"Grocery",locationNotes:"~493 stores across 18 states"},
   {id:238,name:"Sun Tier City",website:"suntiercity.com",transitionOwner:"Sameer Mohan",status:"Prospect"},
   {id:239,name:"Tourist Folks",website:"touristfolks.com",transitionOwner:"Lauren Goldman",status:"Prospect"},
-  {id:240,name:"Key Food Stores Co-Operative, Inc.",website:"keyfood.com",locationCount:450,transitionOwner:"Max Ratee",status:"Prospect",industry:"Grocery/Supermarket",locationNotes:"~450 stores across 8 states (NY, NJ, FL, CT)"},
+  {id:240,name:"Key Food Stores Co-Operative, Inc.",website:"keyfood.com",locationCount:450,transitionOwner:"Max Ratee",status:"Prospect",industry:"Grocery",locationNotes:"~450 stores across 8 states (NY, NJ, FL, CT)"},
   {id:241,name:"Carrot",website:"carrot.com",transitionOwner:"Raymond Kriss",status:"Churned"},
   {id:242,name:"Family Video Movie Club Inc",website:"familyvideo.com",locationCount:0,transitionOwner:"Max Ratee",status:"Churned",industry:"Other",locationNotes:"CLOSED all stores by 2021. Brand defunct."},
   {id:243,name:"The Honey Baked Ham Company, LLC",website:"honeybaked.com",locationCount:400,transitionOwner:"Micah Bank(ENS)",status:"Churned",industry:"QSR/Fast Casual",locationNotes:"~400 stores across the US"},
-  {id:244,name:"Getty Petroleum Marketing Inc",website:"gettyrealty.com",locationCount:1000,transitionOwner:"Michelle Brown",status:"Churned",industry:"Convenience Store/Gas",locationNotes:"1,000+ properties (NYSE: GTY; REIT not operator)"},
+  {id:244,name:"Getty Petroleum Marketing Inc",website:"gettyrealty.com",locationCount:1000,transitionOwner:"Michelle Brown",status:"Churned",industry:"Gas Stations",locationNotes:"1,000+ properties (NYSE: GTY; REIT not operator)"},
   {id:245,name:"Red Fund",website:"rphmcy.com",transitionOwner:"Luigi Severino",status:"Prospect"},
   {id:246,name:"United Refrigeration Inc (URI)",website:"uri.com",locationCount:350,transitionOwner:"Sean Loughery",status:"Prospect",industry:"HVAC/R Distribution",locationNotes:"350+ branch locations across US"},
   {id:247,name:"Beal O'Reilly's",website:"bealorleys.com",transitionOwner:"Doug Miller",status:"Prospect"},
@@ -373,8 +416,8 @@ const RAW_SEED: Array<Partial<Prospect> & { id: number; name: string }> = [
   {id:250,name:"DesLouche Fresh Southern",website:"deschouffe.com",transitionOwner:"Lauren Goldman",status:"Prospect"},
   {id:251,name:"Costa Oil",website:"costaol.com",transitionOwner:"Ed Molavi",status:"Prospect"},
   {id:252,name:"Avocet Automotive",website:"avocetamlmotival.com",transitionOwner:"Jeff DeSalvatore",status:"Prospect"},
-  {id:253,name:"K-Va-T Food Stores, Inc.",website:"foodcity.com",locationCount:150,transitionOwner:"Matthew Steen",status:"Prospect",industry:"Grocery/Supermarket",locationNotes:"~150 Food City stores across VA, KY, TN, GA"},
-  {id:254,name:"Gate Petroleum Convenience Stores",website:"gatepetro.com",locationCount:60,transitionOwner:"Elissa Pappas",status:"Prospect",industry:"Convenience Store/Gas",locationNotes:"~60 Gate stores in Jacksonville FL area"},
+  {id:253,name:"K-Va-T Food Stores, Inc.",website:"foodcity.com",locationCount:150,transitionOwner:"Matthew Steen",status:"Prospect",industry:"Grocery",locationNotes:"~150 Food City stores across VA, KY, TN, GA"},
+  {id:254,name:"Gate Petroleum Convenience Stores",website:"gatepetro.com",locationCount:60,transitionOwner:"Elissa Pappas",status:"Prospect",industry:"Gas Stations",locationNotes:"~60 Gate stores in Jacksonville FL area"},
   {id:255,name:"GE Trim Pottery",website:"petrimcecy.com",transitionOwner:"Elissa Pappas",status:"Prospect"},
   {id:256,name:"Happy's Pizza",website:"happyspizza.com",locationCount:60,transitionOwner:"Robbie Hassett",status:"Prospect",industry:"QSR/Fast Casual",locationNotes:"~60 locations primarily in Michigan"},
   {id:257,name:"Tubby's Sub Shop Inc.",website:"tubbys.com",locationCount:50,transitionOwner:"Robbie Hassett",status:"Churned",industry:"QSR/Fast Casual",locationNotes:"~50 franchise locations in Michigan"},
@@ -402,7 +445,7 @@ const RAW_SEED: Array<Partial<Prospect> & { id: number; name: string }> = [
   {id:279,name:"HRT",website:"hrtle.com",transitionOwner:"Charles Tousifountas",status:"Prospect"},
   {id:280,name:"Quick Type",website:"quicktype.com",transitionOwner:"Lauren Goldman",status:"Prospect"},
   {id:281,name:"Indigo Books and Music",website:"indigo.ca",locationCount:160,transitionOwner:"Luigi Severino",status:"Prospect",industry:"Bookstore Retail",locationNotes:"~160 stores across Canada (Indigo, Chapters, Coles)"},
-  {id:282,name:"Petro Canada",website:"petro-canada.ca",locationCount:1500,transitionOwner:"Jemima Dumi",status:"Prospect",industry:"Convenience Store/Gas",locationNotes:"1,500+ stations across Canada; owned by Suncor"},
+  {id:282,name:"Petro Canada",website:"petro-canada.ca",locationCount:1500,transitionOwner:"Jemima Dumi",status:"Prospect",industry:"Gas Stations",locationNotes:"1,500+ stations across Canada; owned by Suncor"},
   {id:283,name:"Laura Biagno",website:"biaglo.ca",transitionOwner:"Meera Shah",status:"Prospect"},
   {id:284,name:"Beacon Pharmacy",website:"beaconpharmacy.com",transitionOwner:"Doug Miller",status:"Prospect"},
   {id:285,name:"Kate FACIal",website:"katefacialoak.com",transitionOwner:"D'Andre Lyons",status:"Prospect"},
@@ -411,7 +454,7 @@ const RAW_SEED: Array<Partial<Prospect> & { id: number; name: string }> = [
   {id:288,name:"J. Alexander's Restaurant",website:"jalexanders.com",locationCount:50,transitionOwner:"Elissa Pappas",status:"Prospect",industry:"Casual Dining",locationNotes:"~50 restaurants (incl. Redlands Grill, Stoney River)"},
   {id:289,name:"Rock N' Roll Sushi",website:"rockrollsushi.com",locationCount:70,transitionOwner:"Lauren Goldman",status:"Prospect",industry:"QSR/Fast Casual",locationNotes:"~70 franchise locations across Southern US"},
   {id:290,name:"Fire Water & Good Spirits",website:"finewaterandgoodspirits.com",transitionOwner:"Lauren Suskind",status:"Prospect"},
-  {id:291,name:"Supermercados Bueno",website:"superbuesno.com",locationCount:50,transitionOwner:"Lauren Goldman",status:"Prospect",industry:"Grocery/Supermarket",locationNotes:"~50 stores; regional Hispanic grocery chain"},
+  {id:291,name:"Supermercados Bueno",website:"superbuesno.com",locationCount:50,transitionOwner:"Lauren Goldman",status:"Prospect",industry:"Grocery",locationNotes:"~50 stores; regional Hispanic grocery chain"},
   {id:292,name:"REMAX Quique Inc",website:"rqcase.com",transitionOwner:"D'Andre Lyons",status:"Prospect"},
   {id:293,name:"Efficent Coffee",website:"efficcof.com",transitionOwner:"Luca Filadelli",status:"Prospect"},
   {id:294,name:"Reimagined Parking",website:"reimagindparking.com",transitionOwner:"Lauren Goldman",status:"Prospect"},
