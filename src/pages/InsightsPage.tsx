@@ -155,7 +155,7 @@ export default function InsightsPage() {
             </button>
             <div className="flex items-center gap-3">
               <BarChart3 className="w-5 h-5 text-primary" />
-              <h1 className="text-lg font-extrabold text-primary-foreground">Insights & Digest</h1>
+              <h1 className="text-lg font-extrabold text-primary-foreground">📈 Insights & Digest</h1>
               <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-full border border-primary/40 text-primary bg-primary/10">
                 Yext
               </span>
@@ -219,7 +219,7 @@ export default function InsightsPage() {
               <div className="p-1.5 rounded-lg bg-primary/10">
                 <Zap className="w-4 h-4 text-primary" />
               </div>
-              <h2 className="text-sm font-semibold text-foreground">Top Scored — Never Contacted</h2>
+              <h2 className="text-sm font-semibold text-foreground">⚡ Top Scored — Never Contacted</h2>
             </div>
             {insights.untouched.length === 0 ? (
               <p className="text-xs text-muted-foreground">All prospects have been contacted. 🎉</p>
@@ -255,7 +255,7 @@ export default function InsightsPage() {
               <div className="p-1.5 rounded-lg bg-destructive/10">
                 <AlertTriangle className="w-4 h-4 text-destructive" />
               </div>
-              <h2 className="text-sm font-semibold text-foreground">Stale Accounts (30+ days)</h2>
+              <h2 className="text-sm font-semibold text-foreground">🕸️ Stale Accounts (30+ days)</h2>
             </div>
             {insights.stale.length === 0 ? (
               <p className="text-xs text-muted-foreground">No stale accounts. Keep it up! 💪</p>
@@ -297,7 +297,7 @@ export default function InsightsPage() {
               <div className="p-1.5 rounded-lg bg-[hsl(var(--warning))]/10">
                 <AlertTriangle className="w-4 h-4 text-[hsl(var(--warning))]" />
               </div>
-              <h2 className="text-sm font-semibold text-foreground">Overdue Follow-ups</h2>
+              <h2 className="text-sm font-semibold text-foreground">⏰ Overdue Follow-ups</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {insights.overdue.map((p) => (
