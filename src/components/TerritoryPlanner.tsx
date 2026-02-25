@@ -21,7 +21,30 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
+  Building2,
 } from "lucide-react";
+import { useState as useStateR } from "react";
+
+function LogoImg({ website, size = 24 }: { website?: string; size?: number }) {
+  const [err, setErr] = useStateR(false);
+  if (!website || err) {
+    return (
+      <div className="rounded-md bg-muted flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
+        <Building2 className="text-muted-foreground" style={{ width: size * 0.5, height: size * 0.5 }} />
+      </div>
+    );
+  }
+  const domain = website.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  return (
+    <img
+      src={`https://logo.clearbit.com/${domain}`}
+      alt=""
+      className="rounded-md shrink-0 bg-muted object-contain"
+      style={{ width: size, height: size }}
+      onError={() => setErr(true)}
+    />
+  );
+}
 
 const PAGE_SIZE = 25;
 
@@ -252,7 +275,8 @@ export default function TerritoryPlanner() {
                   className="border-b border-border last:border-0 hover:bg-muted/50 cursor-pointer transition-colors group"
                 >
                   <td className="px-5 py-4">
-                    <div className="flex items-center gap-2.5 flex-wrap">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <LogoImg website={p.website} size={28} />
                       <span className="font-semibold text-foreground group-hover:text-primary transition-colors">
                         {p.name}
                       </span>
