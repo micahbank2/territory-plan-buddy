@@ -7,12 +7,15 @@ import {
   COMPETITORS,
   TIERS,
   scoreProspect,
+  scoreBreakdown,
   getLogoUrl,
   stringSimilarity,
   getScoreLabel,
   type Prospect,
   type EnrichedProspect,
 } from "@/data/prospects";
+import yextLogoBlack from "@/assets/yext-logo-black.jpg";
+import yextLogoWhite from "@/assets/yext-logo-white.jpg";
 import { useProspects } from "@/hooks/useProspects";
 import { MultiSelect } from "@/components/MultiSelect";
 import { ProspectSheet } from "@/components/ProspectSheet";
@@ -275,21 +278,34 @@ function LogoImg({
   );
 }
 // --- Score Badge ---
-function ScoreBadge({ score, compact = false }: { score: number; compact?: boolean }) {
+function ScoreBadge({ score, prospect, compact = false }: { score: number; prospect?: Prospect; compact?: boolean }) {
   const info = getScoreLabel(score);
+  const breakdown = prospect ? scoreBreakdown(prospect) : [];
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 cursor-help">
             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: info.color }} />
             <span className="font-bold text-foreground">{score}</span>
             {!compact && <span className="text-[10px] font-semibold" style={{ color: info.color }}>{info.short}</span>}
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top" className="text-xs">
-          <p className="font-bold">{info.label} ({score} pts)</p>
-          <p className="text-muted-foreground mt-0.5">60+ Excellent · 40-59 Strong · 20-39 Moderate · 1-19 Low · ≤0 Needs Work</p>
+        <TooltipContent side="top" className="text-xs max-w-[220px] p-3">
+          <p className="font-bold mb-1.5" style={{ color: info.color }}>{info.label} — {score} pts</p>
+          {breakdown.length > 0 ? (
+            <div className="space-y-0.5 border-t border-border pt-1.5 mb-1.5">
+              {breakdown.map((b, i) => (
+                <div key={i} className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">{b.label}</span>
+                  <span className={cn("font-bold", b.value >= 0 ? "text-[hsl(var(--success))]" : "text-destructive")}>{b.value > 0 ? "+" : ""}{b.value}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground mb-1.5">No scoring factors detected.</p>
+          )}
+          <p className="text-[10px] text-muted-foreground border-t border-border pt-1.5">Higher scores are prioritized in Action Items & Insights.</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -753,49 +769,45 @@ export default function TerritoryPlanner() {
         <div className="px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
+              <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-10 w-auto object-contain" />
               <div>
-                <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-extrabold tracking-tight text-primary-foreground">Territory Planner</h1>
-                  <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-full border border-primary/40 text-primary bg-primary/10">
-                    Yext
-                  </span>
-                </div>
-                <p className="text-xs text-primary-foreground/50 mt-0.5">Manage, prioritize, and close your territory</p>
+                <h1 className="text-4xl font-black tracking-tight text-foreground">Territory Planner</h1>
+                <p className="text-sm text-muted-foreground mt-0.5">Manage, prioritize, and close your territory</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="gap-1.5 border-primary/20 text-primary-foreground/80 hover:bg-primary/10 hover:text-primary-foreground bg-transparent">
+              <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                 <BarChart3 className="w-3.5 h-3.5" /> Insights
               </Button>
-              <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 border-primary/20 text-primary-foreground/80 hover:bg-primary/10 hover:text-primary-foreground bg-transparent">
+              <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                 <Download className="w-3.5 h-3.5" /> CSV
               </Button>
               <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5 bg-primary hover:bg-primary/90 glow-blue font-semibold">
                 <Plus className="w-3.5 h-3.5" /> Add Prospect
               </Button>
               {selected.size >= 2 && selected.size <= 3 && (
-                <Button variant="outline" size="sm" onClick={() => setShowCompare(true)} className="gap-1.5 border-primary/20 text-primary-foreground/80 hover:bg-primary/10 bg-transparent">
+                <Button variant="outline" size="sm" onClick={() => setShowCompare(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <GitCompare className="w-3.5 h-3.5" /> Compare ({selected.size})
                 </Button>
               )}
               <div className="flex items-center border border-primary/20 rounded-lg overflow-hidden ml-1">
-                <button onClick={() => setViewMode("table")} className={cn("p-2 transition-all", viewMode === "table" ? "bg-primary text-primary-foreground" : "hover:bg-primary/10 text-primary-foreground/60")}>
+                <button onClick={() => setViewMode("table")} className={cn("p-2 transition-all", viewMode === "table" ? "bg-primary text-primary-foreground" : "hover:bg-primary/10 text-foreground/60")}>
                   <List className="w-4 h-4" />
                 </button>
-                <button onClick={() => setViewMode("kanban")} className={cn("p-2 transition-all", viewMode === "kanban" ? "bg-primary text-primary-foreground" : "hover:bg-primary/10 text-primary-foreground/60")}>
+                <button onClick={() => setViewMode("kanban")} className={cn("p-2 transition-all", viewMode === "kanban" ? "bg-primary text-primary-foreground" : "hover:bg-primary/10 text-foreground/60")}>
                   <LayoutGrid className="w-4 h-4" />
                 </button>
               </div>
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="p-2 rounded-lg text-primary-foreground/60 hover:text-primary-foreground/80 hover:bg-primary/10 transition-all"
+                className="p-2 rounded-lg text-foreground/60 hover:text-foreground/80 hover:bg-primary/10 transition-all"
                 title="Toggle theme"
               >
                 {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
               <button
                 onClick={() => { if (confirm("Reset ALL data?")) { reset(); toast("🔄 Data reset to defaults"); } }}
-                className="p-2 rounded-lg text-primary-foreground/40 hover:text-primary-foreground/80 hover:bg-primary/10 transition-all"
+                className="p-2 rounded-lg text-foreground/40 hover:text-foreground/80 hover:bg-primary/10 transition-all"
                 title="Reset data"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -831,7 +843,7 @@ export default function TerritoryPlanner() {
                   onClick={() => { clr(); setFOutreach([s.stage]); }}
                 >
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
-                  {STAGE_EMOJI[s.stage] || ""} {s.stage} ({s.count})
+                  {s.stage} ({s.count})
                 </button>
               ))}
             </div>
@@ -841,10 +853,10 @@ export default function TerritoryPlanner() {
         {/* Stat pills */}
         <div className="flex items-center gap-2.5 mb-6 flex-wrap">
           {([
-            ["📊 Total", stats.t, () => { clr(); }],
+            ["📊 Total Accounts", stats.t, () => { clr(); }],
             ["📍 50+ Locs", stats.o50, () => { clr(); setFLocRange([50, maxLocs]); }],
-            ["📍 100+", stats.o100, () => { clr(); setFLocRange([100, maxLocs]); }],
-            ["🏢 500+", stats.o500, () => { clr(); setFLocRange([500, maxLocs]); }],
+            ["📍 100+ Locs", stats.o100, () => { clr(); setFLocRange([100, maxLocs]); }],
+            ["🏢 500+ Locs", stats.o500, () => { clr(); setFLocRange([500, maxLocs]); }],
             ["🔥 Hot", stats.hot, () => { clr(); }],
             ["☀️ Warm", stats.warm, () => { clr(); }],
             ["🎯 Prospects", stats.prospects, () => { clr(); setFStatus(["Prospect"]); }],
@@ -853,11 +865,11 @@ export default function TerritoryPlanner() {
             <button
               key={i}
               onClick={() => fn()}
-              className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl glass-card cursor-pointer group animate-fade-in-up glow-blue"
+              className="flex items-center gap-3 px-5 py-3.5 rounded-xl glass-card cursor-pointer group animate-fade-in-up glow-blue"
               style={{ animationDelay: `${i * 50}ms` }}
             >
-              <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors font-medium">{label}</span>
-              <span className="text-lg font-black text-foreground animate-count-up" style={{ animationDelay: `${i * 50 + 200}ms` }}>{value}</span>
+              <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors font-medium">{label}</span>
+              <span className="text-xl font-black text-foreground animate-count-up" style={{ animationDelay: `${i * 50 + 200}ms` }}>{value}</span>
             </button>
           ))}
         </div>
@@ -868,7 +880,7 @@ export default function TerritoryPlanner() {
             <CollapsibleTrigger asChild>
               <button className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-3 uppercase tracking-wider">
                 {cardsOpen ? <ChevronUpIcon className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                🎯 Action Items
+                Action Items
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -879,7 +891,7 @@ export default function TerritoryPlanner() {
                     <div className="p-1.5 rounded-lg bg-primary/10">
                       <Zap className="w-4 h-4 text-primary" />
                     </div>
-                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">⚡ Top Scored — Never Contacted</h3>
+                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Top Scored — Never Contacted</h3>
                   </div>
                   {homeCards.untouched.length === 0 ? (
                     <p className="text-xs text-muted-foreground">🎉 All prospects contacted!</p>
@@ -893,7 +905,7 @@ export default function TerritoryPlanner() {
                         >
                           <LogoImg website={p.website} size={20} customLogo={p.customLogo} />
                           <span className="text-xs font-medium text-foreground truncate flex-1">{p.name}</span>
-                          <ScoreBadge score={p.score} compact />
+                          <ScoreBadge score={p.score} prospect={p} compact />
                         </button>
                       ))}
                     </div>
@@ -906,7 +918,7 @@ export default function TerritoryPlanner() {
                     <div className="p-1.5 rounded-lg bg-destructive/10">
                       <AlertTriangle className="w-4 h-4 text-destructive" />
                     </div>
-                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">🕸️ Stale Accounts (30+ days)</h3>
+                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Stale Accounts (30+ days)</h3>
                   </div>
                   {homeCards.stale.length === 0 ? (
                     <p className="text-xs text-muted-foreground">💪 No stale accounts!</p>
@@ -1132,8 +1144,8 @@ export default function TerritoryPlanner() {
                         )}
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-muted-foreground" onClick={() => setSheetProspectId(p.id)}>{p.locationCount || "—"}</td>
-                    <td className="px-5 py-4 text-muted-foreground" onClick={() => setSheetProspectId(p.id)}>{p.industry || "—"}</td>
+                    <td className="px-5 py-4 text-foreground font-medium" onClick={() => setSheetProspectId(p.id)}>{p.locationCount || "—"}</td>
+                    <td className="px-5 py-4 text-foreground font-medium" onClick={() => setSheetProspectId(p.id)}>{p.industry || "—"}</td>
                     <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
                       {editingCell?.id === p.id && editingCell?.field === "outreach" ? (
                         <select
@@ -1156,7 +1168,7 @@ export default function TerritoryPlanner() {
                       )}
                     </td>
                     <td className="px-5 py-4" onClick={() => setSheetProspectId(p.id)}>
-                      <ScoreBadge score={p.ps} />
+                      <ScoreBadge score={p.ps} prospect={p} />
                     </td>
                     <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
                       {editingCell?.id === p.id && editingCell?.field === "tier" ? (
@@ -1221,7 +1233,7 @@ export default function TerritoryPlanner() {
                   onDrop={(e) => handleDrop(e, stage)}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{STAGE_EMOJI[stage] || ""} {stage}</h3>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{stage}</h3>
                     <span className="text-xs font-bold text-primary bg-primary/10 rounded-full px-2 py-0.5">{cards.length}</span>
                   </div>
                   <div className="space-y-2 min-h-[60px]">
@@ -1244,7 +1256,7 @@ export default function TerritoryPlanner() {
                         <div className="flex items-center gap-1.5 ml-7">
                           {p.tier && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold">{p.tier}</span>}
                           <span className="text-[10px] text-muted-foreground">{p.locationCount ? `${p.locationCount} locs` : ""}</span>
-                          <span className="ml-auto"><ScoreBadge score={p.ps} compact /></span>
+                          <span className="ml-auto"><ScoreBadge score={p.ps} prospect={p} compact /></span>
                         </div>
                       </div>
                     ))}
