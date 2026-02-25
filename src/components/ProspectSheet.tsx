@@ -152,7 +152,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
         <div className="px-6 py-5 space-y-5">
           {/* Account Details */}
           <div className="space-y-3 animate-fade-in-up">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">📋 Account Details</h3>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Account Details</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase">Locations</label>
@@ -215,7 +215,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "50ms" }}>
             <div className="flex items-center gap-2">
               <Target className="w-4 h-4 text-primary" />
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">🎯 Next Step</h3>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Next Step</h3>
               {prospect.nextStepDate && new Date(prospect.nextStepDate) < new Date() && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive overdue-flag">⚠️ Overdue</span>
               )}
@@ -251,7 +251,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
 
           {/* Notes */}
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">📝 Notes</h3>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Notes</h3>
             <div className="flex gap-2">
               <input value={newNote} onChange={e => setNewNote(e.target.value)} placeholder="Add a note..." className={cn(inputClass, "flex-1")} onKeyDown={e => e.key === "Enter" && addNote()} />
               <Button size="sm" onClick={addNote} disabled={!newNote.trim()}>Add</Button>
@@ -271,7 +271,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
           {/* Contacts */}
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "150ms" }}>
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">👥 Contacts</h3>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Contacts</h3>
               <button onClick={() => setShowAddContact(!showAddContact)} className="p-1 rounded-md hover:bg-primary/10"><Plus className="w-3.5 h-3.5 text-primary" /></button>
             </div>
             {showAddContact && (
@@ -302,7 +302,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
 
           {/* Activity Timeline */}
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">📊 Activity Timeline</h3>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activity Timeline</h3>
             <div className="flex gap-2">
               <select value={interactionType} onChange={e => setInteractionType(e.target.value)} className={cn(selectClass, "w-32 text-xs")}>
                 {INTERACTION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -334,7 +334,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
           {/* Location Notes */}
           {prospect.locationNotes && (
             <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: "250ms" }}>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">📍 Location Notes</h3>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Location Notes</h3>
               <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg border border-border">{prospect.locationNotes}</p>
             </div>
           )}

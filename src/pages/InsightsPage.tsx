@@ -1,10 +1,13 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "next-themes";
 import { useProspects } from "@/hooks/useProspects";
 import { scoreProspect, getScoreLabel, STAGES, type Prospect } from "@/data/prospects";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, TrendingUp, Users, MessageSquare, Zap, AlertTriangle, BarChart3 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import yextLogoBlack from "@/assets/yext-logo-black.jpg";
+import yextLogoWhite from "@/assets/yext-logo-white.jpg";
 
 const STAGE_COLORS = [
   "hsl(225, 15%, 50%)",
@@ -33,6 +36,7 @@ function relativeTime(dateStr: string): string {
 export default function InsightsPage() {
   const { data, ok } = useProspects();
   const navigate = useNavigate();
+  const { theme } = useTheme();
 
   const insights = useMemo(() => {
     if (!data.length) return null;
@@ -151,14 +155,12 @@ export default function InsightsPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button onClick={() => navigate("/")} className="p-1.5 rounded-md hover:bg-primary/10 transition-colors">
-              <ArrowLeft className="w-4 h-4 text-primary-foreground/60" />
+              <ArrowLeft className="w-4 h-4 text-foreground/60" />
             </button>
+            <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-8 w-auto object-contain" />
             <div className="flex items-center gap-3">
               <BarChart3 className="w-5 h-5 text-primary" />
-              <h1 className="text-lg font-extrabold text-primary-foreground">📈 Insights & Digest</h1>
-              <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-full border border-primary/40 text-primary bg-primary/10">
-                Yext
-              </span>
+              <h1 className="text-2xl font-black text-foreground">Insights & Digest</h1>
             </div>
           </div>
         </div>
@@ -219,7 +221,7 @@ export default function InsightsPage() {
               <div className="p-1.5 rounded-lg bg-primary/10">
                 <Zap className="w-4 h-4 text-primary" />
               </div>
-              <h2 className="text-sm font-semibold text-foreground">⚡ Top Scored — Never Contacted</h2>
+              <h2 className="text-sm font-semibold text-foreground">Top Scored — Never Contacted</h2>
             </div>
             {insights.untouched.length === 0 ? (
               <p className="text-xs text-muted-foreground">All prospects have been contacted. 🎉</p>
@@ -255,7 +257,7 @@ export default function InsightsPage() {
               <div className="p-1.5 rounded-lg bg-destructive/10">
                 <AlertTriangle className="w-4 h-4 text-destructive" />
               </div>
-              <h2 className="text-sm font-semibold text-foreground">🕸️ Stale Accounts (30+ days)</h2>
+              <h2 className="text-sm font-semibold text-foreground">Stale Accounts (30+ days)</h2>
             </div>
             {insights.stale.length === 0 ? (
               <p className="text-xs text-muted-foreground">No stale accounts. Keep it up! 💪</p>
@@ -297,7 +299,7 @@ export default function InsightsPage() {
               <div className="p-1.5 rounded-lg bg-[hsl(var(--warning))]/10">
                 <AlertTriangle className="w-4 h-4 text-[hsl(var(--warning))]" />
               </div>
-              <h2 className="text-sm font-semibold text-foreground">⏰ Overdue Follow-ups</h2>
+              <h2 className="text-sm font-semibold text-foreground">Overdue Follow-ups</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {insights.overdue.map((p) => (
