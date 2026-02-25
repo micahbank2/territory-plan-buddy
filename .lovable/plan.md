@@ -1,45 +1,73 @@
 
 
-# Territory Planner UX Improvements + New Features
+# Territory Planner: Logo Upload, Bigger Badges, Score Context, and Home Page Enhancements
 
-## 1. Remove Owner Field from Prospect Detail Page
-Remove the "Owner" line from the Details metadata card on the prospect page (line 531 of ProspectPage.tsx). You own all accounts -- no need for this field.
+## 1. Custom Logo Upload Fallback
 
-## 2. Move Pagination to Bottom of Table
-Currently pagination sits above the table (lines 523-545 of TerritoryPlanner.tsx). Move it to below the table (after the `</table>` closing tag) so users can paginate after scrolling through results. Keep the "Showing X-Y of Z" text and prev/next buttons in the same style.
+When no logo loads from Google Favicons, allow users to upload their own logo image for that prospect.
 
-## 3. Additional Features to Make This a Prospecting Machine
+**How it works:**
+- The `LogoImg` component gets an "upload" overlay button that appears when the fallback Building2 icon is shown (or on hover of any logo)
+- Clicking opens a file picker; the selected image is converted to a base64 data URL and stored in a new `customLogo` field on the Prospect object
+- Custom logos take priority over Google Favicon
+- A small "x" button on hover lets you remove a custom logo
 
-### A. Global Command Palette (Cmd+K)
-Upgrade the current Cmd+K shortcut from just focusing search to a full command palette (using the already-installed `cmdk` package). Quick-jump to any prospect by name, switch views, trigger actions like "Add Prospect" or "Export CSV" -- all from the keyboard. Power-user essential.
+**Files:**
+- `src/data/prospects.ts` -- Add `customLogo?: string` to the `Prospect` interface
+- `src/components/TerritoryPlanner.tsx` -- Update `LogoImg` to accept `onUpload` callback, show upload affordance on fallback
+- `src/pages/ProspectPage.tsx` -- Same `LogoImg` upgrade, wire upload to `update(id, { customLogo })` 
 
-### B. Last Contacted Aging Indicator
-Show a colored dot or badge next to each prospect in the list view indicating how long since last interaction: green (< 7 days), yellow (7-30 days), red (30+ days), gray (never). Helps identify stale accounts at a glance. Computed from the `interactions` array -- no API needed.
+## 2. Bigger Status/Competitor/Tier Badges
 
-### C. Follow-Up Reminders / Next Steps
-Add a "Next Step" field on the prospect detail page -- a short text + date picker. On the All Prospects list, prospects with overdue next steps get a visual flag. Stored in localStorage alongside existing data.
+Currently these are tiny `text-[11px] px-2 py-0.5` chips. Make them more prominent:
 
-### D. Pipeline Summary Bar
-A thin horizontal stacked bar at the top showing the distribution of prospects across outreach stages (Not Started / Contacted / Meeting Set / etc.) with color coding. Clicking a segment filters the list. Gives instant pipeline health visibility.
+**List view (TerritoryPlanner.tsx):**
+- Status badge: bump to `text-xs px-2.5 py-1 rounded-lg font-bold`
+- Competitor badge: same sizing upgrade
+- Both get slightly more padding and bolder text
 
-### E. Quick Inline Edit on Table Rows
-Double-click a cell (e.g., Outreach Stage, Tier) in the table to edit it inline without navigating to the detail page. Speeds up bulk data entry significantly.
+**Detail page header (ProspectPage.tsx):**
+- Status, Competitor, and Tier badges in the header: bump to `text-sm px-3 py-1 rounded-lg font-bold`
+- More visible with stronger background opacity
 
-### F. Prospect Comparison View
-Select 2-3 prospects and open a side-by-side comparison table showing key metrics (locations, score, tier, stage, competitor). Helps prioritize which accounts to focus on.
+## 3. Score Context -- Make the Number Meaningful
 
-### G. Weekly Digest / Stats Summary Page
-A new `/insights` page showing: prospects added this week, interactions logged, stage movement (how many moved forward), top-scored untouched accounts. All computed from existing data timestamps.
+The score number (e.g., "90") is shown but users don't know if it's good or bad.
+
+**Changes:**
+- Add a score label: "Excellent" (60+), "Strong" (40-59), "Moderate" (20-39), "Low" (1-19), "Needs Work" (0 or below)
+- Color coding: green for excellent/strong, blue for moderate, gray for low, red for negative
+- In the list view, show a small colored dot + the label abbreviation next to the number
+- In the detail page header, show the full label under the score number
+- Add a tooltip explaining the scoring system when hovering the score
+
+## 4. Stale Accounts + Top Scored on Home Page
+
+Port the "Top Scored -- Never Contacted" and "Stale Accounts" lists from the Insights page to the home page, positioned below the stat pills and above the table.
+
+**Implementation:**
+- Two compact horizontal cards side by side (grid cols 2) showing top 5 each
+- Each row: logo + name + score, clickable to navigate to prospect
+- Collapsible with a toggle so power users can hide them once they've reviewed
+
+## 5. Additional Feature Ideas
+
+### A. Smart Score Breakdown Tooltip
+When hovering or clicking the score on a prospect detail page, show a breakdown: "+40 for 500+ locations", "+20 for QSR industry", "+25 for Hot priority", etc. Helps users understand WHY a score is what it is. Pure frontend logic using the existing `scoreProspect` function expanded to return itemized reasons.
+
+### B. Quick Action Buttons on Home Page Rows
+Add small icon buttons (visible on hover) directly on each table row for common actions: log a quick call, change stage, mark as hot. Saves a click vs opening the full detail page.
+
+### C. Weekly Email-Style Digest Card
+On the home page, show a dismissible "This Week" summary card at the very top: "You added X prospects, logged Y interactions, Z accounts need attention." Computed from timestamps. Dismissible per session.
 
 ## Technical Details
 
 ### Files to modify:
-1. **`src/pages/ProspectPage.tsx`** -- Remove owner field from Details card, add Next Step field
-2. **`src/components/TerritoryPlanner.tsx`** -- Move pagination below table, add command palette, aging indicators, pipeline bar, inline editing
-3. **`src/data/prospects.ts`** -- Add `nextStep` and `nextStepDate` fields to Prospect type
-4. **`src/hooks/useProspects.ts`** -- No changes needed (existing `update` function handles new fields)
-5. **`src/pages/InsightsPage.tsx`** (new) -- Weekly digest / stats summary page
-6. **`src/App.tsx`** -- Add route for `/insights`
-7. **`src/index.css`** -- Add any new animation keyframes for command palette transitions
+1. **`src/data/prospects.ts`** -- Add `customLogo?: string` to Prospect interface
+2. **`src/components/TerritoryPlanner.tsx`** -- Bigger badges, score labels/colors, LogoImg upload, stale+untouched cards on home, quick action row buttons, weekly digest card
+3. **`src/pages/ProspectPage.tsx`** -- Bigger badges, score label + breakdown tooltip, LogoImg upload
+4. **`src/pages/InsightsPage.tsx`** -- Score label consistency
 
-### Dependencies: None new -- `cmdk` is already installed for the command palette.
+### No new dependencies needed.
+
