@@ -1,111 +1,58 @@
 
 
-# CSV Upload with Smart Delta Loading
+# Replace Account Data, Fix Tooltip Clipping, and Multi-Select Stat Pills
 
-## Overview
-Add a CSV Upload button next to the existing CSV Export button. The upload handles incremental loads intelligently: matching existing records by name/website, updating them in place, and only inserting truly new prospects. A preview step lets the user review changes before committing.
+## 1. Replace All Account Data with New CSV
 
-## How It Works
+Replace the hardcoded `RAW_SEED` array in `src/data/prospects.ts` with the 309 accounts from the uploaded CSV. The CSV has three columns:
 
-### Upload Flow
-1. User clicks "Upload CSV" button in header (new button next to existing "CSV" export button)
-2. File picker opens, user selects a .csv file
-3. App parses the CSV, maps columns to prospect fields
-4. A **preview dialog** appears showing:
-   - **New prospects** (no match found) -- highlighted green
-   - **Updates** (matched by website or fuzzy name) -- highlighted blue, showing what fields will change
-   - **Possible duplicates** (fuzzy match 0.5-0.7 similarity) -- highlighted yellow, user can confirm or skip each
-   - **Skipped** (exact match, no changes) -- greyed out
-5. User clicks "Confirm Import" to apply changes
-6. Toast: "CSV imported! 12 added, 8 updated, 3 skipped"
+- `Account Name` --> `name`
+- `Enterprise Client Status` --> `status` (values: "Prospect" or "Churned")
+- `Website` --> `website` (strip `http://www.` prefix to store clean domain)
 
-### Matching Logic
-```text
-For each CSV row:
-  1. Exact website match? --> UPDATE that prospect
-  2. Name similarity > 0.7? --> UPDATE (auto-matched)
-  3. Name similarity 0.5-0.7? --> FLAG as possible duplicate for user review
-  4. No match? --> INSERT as new prospect
-```
+Each record will be initialized with `initProspect()` so all other fields (industry, locationCount, contacts, interactions, etc.) start empty/default and can be filled in manually via the app.
 
-### Column Mapping
-The CSV parser will be flexible -- it recognizes common column header variations:
-- "Company" / "Name" / "Company Name" --> `name`
-- "Website" / "URL" / "Domain" --> `website`
-- "Industry" / "Vertical" / "Category" --> `industry`
-- "Locations" / "Location Count" / "Locs" / "# Locations" --> `locationCount`
-- "Status" --> `status`
-- "Owner" / "Transition Owner" / "Rep" --> `transitionOwner`
-- "Priority" / "Heat" --> `priority`
-- "Tier" --> `tier`
-- "Outreach" / "Stage" / "Pipeline" --> `outreach`
-- "Competitor" --> `competitor`
-- "Notes" / "Location Notes" --> `locationNotes`
+Logos will automatically pull in via the existing `getLogoUrl()` function which uses Google Favicons based on the website domain -- no changes needed there.
 
-Unrecognized columns are ignored.
+Scoring, filtering, and all downstream features remain intact since they all read from the same `Prospect` interface and compute dynamically.
 
-### Update Rules
-When updating an existing prospect:
-- **Fill blanks**: If the existing field is empty but CSV has a value, use the CSV value
-- **Overwrite**: If both have values and they differ, the CSV value wins (it's the newer data)
-- **Never clear**: If CSV has an empty cell but existing has data, keep existing data
-- **Preserve app-only fields**: `contacts`, `interactions`, `noteLog`, `nextStep`, `nextStepDate`, `ps` (score) are never overwritten by CSV -- these are app-managed
+Also bump the `STORAGE_KEY` from `"tp-data-v5"` to `"tp-data-v6"` so existing localStorage is ignored and the fresh seed data loads on next visit.
 
-## Files to Create/Modify
+## 2. Fix Score Tooltip Clipping
 
-### New: `src/components/CSVUploadDialog.tsx`
-- File input + drag-and-drop zone
-- CSV parsing logic (split by comma, handle quoted fields)
-- Column header auto-mapping
-- Match/diff engine using `stringSimilarity` from prospects.ts
-- Preview table with color-coded rows (new/update/duplicate/skip)
-- Checkboxes to include/exclude individual rows
-- "Confirm Import" button that calls `add()` and `update()` from useProspects
+The tooltips are being cut off because the table container at line 1085 of `TerritoryPlanner.tsx` has `overflow-hidden` in its `rounded-xl` class. Radix tooltips render via a Portal so they should escape the container, but the issue is likely the combination of `overflow-hidden` on ancestors.
 
-### Modify: `src/components/TerritoryPlanner.tsx`
-- Add "Upload CSV" button next to existing CSV export button (Upload icon)
-- Add state: `const [showUpload, setShowUpload] = useState(false)`
-- Render `CSVUploadDialog` with `open={showUpload}` and pass `data`, `add`, `update` props
-- Add to Command Palette: "Upload CSV" option
+**Fix**: Update the `TooltipContent` component in `src/components/ui/tooltip.tsx` to always use `collisionPadding={12}` and add `z-[9999]` to ensure it renders above everything and respects viewport boundaries. Also ensure the `avoidCollisions` prop is true (it is by default).
 
-### Modify: `src/hooks/useProspects.ts`
-- Add a `bulkAdd` function that adds multiple prospects at once (more efficient than calling `add()` in a loop)
-- Add a `bulkMerge` function that takes an array of `{ id, updates }` for batch updates
+Additionally, in `ScoreBadge`, change `side="top"` to `side="left"` so the tooltip opens to the side rather than above, which avoids clipping against the top of the viewport and the table edges.
 
-### No changes needed:
-- `src/data/prospects.ts` -- `stringSimilarity` already exported and ready to use
-- Score recalculation happens automatically since `ps` is computed on render
+## 3. Multi-Select Stat Pills
 
-## UI Design
+Currently each stat pill calls `clr()` then sets one filter, replacing all other filters. The user wants toggle behavior where clicking a pill adds/removes that filter without clearing others.
 
-### Upload Button
-Sits next to the existing CSV export button in the header bar:
-```text
-[Insights] [CSV ↓] [CSV ↑] [+ Add Prospect]
-```
-The upload button uses the `Upload` icon from lucide-react.
+**Changes to `TerritoryPlanner.tsx`**:
+- "Hot" pill: toggle "Hot" in/out of a priority filter (add `fPriority` state, or reuse by filtering on priority field)
+  - Actually, since there's no `fPriority` filter state, the simplest approach is to make the stat pills that map to existing filter dimensions toggle those filters:
+    - "50+ Locs", "100+ Locs", "500+ Locs" --> toggle location range
+    - "Prospects" --> toggle "Prospect" in `fStatus`
+    - "Churned" --> toggle "Churned" in `fStatus`
+    - "Hot", "Warm" --> these need a new `fPriority` filter state since priority filtering doesn't currently exist as a multi-select
+- Add `fPriority` state (`useState<string[]>([])`) and include it in the filter chain
+- Add a Priority `MultiSelect` dropdown next to the existing filter dropdowns
+- Update each stat pill's `onClick` to toggle its value in the corresponding filter array instead of calling `clr()`
+- "Total Accounts" pill will still clear all filters (acts as a reset)
 
-### Preview Dialog
-A large dialog (max-w-4xl) with a scrollable table:
-```text
-+--------------------------------------------------+
-|  CSV Import Preview                               |
-|  File: prospects_update.csv (45 rows)             |
-|--------------------------------------------------|
-|  Summary: 12 New | 8 Updates | 3 Review | 22 Skip|
-|--------------------------------------------------|
-|  [x] | NEW    | Acme Corp    | acme.com   | QSR  |
-|  [x] | UPDATE | White Spot   | whitespot… | +locs|
-|  [?] | REVIEW | Whit Spot    | whitspot…  | dup? |
-|  [ ] | SKIP   | Food King    | (no change)|      |
-|--------------------------------------------------|
-|  [Cancel]                    [Confirm Import (23)]|
-+--------------------------------------------------+
-```
+## Files to Modify
 
-Color coding:
-- Green badge: NEW
-- Blue badge: UPDATE
-- Yellow badge: REVIEW (needs user confirmation)
-- Grey badge: SKIP (exact match, no changes)
+1. **`src/data/prospects.ts`**: Replace `RAW_SEED` array with 309 new accounts from CSV. Bump `STORAGE_KEY` to `"tp-data-v6"`.
 
+2. **`src/components/ui/tooltip.tsx`**: Add `collisionPadding={12}` as default prop, increase z-index to `z-[9999]`.
+
+3. **`src/components/TerritoryPlanner.tsx`**:
+   - Add `fPriority` state and wire it into the filter chain
+   - Add Priority `MultiSelect` in the filter bar
+   - Update stat pill click handlers to toggle filters instead of replacing them
+   - Change `ScoreBadge` tooltip `side` from `"top"` to `"left"`
+   - Include `fPriority` in `clr()`, `hasFilters`, saved views, etc.
+
+4. **`src/pages/InsightsPage.tsx`**: Same `ScoreBadge` tooltip side fix if present.
