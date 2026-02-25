@@ -11,15 +11,23 @@ export function useProspects() {
       if (raw) {
         const p = JSON.parse(raw);
         if (Array.isArray(p) && p.length > 0) {
-          const migrated = p.map((item: any) => ({
-            ...item,
-            competitor: item.competitor || "",
-            tier: item.tier || "",
-            contacts: item.contacts || [],
-            interactions: item.interactions || [],
-            noteLog: item.noteLog || [],
-            createdAt: item.createdAt || "",
-          }));
+          const migrated = p.map((item: any) => {
+            const m = {
+              ...item,
+              competitor: item.competitor || "",
+              tier: item.tier || "",
+              contacts: item.contacts || [],
+              interactions: item.interactions || [],
+              noteLog: item.noteLog || [],
+              createdAt: item.createdAt || "",
+              tasks: item.tasks || [],
+            };
+            // Migrate legacy nextStep into tasks array
+            if (!m.tasks.length && item.nextStep) {
+              m.tasks = [{ id: Date.now().toString() + m.id, text: item.nextStep, dueDate: item.nextStepDate || "" }];
+            }
+            return m;
+          });
           setData(migrated);
           setOk(true);
           return;

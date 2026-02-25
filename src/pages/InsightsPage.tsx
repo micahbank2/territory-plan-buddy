@@ -82,9 +82,14 @@ export default function InsightsPage() {
       .slice(0, 10);
 
     // Overdue follow-ups
-    const overdue = data.filter((p) => {
-      if (!p.nextStepDate) return false;
-      return new Date(p.nextStepDate) < now;
+    // Overdue tasks
+    const overdue: { prospectId: number; prospectName: string; taskText: string; dueDate: string }[] = [];
+    data.forEach((p) => {
+      (p.tasks || []).forEach((task) => {
+        if (task.dueDate && new Date(task.dueDate) < now) {
+          overdue.push({ prospectId: p.id, prospectName: p.name, taskText: task.text, dueDate: task.dueDate });
+        }
+      });
     });
 
     // Stale accounts (30+ days no interaction)
@@ -343,15 +348,15 @@ export default function InsightsPage() {
               <h2 className="text-sm font-semibold text-foreground">Overdue Follow-ups</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {insights.overdue.map((p) => (
+              {insights.overdue.map((item, idx) => (
                 <button
-                  key={p.id}
-                  onClick={() => navigate(`/prospect/${p.id}`)}
+                  key={idx}
+                  onClick={() => navigate(`/prospect/${item.prospectId}`)}
                   className="p-3 rounded-lg border border-[hsl(var(--warning))]/20 bg-[hsl(var(--warning))]/5 hover:bg-[hsl(var(--warning))]/10 transition-colors text-left"
                 >
-                  <div className="text-xs font-semibold text-foreground">{p.name}</div>
-                  <div className="text-[10px] text-muted-foreground mt-1">{p.nextStep}</div>
-                  <div className="text-[10px] text-destructive mt-1 overdue-flag">Due: {p.nextStepDate}</div>
+                  <div className="text-xs font-semibold text-foreground">{item.prospectName}</div>
+                  <div className="text-[10px] text-muted-foreground mt-1">{item.taskText}</div>
+                  <div className="text-[10px] text-destructive mt-1 overdue-flag">Due: {item.dueDate}</div>
                 </button>
               ))}
             </div>

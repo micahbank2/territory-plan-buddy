@@ -503,12 +503,21 @@ export default function TerritoryPlanner() {
       .map((p) => ({ ...p, score: scoreProspect(p) }))
       .sort((a, b) => b.score - a.score)
       .slice(0, 5);
-    const upcoming = data
-      .filter((p) => p.nextStepDate)
-      .map((p) => ({ ...p, score: scoreProspect(p) }))
-      .sort((a, b) => new Date(a.nextStepDate!).getTime() - new Date(b.nextStepDate!).getTime())
-      .slice(0, 5);
-    return { untouched, stale, upcoming };
+    // Group open tasks by prospect
+    const prospectTasks = data
+      .filter((p) => p.tasks && p.tasks.length > 0)
+      .map((p) => ({
+        ...p,
+        score: scoreProspect(p),
+        sortedTasks: [...p.tasks].sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999")),
+      }))
+      .sort((a, b) => {
+        const aEarliest = a.sortedTasks[0]?.dueDate || "9999";
+        const bEarliest = b.sortedTasks[0]?.dueDate || "9999";
+        return aEarliest.localeCompare(bEarliest);
+      })
+      .slice(0, 8);
+    return { untouched, stale, prospectTasks };
   }, [data]);
 
   const stats = useMemo(() => {
@@ -907,7 +916,7 @@ export default function TerritoryPlanner() {
         </div>
 
         {/* Action Items */}
-        {(homeCards.untouched.length > 0 || homeCards.stale.length > 0 || homeCards.upcoming.length > 0) && (
+        {(homeCards.untouched.length > 0 || homeCards.stale.length > 0 || homeCards.prospectTasks.length > 0) && (
           <Collapsible open={cardsOpen} onOpenChange={setCardsOpen} className="mb-6">
             <CollapsibleTrigger asChild>
               <button className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-3 uppercase tracking-wider">
@@ -985,33 +994,40 @@ export default function TerritoryPlanner() {
                     </div>
                     <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Upcoming Tasks</h3>
                   </div>
-                  <p className="text-[10px] text-muted-foreground mb-2">Next steps and follow-ups sorted by due date.</p>
-                  {homeCards.upcoming.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">📋 No upcoming tasks</p>
+                  <p className="text-[10px] text-muted-foreground mb-2">Open tasks grouped by account, sorted by due date.</p>
+                  {homeCards.prospectTasks.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">📋 No open tasks</p>
                   ) : (
-                    <div className="space-y-1.5">
-                      {homeCards.upcoming.map((p) => {
-                        const isOverdue = new Date(p.nextStepDate!) < new Date();
-                        const isToday = p.nextStepDate === new Date().toISOString().split("T")[0];
-                        return (
+                    <div className="space-y-3">
+                      {homeCards.prospectTasks.map((p) => (
+                        <div key={p.id}>
                           <button
-                            key={p.id}
                             onClick={() => setSheetProspectId(p.id)}
-                            className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors text-left"
+                            className="w-full flex items-center gap-2 p-1.5 rounded-lg hover:bg-primary/5 transition-colors text-left"
                           >
-                            <LogoImg website={p.website} size={20} customLogo={p.customLogo} />
-                            <div className="flex-1 min-w-0">
-                              <span className="text-xs font-medium text-foreground truncate block">{p.name}</span>
-                              <span className="text-[10px] text-muted-foreground truncate block">{p.nextStep}</span>
-                            </div>
-                            <span className={cn("text-[10px] font-semibold shrink-0",
-                              isOverdue ? "text-destructive" : isToday ? "text-[hsl(var(--warning))]" : "text-muted-foreground"
-                            )}>
-                              {isOverdue ? "⚠️ Overdue" : isToday ? "📅 Today" : p.nextStepDate}
-                            </span>
+                            <LogoImg website={p.website} size={16} customLogo={p.customLogo} />
+                            <span className="text-xs font-semibold text-foreground truncate">{p.name}</span>
                           </button>
-                        );
-                      })}
+                          <div className="ml-6 space-y-0.5">
+                            {p.sortedTasks.map((task) => {
+                              const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
+                              const isToday = task.dueDate === new Date().toISOString().split("T")[0];
+                              return (
+                                <div key={task.id} className="flex items-center gap-2 py-0.5">
+                                  <span className="text-[10px] text-muted-foreground truncate flex-1">{task.text}</span>
+                                  {task.dueDate && (
+                                    <span className={cn("text-[10px] font-semibold shrink-0",
+                                      isOverdue ? "text-destructive" : isToday ? "text-[hsl(var(--warning))]" : "text-muted-foreground"
+                                    )}>
+                                      {isOverdue ? "⚠️ " : isToday ? "📅 " : ""}{task.dueDate}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
