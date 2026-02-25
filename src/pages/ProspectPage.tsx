@@ -19,14 +19,104 @@ import {
   Trash2,
   Plus,
   X,
-  User,
   Mail,
   Phone,
+  Pencil,
+  Check,
   Building2,
-  MapPin,
-  Star,
-  MessageSquare,
 } from "lucide-react";
+
+function LogoImg({ website, size = 32 }: { website?: string; size?: number }) {
+  const [err, setErr] = useState(false);
+  if (!website || err) {
+    return (
+      <div
+        className="rounded-lg bg-muted flex items-center justify-center shrink-0"
+        style={{ width: size, height: size }}
+      >
+        <Building2 className="text-muted-foreground" style={{ width: size * 0.5, height: size * 0.5 }} />
+      </div>
+    );
+  }
+  const domain = website.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  return (
+    <img
+      src={`https://logo.clearbit.com/${domain}`}
+      alt=""
+      className="rounded-lg shrink-0 bg-muted object-contain"
+      style={{ width: size, height: size }}
+      onError={() => setErr(true)}
+    />
+  );
+}
+
+function EditableContact({
+  contact,
+  onSave,
+  onRemove,
+}: {
+  contact: Contact;
+  onSave: (updated: Contact) => void;
+  onRemove: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(contact);
+
+  const inputClass =
+    "w-full px-2.5 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground";
+
+  if (editing) {
+    return (
+      <div className="p-3 border border-primary/30 rounded-lg bg-primary/5 space-y-2">
+        <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Name *" className={inputClass} />
+        <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="Title" className={inputClass} />
+        <input value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="Email" className={inputClass} />
+        <input value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} placeholder="Phone" className={inputClass} />
+        <input value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} placeholder="Notes" className={inputClass} />
+        <div className="flex gap-2">
+          <button
+            onClick={() => { onSave(draft); setEditing(false); }}
+            className="px-3 py-1.5 bg-primary text-primary-foreground text-xs rounded-md hover:bg-primary/90 flex items-center gap-1"
+          >
+            <Check className="w-3 h-3" /> Save
+          </button>
+          <button
+            onClick={() => { setDraft(contact); setEditing(false); }}
+            className="px-3 py-1.5 bg-muted text-muted-foreground text-xs rounded-md hover:bg-accent"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-3 border border-border rounded-lg group relative">
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+        <button onClick={() => setEditing(true)} className="p-0.5 rounded hover:bg-accent">
+          <Pencil className="w-3 h-3 text-muted-foreground" />
+        </button>
+        <button onClick={onRemove} className="p-0.5 rounded hover:bg-destructive/10">
+          <X className="w-3 h-3 text-destructive" />
+        </button>
+      </div>
+      <div className="font-medium text-xs text-foreground">{contact.name}</div>
+      {contact.title && <div className="text-[10px] text-muted-foreground">{contact.title}</div>}
+      {contact.email && (
+        <a href={`mailto:${contact.email}`} className="text-[10px] text-primary hover:underline flex items-center gap-1 mt-1">
+          <Mail className="w-2.5 h-2.5" /> {contact.email}
+        </a>
+      )}
+      {contact.phone && (
+        <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+          <Phone className="w-2.5 h-2.5" /> {contact.phone}
+        </div>
+      )}
+      {contact.notes && <div className="text-[10px] text-muted-foreground mt-1 italic">{contact.notes}</div>}
+    </div>
+  );
+}
 
 export default function ProspectPage() {
   const { id } = useParams();
@@ -67,6 +157,12 @@ export default function ProspectPage() {
     setShowAddContact(false);
   };
 
+  const updateContact = (updated: Contact) => {
+    update(prospect.id, {
+      contacts: (prospect.contacts || []).map((c) => (c.id === updated.id ? updated : c)),
+    });
+  };
+
   const removeContact = (contactId: string) => {
     update(prospect.id, { contacts: (prospect.contacts || []).filter((c) => c.id !== contactId) });
   };
@@ -103,26 +199,25 @@ export default function ProspectPage() {
   return (
     <div className="bg-background min-h-screen">
       {/* Header */}
-      <header className="border-b border-border px-6 py-3 bg-card flex items-center justify-between">
+      <header className="border-b border-border px-6 py-4 bg-card flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate("/")} className="p-1.5 rounded-md hover:bg-accent transition-colors">
+          <button onClick={() => navigate("/")} className="p-1.5 rounded-md hover:bg-muted transition-colors">
             <ArrowLeft className="w-4 h-4 text-muted-foreground" />
           </button>
+          <LogoImg website={prospect.website} size={40} />
           <div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-lg font-bold text-foreground">{prospect.name}</h1>
-              {prospect.status === "Churned" && (
-                <span className="px-2 py-0.5 text-xs font-bold rounded-md bg-red-100 text-red-700 uppercase">
-                  Churned
-                </span>
-              )}
-              {prospect.status === "Prospect" && (
-                <span className="px-2 py-0.5 text-xs font-bold rounded-md bg-emerald-100 text-emerald-700 uppercase">
-                  Prospect
-                </span>
-              )}
+              <span className={cn(
+                "px-2 py-0.5 text-xs font-bold rounded-md uppercase",
+                prospect.status === "Churned"
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-[hsl(152,60%,42%)]/10 text-[hsl(152,60%,42%)]"
+              )}>
+                {prospect.status}
+              </span>
               {prospect.competitor && (
-                <span className="px-2 py-0.5 text-xs font-bold rounded-md bg-amber-100 text-amber-800">
+                <span className="px-2 py-0.5 text-xs font-bold rounded-md bg-warning/10 text-[hsl(38,92%,40%)]">
                   Now w/ {prospect.competitor}
                 </span>
               )}
@@ -130,7 +225,7 @@ export default function ProspectPage() {
                 <span className={cn(
                   "px-2 py-0.5 text-xs font-semibold rounded-md",
                   prospect.tier === "Tier 1" ? "bg-primary/10 text-primary" :
-                  prospect.tier === "Tier 2" ? "bg-violet-100 text-violet-700" :
+                  prospect.tier === "Tier 2" ? "bg-secondary text-secondary-foreground" :
                   "bg-muted text-muted-foreground"
                 )}>
                   {prospect.tier}
@@ -150,12 +245,12 @@ export default function ProspectPage() {
             <div className="text-[10px] text-muted-foreground uppercase">Score</div>
             <div className={cn(
               "text-2xl font-black",
-              score >= 40 ? "text-emerald-600" : score >= 20 ? "text-primary" : "text-muted-foreground"
+              score >= 40 ? "text-[hsl(152,60%,42%)]" : score >= 20 ? "text-primary" : "text-muted-foreground"
             )}>
               {score}
             </div>
           </div>
-          <button onClick={handleDelete} className="p-2 rounded-md text-red-500 hover:bg-red-50 transition-colors" title="Delete prospect">
+          <button onClick={handleDelete} className="p-2 rounded-md text-destructive hover:bg-destructive/5 transition-colors" title="Delete prospect">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
@@ -255,9 +350,9 @@ export default function ProspectPage() {
                     <div key={i.id} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
                       <div className={cn(
                         "px-2 py-0.5 rounded text-[10px] font-semibold shrink-0 mt-0.5",
-                        i.type === "Email" ? "bg-blue-100 text-blue-700" :
-                        i.type === "Call" ? "bg-emerald-100 text-emerald-700" :
-                        "bg-violet-100 text-violet-700"
+                        i.type === "Email" ? "bg-primary/10 text-primary" :
+                        i.type === "Call" ? "bg-[hsl(152,60%,42%)]/10 text-[hsl(152,60%,42%)]" :
+                        "bg-secondary text-secondary-foreground"
                       )}>
                         {i.type}
                       </div>
@@ -278,7 +373,7 @@ export default function ProspectPage() {
             <div className="bg-card rounded-xl border border-border p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-foreground">Contacts</h2>
-                <button onClick={() => setShowAddContact(true)} className="p-1 rounded-md hover:bg-accent transition-colors">
+                <button onClick={() => setShowAddContact(true)} className="p-1 rounded-md hover:bg-muted transition-colors">
                   <Plus className="w-4 h-4 text-primary" />
                 </button>
               </div>
@@ -303,24 +398,12 @@ export default function ProspectPage() {
 
               <div className="space-y-3">
                 {(prospect.contacts || []).map((c) => (
-                  <div key={c.id} className="p-3 border border-border rounded-lg group relative">
-                    <button onClick={() => removeContact(c.id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10">
-                      <X className="w-3 h-3 text-destructive" />
-                    </button>
-                    <div className="font-medium text-xs text-foreground">{c.name}</div>
-                    {c.title && <div className="text-[10px] text-muted-foreground">{c.title}</div>}
-                    {c.email && (
-                      <a href={`mailto:${c.email}`} className="text-[10px] text-primary hover:underline flex items-center gap-1 mt-1">
-                        <Mail className="w-2.5 h-2.5" /> {c.email}
-                      </a>
-                    )}
-                    {c.phone && (
-                      <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                        <Phone className="w-2.5 h-2.5" /> {c.phone}
-                      </div>
-                    )}
-                    {c.notes && <div className="text-[10px] text-muted-foreground mt-1 italic">{c.notes}</div>}
-                  </div>
+                  <EditableContact
+                    key={c.id}
+                    contact={c}
+                    onSave={updateContact}
+                    onRemove={() => removeContact(c.id)}
+                  />
                 ))}
               </div>
             </div>
