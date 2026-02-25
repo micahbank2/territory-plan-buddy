@@ -44,7 +44,7 @@ export const INDUSTRIES = [
   "Other",
 ];
 
-export const INTERACTION_TYPES = ["Email", "Call", "LinkedIn Message"];
+export const INTERACTION_TYPES = ["Email", "Call", "LinkedIn Message", "Task Completed"];
 
 export const COMPETITORS = [
   "",
@@ -56,6 +56,7 @@ export const COMPETITORS = [
   "Uberall",
   "Rio SEO",
   "Chatmeter",
+  "Unknown",
   "Other",
 ];
 

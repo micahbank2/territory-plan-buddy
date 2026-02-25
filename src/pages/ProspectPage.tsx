@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useProspects } from "@/hooks/useProspects";
 import { format } from "date-fns";
@@ -28,6 +28,7 @@ import {
   Phone,
   Pencil,
   Check,
+  CheckCircle,
   Building2,
   MessageSquare,
   PhoneCall,
@@ -267,6 +268,7 @@ function relativeTime(dateStr: string): string {
 function InteractionIcon({ type }: { type: string }) {
   if (type === "Email") return <MessageSquare className="w-3.5 h-3.5" />;
   if (type === "Call") return <PhoneCall className="w-3.5 h-3.5" />;
+  if (type === "Task Completed") return <CheckCircle className="w-3.5 h-3.5" />;
   return <Linkedin className="w-3.5 h-3.5" />;
 }
 
@@ -286,6 +288,21 @@ export default function ProspectPage() {
   const [interactionNotes, setInteractionNotes] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [newNote, setNewNote] = useState("");
+  const [localLocCount, setLocalLocCount] = useState("");
+  const [localNextStep, setLocalNextStep] = useState("");
+  const [localCustomCompetitor, setLocalCustomCompetitor] = useState("");
+
+  useEffect(() => {
+    if (prospect) {
+      setLocalLocCount(prospect.locationCount != null ? String(prospect.locationCount) : "");
+      setLocalNextStep(prospect.nextStep || "");
+      if (prospect.competitor && !COMPETITORS.includes(prospect.competitor) && prospect.competitor.startsWith("Other: ")) {
+        setLocalCustomCompetitor(prospect.competitor.replace("Other: ", ""));
+      } else {
+        setLocalCustomCompetitor("");
+      }
+    }
+  }, [prospect?.id]);
 
   if (!ok) return (
     <div className="bg-background min-h-screen yext-grid-bg">
@@ -322,6 +339,33 @@ export default function ProspectPage() {
     toast.success("✅ Updated!");
   };
 
+  const commitLocCount = () => {
+    const val = localLocCount ? parseInt(localLocCount) : null;
+    if (val !== prospect.locationCount) {
+      update(prospect.id, { locationCount: val });
+      toast.success("✅ Updated!");
+    }
+  };
+
+  const commitNextStep = () => {
+    if (localNextStep !== (prospect.nextStep || "")) {
+      update(prospect.id, { nextStep: localNextStep });
+      toast.success("✅ Updated!");
+    }
+  };
+
+  const commitCustomCompetitor = () => {
+    const val = localCustomCompetitor.trim() ? `Other: ${localCustomCompetitor.trim()}` : "Other";
+    if (val !== prospect.competitor) {
+      update(prospect.id, { competitor: val });
+      toast.success("✅ Updated!");
+    }
+  };
+
+  const competitorSelectValue = prospect.competitor && !COMPETITORS.includes(prospect.competitor) && prospect.competitor.startsWith("Other: ")
+    ? "Other" : prospect.competitor;
+  const showCustomCompetitorInput = competitorSelectValue === "Other" || (prospect.competitor && prospect.competitor.startsWith("Other: "));
+
   const addContact = () => {
     if (!newContact.name) return;
     const contact: Contact = {
@@ -350,16 +394,30 @@ export default function ProspectPage() {
   };
 
   const logInteraction = () => {
-    if (!interactionNotes.trim()) return;
     const interaction: InteractionLog = {
       id: Date.now().toString(),
       type: interactionType,
       date: new Date().toISOString().split("T")[0],
-      notes: interactionNotes,
+      notes: interactionNotes || `${interactionType} logged`,
     };
     update(prospect.id, { interactions: [...(prospect.interactions || []), interaction] });
     setInteractionNotes("");
     toast.success("📝 Activity logged!");
+  };
+
+  const markNextStepComplete = () => {
+    const taskText = prospect.nextStep || "Task";
+    const interaction: InteractionLog = {
+      id: Date.now().toString(), type: "Task Completed",
+      date: new Date().toISOString().split("T")[0], notes: taskText,
+    };
+    update(prospect.id, {
+      interactions: [...(prospect.interactions || []), interaction],
+      nextStep: "",
+      nextStepDate: "",
+    });
+    setLocalNextStep("");
+    toast.success("✅ Next step completed!");
   };
 
   const handleDelete = () => {
@@ -490,7 +548,7 @@ export default function ProspectPage() {
               <h2 className="text-sm font-semibold text-foreground">Account Details</h2>
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Locations">
-                  <input type="number" value={prospect.locationCount || ""} onChange={(e) => handleUpdate("locationCount", e.target.value ? parseInt(e.target.value) : null)} className={inputClass} placeholder="# of locations" />
+                  <input type="number" value={localLocCount} onChange={(e) => setLocalLocCount(e.target.value)} onBlur={commitLocCount} className={inputClass} placeholder="# of locations" />
                 </Field>
                 <Field label="Industry">
                   <select value={prospect.industry} onChange={(e) => handleUpdate("industry", e.target.value)} className={selectClass}>
@@ -514,12 +572,21 @@ export default function ProspectPage() {
                   </select>
                 </Field>
                 <Field label="Known Competitor">
-                  <select value={prospect.competitor} onChange={(e) => handleUpdate("competitor", e.target.value)} className={selectClass}>
+                  <select value={competitorSelectValue} onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "Other") {
+                      handleUpdate("competitor", "Other");
+                      setLocalCustomCompetitor("");
+                    } else {
+                      handleUpdate("competitor", val);
+                      setLocalCustomCompetitor("");
+                    }
+                  }} className={selectClass}>
                     {COMPETITORS.map((c) => <option key={c} value={c}>{c || "None"}</option>)}
                   </select>
-                </Field>
-                <Field label="Est. Revenue ($)">
-                  <input type="number" value={prospect.estimatedRevenue || ""} onChange={(e) => handleUpdate("estimatedRevenue", e.target.value ? parseInt(e.target.value) : null)} className={inputClass} placeholder="Revenue estimate" />
+                  {showCustomCompetitorInput && (
+                    <input value={localCustomCompetitor} onChange={e => setLocalCustomCompetitor(e.target.value)} onBlur={commitCustomCompetitor} placeholder="Type competitor name..." className={cn(inputClass, "mt-1 text-xs")} />
+                  )}
                 </Field>
                 <Field label="Status">
                   <select value={prospect.status} onChange={(e) => handleUpdate("status", e.target.value)} className={selectClass}>
@@ -544,8 +611,9 @@ export default function ProspectPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label="Action">
                   <input
-                    value={prospect.nextStep || ""}
-                    onChange={(e) => handleUpdate("nextStep", e.target.value)}
+                    value={localNextStep}
+                    onChange={(e) => setLocalNextStep(e.target.value)}
+                    onBlur={commitNextStep}
                     placeholder="e.g. Send follow-up email"
                     className={inputClass}
                   />
@@ -570,12 +638,12 @@ export default function ProspectPage() {
                   </Popover>
                 </Field>
               </div>
-              {prospect.nextStepDate && (
+              {prospect.nextStep && (
                 <button
-                  onClick={() => { handleUpdate("nextStep", ""); handleUpdate("nextStepDate", ""); }}
-                  className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                  onClick={markNextStepComplete}
+                  className="text-xs text-primary hover:underline inline-flex items-center gap-1"
                 >
-                  Clear next step
+                  <Check className="w-3 h-3" /> Mark complete
                 </button>
               )}
             </div>
@@ -633,7 +701,7 @@ export default function ProspectPage() {
               <h2 className="text-sm font-semibold text-foreground">Activity Timeline</h2>
               <div className="flex gap-3">
                 <select value={interactionType} onChange={(e) => setInteractionType(e.target.value)} className={cn(selectClass, "w-40")}>
-                  {INTERACTION_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  {INTERACTION_TYPES.filter((t) => t !== "Task Completed").map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
                 <input
                   value={interactionNotes}
@@ -654,6 +722,7 @@ export default function ProspectPage() {
                           "w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10",
                           i.type === "Email" ? "bg-primary/10 text-primary" :
                           i.type === "Call" ? "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]" :
+                          i.type === "Task Completed" ? "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]" :
                           "bg-secondary text-secondary-foreground"
                         )}>
                           <InteractionIcon type={i.type} />
