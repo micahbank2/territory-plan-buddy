@@ -1,80 +1,111 @@
 
-# Polish Pass: Yext Logos, Light Mode Fix, Score Tooltips, UI Refinements
 
-## 1. Add Yext Logo Assets
+# CSV Upload with Smart Delta Loading
 
-Copy both uploaded Yext logo files into the project:
-- `user-uploads://Yext_Logo_Black-8000x8000-64f762d_1.jpg` to `src/assets/yext-logo-black.jpg`
-- `user-uploads://Yext_Logo_White-8000x8000-64f762d_1.jpg` to `src/assets/yext-logo-white.jpg`
+## Overview
+Add a CSV Upload button next to the existing CSV Export button. The upload handles incremental loads intelligently: matching existing records by name/website, updating them in place, and only inserting truly new prospects. A preview step lets the user review changes before committing.
 
-Create a `YextLogo` component that renders the black logo in light mode and white logo in dark mode using `next-themes` `useTheme()`. Place it in the header next to the title.
+## How It Works
 
-## 2. Fix Light Mode Text Visibility
+### Upload Flow
+1. User clicks "Upload CSV" button in header (new button next to existing "CSV" export button)
+2. File picker opens, user selects a .csv file
+3. App parses the CSV, maps columns to prospect fields
+4. A **preview dialog** appears showing:
+   - **New prospects** (no match found) -- highlighted green
+   - **Updates** (matched by website or fuzzy name) -- highlighted blue, showing what fields will change
+   - **Possible duplicates** (fuzzy match 0.5-0.7 similarity) -- highlighted yellow, user can confirm or skip each
+   - **Skipped** (exact match, no changes) -- greyed out
+5. User clicks "Confirm Import" to apply changes
+6. Toast: "CSV imported! 12 added, 8 updated, 3 skipped"
 
-Replace all `text-primary-foreground` classes in the header, buttons, and toggles across `TerritoryPlanner.tsx` and `InsightsPage.tsx` with `text-foreground` (which correctly adapts to both themes). This fixes the invisible text issue in light mode.
+### Matching Logic
+```text
+For each CSV row:
+  1. Exact website match? --> UPDATE that prospect
+  2. Name similarity > 0.7? --> UPDATE (auto-matched)
+  3. Name similarity 0.5-0.7? --> FLAG as possible duplicate for user review
+  4. No match? --> INSERT as new prospect
+```
 
-Affected areas:
-- Header title, subtitle, buttons, view toggles, theme toggle, reset button
-- Insights page header title, back arrow
-- All header action buttons (`Insights`, `CSV`, `Compare`, etc.)
+### Column Mapping
+The CSV parser will be flexible -- it recognizes common column header variations:
+- "Company" / "Name" / "Company Name" --> `name`
+- "Website" / "URL" / "Domain" --> `website`
+- "Industry" / "Vertical" / "Category" --> `industry`
+- "Locations" / "Location Count" / "Locs" / "# Locations" --> `locationCount`
+- "Status" --> `status`
+- "Owner" / "Transition Owner" / "Rep" --> `transitionOwner`
+- "Priority" / "Heat" --> `priority`
+- "Tier" --> `tier`
+- "Outreach" / "Stage" / "Pipeline" --> `outreach`
+- "Competitor" --> `competitor`
+- "Notes" / "Location Notes" --> `locationNotes`
 
-## 3. Bigger Header Title + Yext Logo
+Unrecognized columns are ignored.
 
-- Increase header title from `text-2xl` to `text-4xl font-black`
-- Center the header content (logo + title + subtitle) using flex centering
-- Add the `YextLogo` component (about 40px tall) to the left of the title
-- Remove the small "Yext" pill badge (redundant now that the logo is present)
-- Make the subtitle slightly larger (`text-sm` instead of `text-xs`)
+### Update Rules
+When updating an existing prospect:
+- **Fill blanks**: If the existing field is empty but CSV has a value, use the CSV value
+- **Overwrite**: If both have values and they differ, the CSV value wins (it's the newer data)
+- **Never clear**: If CSV has an empty cell but existing has data, keep existing data
+- **Preserve app-only fields**: `contacts`, `interactions`, `noteLog`, `nextStep`, `nextStepDate`, `ps` (score) are never overwritten by CSV -- these are app-managed
 
-The Insights page header will get the same treatment -- bigger title (`text-2xl`), Yext logo, remove the redundant pill badge.
+## Files to Create/Modify
 
-## 4. Emoji/Icon Duplication Cleanup
+### New: `src/components/CSVUploadDialog.tsx`
+- File input + drag-and-drop zone
+- CSV parsing logic (split by comma, handle quoted fields)
+- Column header auto-mapping
+- Match/diff engine using `stringSimilarity` from prospects.ts
+- Preview table with color-coded rows (new/update/duplicate/skip)
+- Checkboxes to include/exclude individual rows
+- "Confirm Import" button that calls `add()` and `update()` from useProspects
 
-Remove redundant emojis where Lucide icons already exist:
-- "Action Items" header: Remove the target emoji, keep the collapsible chevron icon
-- "Top Scored -- Never Contacted": Remove the lightning emoji, keep the `Zap` icon
-- "Stale Accounts (30+ days)": Remove the spider web emoji, keep the `AlertTriangle` icon
-- Insights page: Same cleanup for section headers that have both icons and emojis
-- Pipeline stage labels in the summary bar: Remove `STAGE_EMOJI` prefix since the colored dots already indicate stage
+### Modify: `src/components/TerritoryPlanner.tsx`
+- Add "Upload CSV" button next to existing CSV export button (Upload icon)
+- Add state: `const [showUpload, setShowUpload] = useState(false)`
+- Render `CSVUploadDialog` with `open={showUpload}` and pass `data`, `add`, `update` props
+- Add to Command Palette: "Upload CSV" option
 
-## 5. Score Tooltip with Breakdown
+### Modify: `src/hooks/useProspects.ts`
+- Add a `bulkAdd` function that adds multiple prospects at once (more efficient than calling `add()` in a loop)
+- Add a `bulkMerge` function that takes an array of `{ id, updates }` for batch updates
 
-Upgrade the `ScoreBadge` component to show a detailed breakdown tooltip:
-- Import `scoreBreakdown` from `@/data/prospects`
-- Accept the full `prospect` object (not just `score`)
-- Render each breakdown item as a line: `+40 500+ locations`
-- Add a footer note: "Higher scores are prioritized in Action Items and Insights"
+### No changes needed:
+- `src/data/prospects.ts` -- `stringSimilarity` already exported and ready to use
+- Score recalculation happens automatically since `ps` is computed on render
 
-This requires passing the prospect to `ScoreBadge` everywhere it's used (table rows, kanban cards, action item lists, ProspectSheet).
+## UI Design
 
-## 6. Table Column Text -- More Prominent
+### Upload Button
+Sits next to the existing CSV export button in the header bar:
+```text
+[Insights] [CSV ↓] [CSV ↑] [+ Add Prospect]
+```
+The upload button uses the `Upload` icon from lucide-react.
 
-Change lines 1135-1136 in TerritoryPlanner.tsx:
-- Locations: `text-muted-foreground` to `text-foreground font-medium`
-- Industry: `text-muted-foreground` to `text-foreground font-medium`
+### Preview Dialog
+A large dialog (max-w-4xl) with a scrollable table:
+```text
++--------------------------------------------------+
+|  CSV Import Preview                               |
+|  File: prospects_update.csv (45 rows)             |
+|--------------------------------------------------|
+|  Summary: 12 New | 8 Updates | 3 Review | 22 Skip|
+|--------------------------------------------------|
+|  [x] | NEW    | Acme Corp    | acme.com   | QSR  |
+|  [x] | UPDATE | White Spot   | whitespot… | +locs|
+|  [?] | REVIEW | Whit Spot    | whitspot…  | dup? |
+|  [ ] | SKIP   | Food King    | (no change)|      |
+|--------------------------------------------------|
+|  [Cancel]                    [Confirm Import (23)]|
++--------------------------------------------------+
+```
 
-## 7. Grid Background -- More Visible
+Color coding:
+- Green badge: NEW
+- Blue badge: UPDATE
+- Yellow badge: REVIEW (needs user confirmation)
+- Grey badge: SKIP (exact match, no changes)
 
-In `src/index.css`, update `.yext-grid-bg`:
-- Increase grid-line opacity from `0.04` to `0.08`
-- Add a subtle radial gradient glow overlay at the center for depth:
-  `radial-gradient(ellipse at 50% 0%, hsl(var(--primary) / 0.06) 0%, transparent 70%)`
-
-## 8. Stat Pill Label + Sizing Fixes
-
-Update the stat pills array:
-- `"Total"` becomes `"Total Accounts"`
-- `"100+"` becomes `"100+ Locs"`
-- `"500+"` becomes `"500+ Locs"`
-- Increase pill padding from `px-4 py-2.5` to `px-5 py-3.5`
-- Increase number font from `text-lg` to `text-xl`
-- Increase label font from `text-xs` to `text-sm`
-
-## Files to Modify
-
-1. **Copy assets**: `src/assets/yext-logo-black.jpg` and `src/assets/yext-logo-white.jpg`
-2. **`src/index.css`**: Grid background opacity + radial glow
-3. **`src/components/TerritoryPlanner.tsx`**: Header redesign (bigger title, Yext logo, light mode fix), stat pill labels/sizing, emoji cleanup, score tooltip upgrade, table column text prominence
-4. **`src/components/ProspectSheet.tsx`**: Score tooltip upgrade, emoji cleanup
-5. **`src/pages/InsightsPage.tsx`**: Header light mode fix, bigger title, Yext logo, emoji cleanup
-6. **`src/data/prospects.ts`**: No changes needed (scoreBreakdown already exists)
