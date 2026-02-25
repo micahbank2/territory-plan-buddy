@@ -7,15 +7,15 @@ import { ArrowLeft, TrendingUp, Users, MessageSquare, Zap, AlertTriangle, BarCha
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const STAGE_COLORS = [
-  "hsl(220, 14%, 70%)", // Not Started
-  "hsl(220, 80%, 50%)", // Researching
-  "hsl(38, 92%, 50%)",  // Contacted
-  "hsl(152, 60%, 42%)", // Meeting Set
-  "hsl(280, 60%, 50%)", // Proposal Sent
-  "hsl(340, 70%, 50%)", // Negotiating
-  "hsl(152, 60%, 32%)", // Closed Won
-  "hsl(0, 72%, 51%)",   // Closed Lost
-  "hsl(220, 14%, 50%)", // On Hold
+  "hsl(225, 15%, 50%)",
+  "hsl(236, 64%, 57%)",
+  "hsl(38, 92%, 55%)",
+  "hsl(152, 60%, 45%)",
+  "hsl(270, 60%, 58%)",
+  "hsl(340, 70%, 55%)",
+  "hsl(152, 65%, 38%)",
+  "hsl(0, 65%, 55%)",
+  "hsl(225, 15%, 40%)",
 ];
 
 function relativeTime(dateStr: string): string {
@@ -121,7 +121,7 @@ export default function InsightsPage() {
 
   if (!ok || !insights)
     return (
-      <div className="bg-background min-h-screen px-8 pt-8">
+      <div className="bg-background min-h-screen px-8 pt-8 yext-grid-bg">
         <div className="h-8 w-48 skeleton-shimmer rounded-lg mb-6" />
         <div className="grid grid-cols-4 gap-4 mb-8">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -132,28 +132,34 @@ export default function InsightsPage() {
     );
 
   const StatCard = ({ icon: Icon, label, value, sub }: { icon: any; label: string; value: number | string; sub?: string }) => (
-    <div className="bg-card rounded-xl border border-border p-5 animate-fade-in-up">
+    <div className="glass-card rounded-xl p-5 animate-fade-in-up glow-blue">
       <div className="flex items-center gap-3 mb-2">
         <div className="p-2 rounded-lg bg-primary/10">
           <Icon className="w-4 h-4 text-primary" />
         </div>
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</span>
       </div>
-      <div className="text-2xl font-bold text-foreground">{value}</div>
+      <div className="text-3xl font-black text-foreground">{value}</div>
       {sub && <div className="text-xs text-muted-foreground mt-1">{sub}</div>}
     </div>
   );
 
   return (
-    <div className="bg-background min-h-screen text-foreground">
-      <header className="border-b border-border px-8 py-4 bg-card flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate("/")} className="p-1.5 rounded-md hover:bg-muted transition-colors">
-            <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-          </button>
-          <div className="flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-primary" />
-            <h1 className="text-lg font-bold text-foreground">Insights & Digest</h1>
+    <div className="bg-background min-h-screen text-foreground yext-grid-bg">
+      {/* Yext Header */}
+      <header className="yext-gradient border-b border-primary/10 px-8 py-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button onClick={() => navigate("/")} className="p-1.5 rounded-md hover:bg-primary/10 transition-colors">
+              <ArrowLeft className="w-4 h-4 text-primary-foreground/60" />
+            </button>
+            <div className="flex items-center gap-3">
+              <BarChart3 className="w-5 h-5 text-primary" />
+              <h1 className="text-lg font-extrabold text-primary-foreground">Insights & Digest</h1>
+              <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-full border border-primary/40 text-primary bg-primary/10">
+                Yext
+              </span>
+            </div>
           </div>
         </div>
       </header>
@@ -169,7 +175,7 @@ export default function InsightsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Stage Distribution */}
-          <div className="bg-card rounded-xl border border-border p-5 animate-fade-in-up">
+          <div className="glass-card rounded-xl p-5 animate-fade-in-up">
             <h2 className="text-sm font-semibold text-foreground mb-4">Pipeline by Stage</h2>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
@@ -192,7 +198,7 @@ export default function InsightsPage() {
           </div>
 
           {/* Industry Breakdown */}
-          <div className="bg-card rounded-xl border border-border p-5 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
+          <div className="glass-card rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
             <h2 className="text-sm font-semibold text-foreground mb-4">Top Industries</h2>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={insights.industryData} layout="vertical">
@@ -208,9 +214,11 @@ export default function InsightsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Untouched */}
-          <div className="bg-card rounded-xl border border-border p-5 animate-fade-in-up" style={{ animationDelay: "150ms" }}>
+          <div className="glass-card rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: "150ms" }}>
             <div className="flex items-center gap-2 mb-4">
-              <Zap className="w-4 h-4 text-[hsl(var(--warning))]" />
+              <div className="p-1.5 rounded-lg bg-primary/10">
+                <Zap className="w-4 h-4 text-primary" />
+              </div>
               <h2 className="text-sm font-semibold text-foreground">Top Scored — Never Contacted</h2>
             </div>
             {insights.untouched.length === 0 ? (
@@ -223,7 +231,7 @@ export default function InsightsPage() {
                     <button
                       key={p.id}
                       onClick={() => navigate(`/prospect/${p.id}`)}
-                      className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                      className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-primary/5 transition-colors text-left"
                     >
                       <div>
                         <div className="text-xs font-semibold text-foreground">{p.name}</div>
@@ -242,9 +250,11 @@ export default function InsightsPage() {
           </div>
 
           {/* Stale Accounts */}
-          <div className="bg-card rounded-xl border border-border p-5 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
+          <div className="glass-card rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
             <div className="flex items-center gap-2 mb-4">
-              <AlertTriangle className="w-4 h-4 text-destructive" />
+              <div className="p-1.5 rounded-lg bg-destructive/10">
+                <AlertTriangle className="w-4 h-4 text-destructive" />
+              </div>
               <h2 className="text-sm font-semibold text-foreground">Stale Accounts (30+ days)</h2>
             </div>
             {insights.stale.length === 0 ? (
@@ -257,7 +267,7 @@ export default function InsightsPage() {
                     <button
                       key={p.id}
                       onClick={() => navigate(`/prospect/${p.id}`)}
-                      className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                      className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-primary/5 transition-colors text-left"
                     >
                       <div>
                         <div className="text-xs font-semibold text-foreground">{p.name}</div>
@@ -282,9 +292,11 @@ export default function InsightsPage() {
 
         {/* Overdue Follow-ups */}
         {insights.overdue.length > 0 && (
-          <div className="bg-card rounded-xl border border-border p-5 animate-fade-in-up" style={{ animationDelay: "250ms" }}>
+          <div className="glass-card rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: "250ms" }}>
             <div className="flex items-center gap-2 mb-4">
-              <AlertTriangle className="w-4 h-4 text-[hsl(var(--warning))]" />
+              <div className="p-1.5 rounded-lg bg-[hsl(var(--warning))]/10">
+                <AlertTriangle className="w-4 h-4 text-[hsl(var(--warning))]" />
+              </div>
               <h2 className="text-sm font-semibold text-foreground">Overdue Follow-ups</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
