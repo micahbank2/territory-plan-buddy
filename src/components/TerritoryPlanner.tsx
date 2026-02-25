@@ -19,6 +19,7 @@ import yextLogoWhite from "@/assets/yext-logo-white.jpg";
 import { useProspects } from "@/hooks/useProspects";
 import { MultiSelect } from "@/components/MultiSelect";
 import { ProspectSheet } from "@/components/ProspectSheet";
+import { CSVUploadDialog } from "@/components/CSVUploadDialog";
 import { cn } from "@/lib/utils";
 import {
   Search,
@@ -345,7 +346,7 @@ function relativeTime(dateStr: string): string {
 const PAGE_SIZE = 25;
 
 export default function TerritoryPlanner() {
-  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove } = useProspects();
+  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge } = useProspects();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -398,6 +399,9 @@ export default function TerritoryPlanner() {
 
   // Slide-over panel
   const [sheetProspectId, setSheetProspectId] = useState<number | null>(null);
+
+  // CSV Upload
+  const [showUpload, setShowUpload] = useState(false);
 
   // Keyboard shortcut for Cmd+K → command palette
   useEffect(() => {
@@ -742,6 +746,9 @@ export default function TerritoryPlanner() {
                   <CommandItem onSelect={() => { setCmdOpen(false); exportCSV(); }}>
                     <Download className="w-4 h-4 mr-2" /> Export CSV
                   </CommandItem>
+                  <CommandItem onSelect={() => { setCmdOpen(false); setShowUpload(true); }}>
+                    <Upload className="w-4 h-4 mr-2" /> Upload CSV
+                  </CommandItem>
                   <CommandItem onSelect={() => { setCmdOpen(false); navigate("/insights"); }}>
                     <BarChart3 className="w-4 h-4 mr-2" /> Open Insights
                   </CommandItem>
@@ -781,6 +788,9 @@ export default function TerritoryPlanner() {
               </Button>
               <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                 <Download className="w-3.5 h-3.5" /> CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowUpload(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
+                <Upload className="w-3.5 h-3.5" /> Upload
               </Button>
               <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5 bg-primary hover:bg-primary/90 glow-blue font-semibold">
                 <Plus className="w-3.5 h-3.5" /> Add Prospect
@@ -1394,6 +1404,17 @@ export default function TerritoryPlanner() {
         data={data}
         update={update}
         remove={(id) => { remove(id); setSheetProspectId(null); toast("🗑️ Prospect removed"); }}
+      />
+
+      {/* CSV Upload Dialog */}
+      <CSVUploadDialog
+        open={showUpload}
+        onOpenChange={setShowUpload}
+        existingData={data}
+        onImport={(newRows, updates) => {
+          if (newRows.length > 0) bulkAdd(newRows);
+          if (updates.length > 0) bulkMerge(updates);
+        }}
       />
     </div>
   );
