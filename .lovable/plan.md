@@ -1,68 +1,143 @@
 
+# Make It Pop: Animations, Slide-Over Panel, Dark Theme Refinement, Emojis & Toasts
 
-# Yext-ify the Territory Planner
+## 1. Prospect Slide-Over Panel (Airtable-style)
 
-Transform the app into a polished, Yext-branded internal tool inspired by the latest pitch deck screenshots.
+Instead of navigating to a new page when clicking a prospect, open a **right-side slide-over panel** that overlays the list view. The user stays on the main page, can edit fields, and close it to return to the list.
 
-## Brand Palette (from screenshots)
+### How it works:
+- Use the existing Sheet (Radix Dialog) component with `side="right"` and a wider width (~700px)
+- Clicking a prospect row opens the sheet instead of `navigate(`/prospect/${p.id}`)`
+- The sheet contains **all the same fields** from ProspectPage: Account Details, Next Step, Notes, Contacts, Activity Timeline, Score breakdown
+- The sheet has a header with logo, name, status badges, and a "Open Full Page" link for those who still want the dedicated page
+- Closing the sheet (X button, clicking overlay, or pressing Escape) returns focus to the list
+- This applies to both table rows and kanban cards
 
-The new Yext brand leans into:
-- **Dark charcoal backgrounds**: #1C1F2E (main), #232738 (cards), #14172A (deepest)
-- **Blue/periwinkle accent**: #4F5BD5 (primary actions, highlights, grid lines)
-- **Clean white text** on dark surfaces
-- **Subtle blue grid-line patterns** as decorative background elements
-- **Rounded pill badges** with blue outlines ("OMNI EDITION" style)
-- **Minimal, confident typography** -- Inter font (already in use, perfect)
+### State changes in TerritoryPlanner.tsx:
+- New state: `const [sheetProspectId, setSheetProspectId] = useState<number | null>(null)`
+- Replace all `navigate(`/prospect/${p.id}`)` calls with `setSheetProspectId(p.id)`
+- Add a `ProspectSheet` component at the bottom of the page that renders the Sheet with prospect detail content
+- Keep ProspectPage.tsx intact for direct URL access (`/prospect/:id`)
 
-## Changes by File
+## 2. Refined Dark Theme + Light/Dark Toggle
 
-### 1. `index.html`
-- Add `class="dark"` to the `<html>` tag to default to dark mode
-- Update `<title>` to "Territory Planner | Yext"
+### Theme refinement:
+- Update the dark palette to use richer, deeper blacks (not pure black): `#0C0E14` background, `#12151E` cards
+- Slightly more blue-tinted borders for depth
+- Keep the periwinkle primary accent
 
-### 2. `src/index.css` -- Full dark theme overhaul
-- Update `.dark` CSS variables to match Yext palette:
-  - `--background`: deep navy #14172A
-  - `--card`: slightly lighter #1C1F2E
-  - `--primary`: periwinkle blue #4F5BD5
-  - `--border`: subtle blue-tinted borders (white at ~10% opacity feel)
-  - `--muted`: #232738
-- Add new utility classes:
-  - `.glass-card` -- translucent card with backdrop-blur and subtle border glow
-  - `.yext-gradient` -- subtle navy-to-blue gradient for headers
-  - `.yext-grid-bg` -- CSS grid-line background pattern (matching the pitch deck aesthetic)
-  - `.glow-blue` -- blue box-shadow glow on hover for buttons/cards
-- Update the pipeline segment and kanban card styles for the new palette
-- Styled scrollbar for dark theme
+### Light mode palette:
+- Clean white background with soft gray cards
+- Same periwinkle primary accent
+- Properly styled glass-card and glow effects for light mode
 
-### 3. `src/components/TerritoryPlanner.tsx`
-- **Header**: Navy-to-blue gradient background, "Territory Planner" title in bold white, small "Yext" wordmark or badge beside it
-- **Stat pills**: Glass-card style with blue accent borders, larger bolder numbers, blue glow on hover/active
-- **Pipeline bar**: Taller (16px), with a subtle glow underneath, updated stage colors to complement the blue palette
-- **Search bar**: Glass background, blue focus ring
-- **Filter buttons**: Blue-outlined pill style (like "OMNI EDITION" badge in screenshots)
-- **Table**: Darker header row, blue-tinted row hover, subtle row separators
-- **Kanban columns**: Glass-card backgrounds, blue top-accent border
-- **Kanban cards**: Left accent strip colored by stage, glass hover effect
-- **"Add Prospect" button**: Blue gradient fill with glow
-- **Action items section**: Glass cards with blue icon tints
+### Toggle:
+- Add a Sun/Moon icon toggle button in the header bar (next to the reset button)
+- Use `next-themes` (already installed) ThemeProvider to wrap the app
+- Clicking toggles between `light` and `dark` class on HTML
+- Remove the hardcoded `class="dark"` from index.html, let next-themes manage it
+- Persist preference to localStorage
 
-### 4. `src/pages/ProspectPage.tsx`
-- Header section with the same navy gradient
-- Score badges with more vibrant coloring against dark background
-- Section cards get glass-card styling
-- Interaction timeline with blue accent dots
+### Files:
+- `src/App.tsx` -- wrap with ThemeProvider
+- `index.html` -- remove hardcoded `class="dark"`
+- `src/index.css` -- refine both light and dark palettes
+- `src/components/TerritoryPlanner.tsx` -- add toggle button in header
 
-### 5. `src/pages/InsightsPage.tsx`
-- Header matches main page gradient
-- Chart colors updated to blue/periwinkle palette
-- Stat cards and list cards get glass-card treatment
-- Pie chart colors adjusted to complement the dark theme
+## 3. Animations for Actions
 
-## Visual Details
+Add satisfying micro-animations when things happen:
 
-- The grid-line background pattern (visible in the pitch deck screenshots) will be implemented as a pure CSS repeating-linear-gradient on the body or main container, giving that techy "data platform" feel
-- All interactive elements get smooth transitions and a subtle blue glow on hover
-- Numbers and stats use slightly larger font weights to feel confident and bold
-- The overall feel: dark, professional, techy -- like an internal Yext power tool
+### Stage changes (inline edit or kanban drag):
+- Brief green checkmark flash animation on the cell/card when stage is updated
 
+### Adding a prospect:
+- The dialog closes with a scale-out animation
+- The new row in the table briefly highlights with a green pulse
+
+### Deleting:
+- Row fades out with a slide-left + fade animation before being removed
+- Kanban card shrinks and fades
+
+### Bulk actions:
+- Bulk update shows a brief ripple/pulse across all affected rows
+
+### Saving a view:
+- The new view pill animates in with a bounce/scale effect
+
+### Completing/clearing next step:
+- Confetti-style checkmark animation (a brief CSS-only pulse)
+
+### Implementation:
+- Add new CSS keyframes in `index.css`: `@keyframes success-flash`, `@keyframes delete-slide`, `@keyframes bounce-in`
+- Use React state to temporarily apply animation classes, then remove them after the animation completes
+- Add a small `useAnimation` pattern: set a `animatingId` state, apply class, clear after 600ms
+
+## 4. Emojis Throughout
+
+Sprinkle emojis contextually across the app:
+
+### Stat pills:
+- "Total" -> "Total" (no emoji needed), "50+ Locs" -> "📍 50+ Locs", "100+ Locs" -> "📍 100+", "500+ Locs" -> "🏢 500+", "Hot" -> "🔥 Hot", "Warm" -> "☀️ Warm", "Prospects" -> "🎯 Prospects", "Churned" -> "💀 Churned"
+
+### Pipeline stages:
+- "Not Started" -> "⬜ Not Started", "Researching" -> "🔍 Researching", "Contacted" -> "📧 Contacted", "Meeting Set" -> "📅 Meeting Set", "Proposal Sent" -> "📄 Proposal Sent", "Negotiating" -> "🤝 Negotiating", "Closed Won" -> "🏆 Closed Won", "Closed Lost" -> "❌ Closed Lost", "On Hold" -> "⏸️ On Hold"
+
+### Status badges:
+- "Prospect" -> "🎯 Prospect", "Churned" -> "💀 Churned"
+
+### Tier badges:
+- "Tier 1" -> "⭐ Tier 1", "Tier 2" -> "🥈 Tier 2", "Tier 3" -> "🥉 Tier 3"
+
+### Priority:
+- "Hot" -> "🔥 Hot", "Warm" -> "☀️ Warm", "Cold" -> "🧊 Cold"
+
+### Action items section headers:
+- "Top Scored -- Never Contacted" -> "⚡ Top Scored -- Never Contacted"
+- "Stale Accounts" -> "🕸️ Stale Accounts (30+ days)"
+- "Action Items" -> "🎯 Action Items"
+
+### Score labels:
+- Add emoji to score label (Excellent -> "🚀 Excellent", etc.)
+
+### Empty states:
+- "No prospects match" -> "🔍 No prospects match your filters"
+- "All contacted" -> "🎉 All prospects contacted!"
+
+## 5. Fun Toast Bars with Emojis
+
+Replace all `toast.success("...")` calls with emoji-enhanced, more descriptive toasts:
+
+### Examples:
+- Add prospect: `toast.success("🎉 Added to your territory!", { description: `"${name}" is ready to go` })`
+- Delete prospect: `toast("🗑️ Prospect removed", { description: `"${name}" has been deleted` })`
+- Bulk delete: `toast("🗑️ Cleaned up!", { description: `${count} prospects removed` })`
+- Stage update: `toast.success("🚀 Stage updated!", { description: `Moved to "${stage}"` })`
+- CSV export: `toast.success("📊 CSV downloaded!", { description: "Your data is ready" })`
+- View saved: `toast.success("💾 View saved!", { description: `"${name}" is ready to use` })`
+- Logo uploaded: `toast.success("🖼️ Logo updated!")`
+- Logo removed: `toast("🖼️ Logo removed")`
+- Contact added: `toast.success("👤 Contact added!")`
+- Contact removed: `toast("👤 Contact removed")`
+- Interaction logged: `toast.success("📝 Activity logged!")`
+- Note added: `toast.success("📌 Note saved!")`
+- Data reset: `toast("🔄 Data reset to defaults")`
+- Inline edit: `toast.success("✅ Updated!")`
+- Kanban drag: `toast.success("🎯 Moved!", { description: `Now in "${stage}"` })`
+- Bulk tier update: `toast.success("🏷️ Tier updated!", { description: `${count} prospects tagged` })`
+- Next step cleared: `toast("✅ Next step completed!")`
+
+## Files to Modify
+
+1. **`index.html`** -- Remove hardcoded `class="dark"`, let next-themes manage
+2. **`src/index.css`** -- Refined dark palette, improved light palette, new animation keyframes (success-flash, delete-slide, bounce-in)
+3. **`src/App.tsx`** -- Wrap with ThemeProvider from next-themes
+4. **`src/components/TerritoryPlanner.tsx`** -- Major changes:
+   - Add theme toggle in header
+   - Replace `navigate()` with slide-over sheet
+   - Add ProspectSheet component with all detail fields
+   - Add emojis to stat pills, pipeline labels, badges
+   - Enhance all toast calls with emojis + descriptions
+   - Add animation states for CRUD operations
+5. **`src/pages/ProspectPage.tsx`** -- Add emojis to badges/labels, enhance toast calls
+6. **`src/pages/InsightsPage.tsx`** -- Add emojis to section headers, enhance stat cards
