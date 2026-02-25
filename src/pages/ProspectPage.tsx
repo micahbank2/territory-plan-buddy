@@ -183,6 +183,7 @@ function LogoImg({
     </div>
   );
 }
+
 function EditableContact({
   contact,
   onSave,
@@ -196,7 +197,7 @@ function EditableContact({
   const [draft, setDraft] = useState(contact);
 
   const inputClass =
-    "w-full px-2.5 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground";
+    "w-full px-2.5 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground";
 
   if (editing) {
     return (
@@ -251,7 +252,6 @@ function EditableContact({
   );
 }
 
-// --- Relative time helper ---
 function relativeTime(dateStr: string): string {
   const now = new Date();
   const then = new Date(dateStr);
@@ -264,7 +264,6 @@ function relativeTime(dateStr: string): string {
   return `${Math.floor(diffDays / 30)} months ago`;
 }
 
-// --- Interaction icon ---
 function InteractionIcon({ type }: { type: string }) {
   if (type === "Email") return <MessageSquare className="w-3.5 h-3.5" />;
   if (type === "Call") return <PhoneCall className="w-3.5 h-3.5" />;
@@ -289,8 +288,8 @@ export default function ProspectPage() {
   const [newNote, setNewNote] = useState("");
 
   if (!ok) return (
-    <div className="bg-background min-h-screen">
-      <header className="border-b border-border px-6 py-4 bg-card flex items-center gap-4">
+    <div className="bg-background min-h-screen yext-grid-bg">
+      <header className="yext-gradient border-b border-primary/10 px-6 py-4 flex items-center gap-4">
         <div className="h-10 w-10 skeleton-shimmer rounded-lg" />
         <div className="space-y-2 flex-1">
           <div className="h-5 w-48 skeleton-shimmer rounded" />
@@ -369,7 +368,6 @@ export default function ProspectPage() {
     navigate("/");
   };
 
-  // Threaded notes
   const addNote = () => {
     if (!newNote.trim()) return;
     const entry: NoteEntry = {
@@ -389,16 +387,16 @@ export default function ProspectPage() {
     </div>
   );
 
-  const inputClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground";
-  const selectClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring appearance-none cursor-pointer";
+  const inputClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 placeholder:text-muted-foreground transition-all";
+  const selectClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 appearance-none cursor-pointer transition-all";
 
   return (
-    <div className="bg-background min-h-screen">
-      {/* Header */}
-      <header className="border-b border-border px-6 py-4 bg-card flex items-center justify-between">
+    <div className="bg-background min-h-screen yext-grid-bg">
+      {/* Yext Header */}
+      <header className="yext-gradient border-b border-primary/10 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate("/")} className="p-1.5 rounded-md hover:bg-muted transition-colors">
-            <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+          <button onClick={() => navigate("/")} className="p-1.5 rounded-md hover:bg-primary/10 transition-colors">
+            <ArrowLeft className="w-4 h-4 text-primary-foreground/60" />
           </button>
           <LogoImg
             website={prospect.website}
@@ -409,7 +407,7 @@ export default function ProspectPage() {
           />
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-lg font-bold text-foreground">{prospect.name}</h1>
+              <h1 className="text-lg font-extrabold text-primary-foreground">{prospect.name}</h1>
               <span className={cn(
                 "px-3 py-1 text-sm font-bold rounded-lg uppercase",
                 prospect.status === "Churned"
@@ -443,12 +441,11 @@ export default function ProspectPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {/* Score with breakdown tooltip */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="text-center px-4 cursor-help">
-                  <div className="text-[10px] text-muted-foreground uppercase">Score</div>
+                  <div className="text-[10px] text-primary-foreground/50 uppercase">Score</div>
                   <div className="text-2xl font-black animate-count-up" style={{ color: scoreInfo.color }}>
                     {score}
                   </div>
@@ -489,7 +486,7 @@ export default function ProspectPage() {
           {/* Left: Details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Account Info */}
-            <div className="bg-card rounded-xl border border-border p-5 space-y-4 animate-fade-in-up">
+            <div className="glass-card rounded-xl p-5 space-y-4 animate-fade-in-up">
               <h2 className="text-sm font-semibold text-foreground">Account Details</h2>
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Locations">
@@ -533,10 +530,12 @@ export default function ProspectPage() {
               </div>
             </div>
 
-            {/* Next Step / Follow-up */}
-            <div className="bg-card rounded-xl border border-border p-5 space-y-4 animate-fade-in-up" style={{ animationDelay: "75ms" }}>
+            {/* Next Step */}
+            <div className="glass-card rounded-xl p-5 space-y-4 animate-fade-in-up" style={{ animationDelay: "75ms" }}>
               <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-primary" />
+                <div className="p-1.5 rounded-lg bg-primary/10">
+                  <Target className="w-4 h-4 text-primary" />
+                </div>
                 <h2 className="text-sm font-semibold text-foreground">Next Step</h2>
                 {prospect.nextStepDate && new Date(prospect.nextStepDate) < new Date() && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive overdue-flag">Overdue</span>
@@ -580,7 +579,9 @@ export default function ProspectPage() {
                 </button>
               )}
             </div>
-            <div className="bg-card rounded-xl border border-border p-5 space-y-4 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
+
+            {/* Notes */}
+            <div className="glass-card rounded-xl p-5 space-y-4 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
               <h2 className="text-sm font-semibold text-foreground">Notes</h2>
               <div className="flex gap-2">
                 <input
@@ -590,7 +591,7 @@ export default function ProspectPage() {
                   className={cn(inputClass, "flex-1")}
                   onKeyDown={(e) => e.key === "Enter" && addNote()}
                 />
-                <Button size="sm" onClick={addNote} disabled={!newNote.trim()}>Add</Button>
+                <Button size="sm" onClick={addNote} disabled={!newNote.trim()} className="glow-blue">Add</Button>
               </div>
               {(prospect.noteLog || []).length > 0 && (
                 <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -605,7 +606,6 @@ export default function ProspectPage() {
                   ))}
                 </div>
               )}
-              {/* Legacy notes field */}
               {prospect.notes && (
                 <div className="pt-3 border-t border-border">
                   <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Legacy Notes</label>
@@ -629,7 +629,7 @@ export default function ProspectPage() {
             </div>
 
             {/* Activity Timeline */}
-            <div className="bg-card rounded-xl border border-border p-5 space-y-3 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
+            <div className="glass-card rounded-xl p-5 space-y-3 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
               <h2 className="text-sm font-semibold text-foreground">Activity Timeline</h2>
               <div className="flex gap-3">
                 <select value={interactionType} onChange={(e) => setInteractionType(e.target.value)} className={cn(selectClass, "w-40")}>
@@ -642,12 +642,11 @@ export default function ProspectPage() {
                   className={cn(inputClass, "flex-1")}
                   onKeyDown={(e) => e.key === "Enter" && logInteraction()}
                 />
-                <Button onClick={logInteraction} size="sm">Log</Button>
+                <Button onClick={logInteraction} size="sm" className="glow-blue">Log</Button>
               </div>
               {(prospect.interactions || []).length > 0 && (
                 <div className="relative mt-4">
-                  {/* Timeline line */}
-                  <div className="absolute left-[15px] top-0 bottom-0 w-px bg-border" />
+                  <div className="absolute left-[15px] top-0 bottom-0 w-px bg-primary/20" />
                   <div className="space-y-4">
                     {[...(prospect.interactions || [])].reverse().map((i, idx) => (
                       <div key={i.id} className="flex items-start gap-3 relative animate-slide-in-right" style={{ animationDelay: `${idx * 50}ms` }}>
@@ -679,11 +678,10 @@ export default function ProspectPage() {
 
           {/* Right: Contacts + Meta */}
           <div className="space-y-6">
-            {/* Contacts */}
-            <div className="bg-card rounded-xl border border-border p-5 animate-fade-in-up" style={{ animationDelay: "50ms" }}>
+            <div className="glass-card rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: "50ms" }}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-foreground">Contacts</h2>
-                <button onClick={() => setShowAddContact(true)} className="p-1 rounded-md hover:bg-muted transition-colors">
+                <button onClick={() => setShowAddContact(true)} className="p-1 rounded-md hover:bg-primary/10 transition-colors">
                   <Plus className="w-4 h-4 text-primary" />
                 </button>
               </div>
@@ -718,8 +716,7 @@ export default function ProspectPage() {
               </div>
             </div>
 
-            {/* Metadata */}
-            <div className="bg-card rounded-xl border border-border p-5 space-y-2 animate-fade-in-up" style={{ animationDelay: "150ms" }}>
+            <div className="glass-card rounded-xl p-5 space-y-2 animate-fade-in-up" style={{ animationDelay: "150ms" }}>
               <h2 className="text-sm font-semibold text-foreground mb-3">Details</h2>
               <div className="text-xs text-muted-foreground">Modified: <span className="text-foreground">{prospect.lastModified || "—"}</span></div>
               {prospect.lastTouched && <div className="text-xs text-muted-foreground">Last Touched: <span className="text-foreground">{prospect.lastTouched}</span></div>}

@@ -117,17 +117,17 @@ function getAgingLabel(interactions: Prospect["interactions"]): string {
   return `${days} days ago`;
 }
 
-// --- Pipeline colors ---
+// --- Pipeline colors (updated for Yext palette) ---
 const STAGE_COLORS: Record<string, string> = {
-  "Not Started": "hsl(220, 14%, 70%)",
-  "Researching": "hsl(220, 80%, 50%)",
-  "Contacted": "hsl(38, 92%, 50%)",
-  "Meeting Set": "hsl(152, 60%, 42%)",
-  "Proposal Sent": "hsl(280, 60%, 50%)",
-  "Negotiating": "hsl(340, 70%, 50%)",
-  "Closed Won": "hsl(152, 60%, 32%)",
-  "Closed Lost": "hsl(0, 72%, 51%)",
-  "On Hold": "hsl(220, 14%, 50%)",
+  "Not Started": "hsl(225, 15%, 50%)",
+  "Researching": "hsl(236, 64%, 57%)",
+  "Contacted": "hsl(38, 92%, 55%)",
+  "Meeting Set": "hsl(152, 60%, 45%)",
+  "Proposal Sent": "hsl(270, 60%, 58%)",
+  "Negotiating": "hsl(340, 70%, 55%)",
+  "Closed Won": "hsl(152, 65%, 38%)",
+  "Closed Lost": "hsl(0, 65%, 55%)",
+  "On Hold": "hsl(225, 15%, 40%)",
 };
 
 // --- Logo component with upload support ---
@@ -188,7 +188,6 @@ function LogoImg({
     onDragLeave: handleDragLeave,
   } : {};
 
-  // Custom logo takes priority
   if (customLogo) {
     return (
       <div className="relative group shrink-0" style={{ width: size, height: size }} {...dragProps}>
@@ -647,8 +646,8 @@ export default function TerritoryPlanner() {
       <ArrowDown className="w-3.5 h-3.5 text-primary" />
     );
 
-  const inputClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground";
-  const selectClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring appearance-none cursor-pointer";
+  const inputClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 placeholder:text-muted-foreground transition-all";
+  const selectClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 appearance-none cursor-pointer transition-all";
 
   // Pagination component to reuse
   const Pagination = () => (
@@ -661,7 +660,7 @@ export default function TerritoryPlanner() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="p-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="p-1.5 rounded-lg border border-border hover:bg-muted hover:border-primary/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -669,7 +668,7 @@ export default function TerritoryPlanner() {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="p-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="p-1.5 rounded-lg border border-border hover:bg-muted hover:border-primary/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -680,7 +679,7 @@ export default function TerritoryPlanner() {
 
   if (!ok)
     return (
-      <div className="bg-background min-h-screen px-8 pt-8">
+      <div className="bg-background min-h-screen px-8 pt-8 yext-grid-bg">
         <div className="h-8 w-48 skeleton-shimmer rounded-lg mb-6" />
         <div className="flex gap-2 mb-6">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -696,13 +695,13 @@ export default function TerritoryPlanner() {
     );
 
   return (
-    <div className="bg-background min-h-screen text-foreground">
+    <div className="bg-background min-h-screen text-foreground yext-grid-bg">
       {/* Command Palette */}
       {cmdOpen && (
         <div className="fixed inset-0 z-50 cmd-overlay" onClick={() => setCmdOpen(false)}>
           <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" />
           <div className="fixed top-[20%] left-1/2 -translate-x-1/2 w-full max-w-lg z-50 cmd-dialog" onClick={(e) => e.stopPropagation()}>
-            <CmdK className="rounded-xl border border-border shadow-2xl bg-popover text-popover-foreground overflow-hidden">
+            <CmdK className="rounded-xl border border-primary/20 shadow-2xl bg-popover text-popover-foreground overflow-hidden">
               <CommandInput placeholder="Search prospects, actions..." className="h-12" />
               <CommandList className="max-h-80">
                 <CommandEmpty>No results found.</CommandEmpty>
@@ -735,52 +734,64 @@ export default function TerritoryPlanner() {
         </div>
       )}
 
-      {/* Top bar */}
-      <div className="px-8 pt-8 pb-2">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">All Prospects</h1>
-            <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5">
-              <Plus className="w-3.5 h-3.5" /> Add Prospect
-            </Button>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="gap-1.5">
-              <BarChart3 className="w-3.5 h-3.5" /> Insights
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
-              <Download className="w-3.5 h-3.5" /> CSV
-            </Button>
-            {selected.size >= 2 && selected.size <= 3 && (
-              <Button variant="outline" size="sm" onClick={() => setShowCompare(true)} className="gap-1.5">
-                <GitCompare className="w-3.5 h-3.5" /> Compare ({selected.size})
+      {/* ===== YEXT HEADER ===== */}
+      <div className="yext-gradient border-b border-primary/10">
+        <div className="px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-extrabold tracking-tight text-primary-foreground">Territory Planner</h1>
+                  <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-full border border-primary/40 text-primary bg-primary/10">
+                    Yext
+                  </span>
+                </div>
+                <p className="text-xs text-primary-foreground/50 mt-0.5">Manage, prioritize, and close your territory</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="gap-1.5 border-primary/20 text-primary-foreground/80 hover:bg-primary/10 hover:text-primary-foreground bg-transparent">
+                <BarChart3 className="w-3.5 h-3.5" /> Insights
               </Button>
-            )}
-            <div className="flex items-center border border-border rounded-lg overflow-hidden">
-              <button onClick={() => setViewMode("table")} className={cn("p-2 transition-colors", viewMode === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground")}>
-                <List className="w-4 h-4" />
-              </button>
-              <button onClick={() => setViewMode("kanban")} className={cn("p-2 transition-colors", viewMode === "kanban" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground")}>
-                <LayoutGrid className="w-4 h-4" />
+              <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 border-primary/20 text-primary-foreground/80 hover:bg-primary/10 hover:text-primary-foreground bg-transparent">
+                <Download className="w-3.5 h-3.5" /> CSV
+              </Button>
+              <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5 bg-primary hover:bg-primary/90 glow-blue font-semibold">
+                <Plus className="w-3.5 h-3.5" /> Add Prospect
+              </Button>
+              {selected.size >= 2 && selected.size <= 3 && (
+                <Button variant="outline" size="sm" onClick={() => setShowCompare(true)} className="gap-1.5 border-primary/20 text-primary-foreground/80 hover:bg-primary/10 bg-transparent">
+                  <GitCompare className="w-3.5 h-3.5" /> Compare ({selected.size})
+                </Button>
+              )}
+              <div className="flex items-center border border-primary/20 rounded-lg overflow-hidden ml-1">
+                <button onClick={() => setViewMode("table")} className={cn("p-2 transition-all", viewMode === "table" ? "bg-primary text-primary-foreground" : "hover:bg-primary/10 text-primary-foreground/60")}>
+                  <List className="w-4 h-4" />
+                </button>
+                <button onClick={() => setViewMode("kanban")} className={cn("p-2 transition-all", viewMode === "kanban" ? "bg-primary text-primary-foreground" : "hover:bg-primary/10 text-primary-foreground/60")}>
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+              </div>
+              <button
+                onClick={() => { if (confirm("Reset ALL data?")) { reset(); toast.success("Data reset"); } }}
+                className="p-2 rounded-lg text-primary-foreground/40 hover:text-primary-foreground/80 hover:bg-primary/10 transition-all"
+                title="Reset data"
+              >
+                <RotateCcw className="w-4 h-4" />
               </button>
             </div>
-            <button
-              onClick={() => { if (confirm("Reset ALL data?")) { reset(); toast.success("Data reset"); } }}
-              className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-              title="Reset data"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
           </div>
         </div>
+      </div>
 
+      <div className="px-8 pt-6 pb-2">
         {/* Pipeline Summary Bar */}
         {pipelineTotal > 0 && (
           <div className="mb-6 animate-fade-in-up">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pipeline</span>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pipeline</span>
             </div>
-            <div className="flex h-3 rounded-full overflow-hidden bg-muted border border-border">
+            <div className="flex h-4 rounded-full overflow-hidden bg-muted/50 border border-border" style={{ boxShadow: '0 0 12px -2px hsl(236 64% 57% / 0.15)' }}>
               {pipelineCounts.map((s) => (
                 <div
                   key={s.stage}
@@ -806,8 +817,8 @@ export default function TerritoryPlanner() {
           </div>
         )}
 
-        {/* Stat pills with animation */}
-        <div className="flex items-center gap-2 mb-6 flex-wrap">
+        {/* Stat pills */}
+        <div className="flex items-center gap-2.5 mb-6 flex-wrap">
           {([
             ["Total", stats.t, () => { clr(); }],
             ["50+ Locs", stats.o50, () => { clr(); setFLocRange([50, maxLocs]); }],
@@ -821,20 +832,20 @@ export default function TerritoryPlanner() {
             <button
               key={i}
               onClick={() => fn()}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer bg-card group animate-fade-in-up"
+              className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl glass-card cursor-pointer group animate-fade-in-up glow-blue"
               style={{ animationDelay: `${i * 50}ms` }}
             >
-              <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">{label}</span>
-              <span className="text-sm font-bold text-foreground animate-count-up" style={{ animationDelay: `${i * 50 + 200}ms` }}>{value}</span>
+              <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors font-medium">{label}</span>
+              <span className="text-lg font-black text-foreground animate-count-up" style={{ animationDelay: `${i * 50 + 200}ms` }}>{value}</span>
             </button>
           ))}
         </div>
 
-        {/* Stale + Top Scored Home Cards */}
+        {/* Action Items */}
         {(homeCards.untouched.length > 0 || homeCards.stale.length > 0) && (
           <Collapsible open={cardsOpen} onOpenChange={setCardsOpen} className="mb-6">
             <CollapsibleTrigger asChild>
-              <button className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-3">
+              <button className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-3 uppercase tracking-wider">
                 {cardsOpen ? <ChevronUpIcon className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                 Action Items
               </button>
@@ -842,9 +853,11 @@ export default function TerritoryPlanner() {
             <CollapsibleContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in-up">
                 {/* Top Scored Never Contacted */}
-                <div className="bg-card rounded-xl border border-border p-4">
+                <div className="glass-card rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Zap className="w-4 h-4 text-[hsl(var(--warning))]" />
+                    <div className="p-1.5 rounded-lg bg-primary/10">
+                      <Zap className="w-4 h-4 text-primary" />
+                    </div>
                     <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Top Scored — Never Contacted</h3>
                   </div>
                   {homeCards.untouched.length === 0 ? (
@@ -855,7 +868,7 @@ export default function TerritoryPlanner() {
                         <button
                           key={p.id}
                           onClick={() => navigate(`/prospect/${p.id}`)}
-                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors text-left"
                         >
                           <LogoImg website={p.website} size={20} customLogo={p.customLogo} />
                           <span className="text-xs font-medium text-foreground truncate flex-1">{p.name}</span>
@@ -867,9 +880,11 @@ export default function TerritoryPlanner() {
                 </div>
 
                 {/* Stale Accounts */}
-                <div className="bg-card rounded-xl border border-border p-4">
+                <div className="glass-card rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <AlertTriangle className="w-4 h-4 text-destructive" />
+                    <div className="p-1.5 rounded-lg bg-destructive/10">
+                      <AlertTriangle className="w-4 h-4 text-destructive" />
+                    </div>
                     <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Stale Accounts (30+ days)</h3>
                   </div>
                   {homeCards.stale.length === 0 ? (
@@ -880,7 +895,7 @@ export default function TerritoryPlanner() {
                         <button
                           key={p.id}
                           onClick={() => navigate(`/prospect/${p.id}`)}
-                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors text-left"
                         >
                           <LogoImg website={p.website} size={20} customLogo={p.customLogo} />
                           <span className="text-xs font-medium text-foreground truncate flex-1">{p.name}</span>
@@ -889,7 +904,6 @@ export default function TerritoryPlanner() {
                               ? relativeTime(p.interactions[p.interactions.length - 1].date)
                               : "Never"}
                           </span>
-                          <ScoreBadge score={p.score} compact />
                         </button>
                       ))}
                     </div>
@@ -903,10 +917,10 @@ export default function TerritoryPlanner() {
         {/* Saved Views */}
         {savedViews.length > 0 && (
           <div className="flex items-center gap-2 mb-4 flex-wrap">
-            <span className="text-xs text-muted-foreground font-medium">Views:</span>
+            <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Views:</span>
             {savedViews.map((v) => (
               <div key={v.id} className="flex items-center gap-1 group">
-                <button onClick={() => loadView(v)} className="px-3 py-1 text-xs rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium">
+                <button onClick={() => loadView(v)} className="px-3 py-1 text-xs rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/15 transition-all font-medium glow-blue">
                   {v.name}
                 </button>
                 <button onClick={() => deleteView(v.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded-full hover:bg-destructive/10">
@@ -926,12 +940,12 @@ export default function TerritoryPlanner() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search companies, industries..."
-              className="w-full pl-10 pr-20 py-2.5 text-sm rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-primary/40 transition-all"
+              className="w-full pl-10 pr-20 py-2.5 text-sm rounded-xl border border-border bg-card/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all backdrop-blur-sm"
               onFocus={() => {}}
             />
             <button
               onClick={() => setCmdOpen(true)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground bg-muted rounded border border-border hover:bg-accent transition-colors cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground bg-muted rounded border border-border hover:bg-accent hover:border-primary/30 transition-all cursor-pointer"
             >
               <Command className="w-2.5 h-2.5" />K
             </button>
@@ -947,9 +961,9 @@ export default function TerritoryPlanner() {
           <Popover>
             <PopoverTrigger asChild>
               <button className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-colors",
+                "inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-all",
                 locFilterActive
-                  ? "border-primary/40 bg-primary/10 text-primary"
+                  ? "border-primary/40 bg-primary/10 text-primary glow-blue"
                   : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
               )}>
                 <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -990,10 +1004,10 @@ export default function TerritoryPlanner() {
 
           {hasFilters && (
             <>
-              <button onClick={clr} className="px-3 py-2 text-xs font-medium rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/5 transition-colors">
+              <button onClick={clr} className="px-3 py-2 text-xs font-medium rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/5 transition-all">
                 Clear
               </button>
-              <button onClick={() => setShowSaveView(true)} className="px-3 py-2 text-xs font-medium rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition-colors gap-1 inline-flex items-center">
+              <button onClick={() => setShowSaveView(true)} className="px-3 py-2 text-xs font-medium rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition-all gap-1 inline-flex items-center glow-blue">
                 <Save className="w-3 h-3" /> Save View
               </button>
             </>
@@ -1002,8 +1016,8 @@ export default function TerritoryPlanner() {
 
         {/* Bulk action bar */}
         {selected.size > 0 && (
-          <div className="mt-4 p-3 rounded-xl border border-primary/20 bg-primary/5 flex items-center gap-3 flex-wrap animate-fade-in-up">
-            <span className="text-sm font-medium text-primary">{selected.size} selected</span>
+          <div className="mt-4 p-3 rounded-xl border border-primary/20 bg-primary/5 flex items-center gap-3 flex-wrap animate-fade-in-up backdrop-blur-sm">
+            <span className="text-sm font-semibold text-primary">{selected.size} selected</span>
             <select value={bulkStage} onChange={(e) => setBulkStage(e.target.value)} className="px-2 py-1 text-xs rounded-md border border-border bg-background text-foreground">
               <option value="">Set stage...</option>
               {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -1025,10 +1039,10 @@ export default function TerritoryPlanner() {
       {/* TABLE VIEW */}
       {viewMode === "table" && (
         <div className="px-8 pb-8">
-          <div className="border border-border rounded-xl overflow-hidden bg-card">
+          <div className="border border-border rounded-xl overflow-hidden glass-card">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border">
+                <tr className="border-b border-border bg-muted/30">
                   <th className="px-3 py-3 w-10">
                     <Checkbox checked={paged.length > 0 && selected.size === paged.length} onCheckedChange={toggleSelectAll} />
                   </th>
@@ -1045,7 +1059,7 @@ export default function TerritoryPlanner() {
                       key={k}
                       onClick={() => doSort(k)}
                       className={cn(
-                        "px-5 py-3 text-left text-xs font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors",
+                        "px-5 py-3 text-left text-xs font-semibold text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors uppercase tracking-wider",
                         w
                       )}
                     >
@@ -1058,7 +1072,7 @@ export default function TerritoryPlanner() {
                 {paged.map((p) => (
                   <tr
                     key={p.id}
-                    className="border-b border-border last:border-0 hover:bg-muted/50 cursor-pointer transition-all group row-hover-lift"
+                    className="border-b border-border last:border-0 hover:bg-primary/[0.03] cursor-pointer transition-all group row-hover-lift"
                   >
                     <td className="px-3 py-4" onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
@@ -1079,7 +1093,6 @@ export default function TerritoryPlanner() {
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
                         )}
-                        {/* Overdue next step flag */}
                         {p.nextStepDate && new Date(p.nextStepDate) < new Date() && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive overdue-flag" title={`Overdue: ${p.nextStep}`}>
                             ⚠ Overdue
@@ -1100,7 +1113,6 @@ export default function TerritoryPlanner() {
                     </td>
                     <td className="px-5 py-4 text-muted-foreground" onClick={() => navigate(`/prospect/${p.id}`)}>{p.locationCount || "—"}</td>
                     <td className="px-5 py-4 text-muted-foreground" onClick={() => navigate(`/prospect/${p.id}`)}>{p.industry || "—"}</td>
-                    {/* Inline editable: Outreach */}
                     <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
                       {editingCell?.id === p.id && editingCell?.field === "outreach" ? (
                         <select
@@ -1122,11 +1134,9 @@ export default function TerritoryPlanner() {
                         </span>
                       )}
                     </td>
-                    {/* Score with context */}
                     <td className="px-5 py-4" onClick={() => navigate(`/prospect/${p.id}`)}>
                       <ScoreBadge score={p.ps} />
                     </td>
-                    {/* Inline editable: Tier */}
                     <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
                       {editingCell?.id === p.id && editingCell?.field === "tier" ? (
                         <select
@@ -1168,7 +1178,6 @@ export default function TerritoryPlanner() {
               </tbody>
             </table>
           </div>
-          {/* Pagination at bottom */}
           <div className="mt-4">
             <Pagination />
           </div>
@@ -1181,16 +1190,18 @@ export default function TerritoryPlanner() {
           <div className="flex gap-4 min-w-max">
             {kanbanStages.map((stage) => {
               const cards = filtered.filter((p) => p.outreach === stage);
+              const stageColor = STAGE_COLORS[stage] || "hsl(225, 15%, 50%)";
               return (
                 <div
                   key={stage}
-                  className="w-72 shrink-0 bg-muted/30 rounded-xl border border-border p-3"
+                  className="w-72 shrink-0 glass-card rounded-xl p-3"
+                  style={{ borderTop: `3px solid ${stageColor}` }}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, stage)}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{stage}</h3>
-                    <span className="text-xs font-bold text-muted-foreground bg-muted rounded-full px-2 py-0.5">{cards.length}</span>
+                    <span className="text-xs font-bold text-primary bg-primary/10 rounded-full px-2 py-0.5">{cards.length}</span>
                   </div>
                   <div className="space-y-2 min-h-[60px]">
                     {cards.map((p) => (
@@ -1199,15 +1210,17 @@ export default function TerritoryPlanner() {
                         draggable
                         onDragStart={(e) => handleDragStart(e, p.id)}
                         onClick={() => navigate(`/prospect/${p.id}`)}
-                        className={cn("kanban-card bg-card border border-border rounded-lg p-3 cursor-pointer", dragId === p.id && "dragging")}
+                        className={cn("kanban-card bg-card border border-border rounded-lg p-3 cursor-pointer relative overflow-hidden", dragId === p.id && "dragging")}
                       >
-                        <div className="flex items-center gap-2 mb-1">
+                        {/* Left accent strip */}
+                        <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg" style={{ backgroundColor: stageColor }} />
+                        <div className="flex items-center gap-2 mb-1 ml-2">
                           <GripVertical className="w-3 h-3 text-muted-foreground/40 shrink-0" />
                           <LogoImg website={p.website} size={20} customLogo={p.customLogo} />
                           <span className="text-xs font-semibold text-foreground truncate">{p.name}</span>
                           <span className={cn("aging-dot ml-auto", getAgingClass(p.interactions))} title={getAgingLabel(p.interactions)} />
                         </div>
-                        <div className="flex items-center gap-1.5 ml-5">
+                        <div className="flex items-center gap-1.5 ml-7">
                           {p.tier && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold">{p.tier}</span>}
                           <span className="text-[10px] text-muted-foreground">{p.locationCount ? `${p.locationCount} locs` : ""}</span>
                           <span className="ml-auto"><ScoreBadge score={p.ps} compact /></span>
@@ -1258,7 +1271,7 @@ export default function TerritoryPlanner() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={!newName.trim()}>Add Prospect</Button>
+            <Button onClick={handleAdd} disabled={!newName.trim()} className="glow-blue">Add Prospect</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
