@@ -209,7 +209,7 @@ function EditableContact({
         <input value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} placeholder="Notes" className={inputClass} />
         <div className="flex gap-2">
           <button
-            onClick={() => { onSave(draft); setEditing(false); toast.success("Contact updated"); }}
+            onClick={() => { onSave(draft); setEditing(false); toast.success("✅ Contact updated!"); }}
             className="px-3 py-1.5 bg-primary text-primary-foreground text-xs rounded-md hover:bg-primary/90 flex items-center gap-1"
           >
             <Check className="w-3 h-3" /> Save
@@ -319,7 +319,7 @@ export default function ProspectPage() {
 
   const handleUpdate = (field: string, value: any) => {
     update(prospect.id, { [field]: value });
-    toast.success("Updated");
+    toast.success("✅ Updated!");
   };
 
   const addContact = () => {
@@ -335,7 +335,7 @@ export default function ProspectPage() {
     update(prospect.id, { contacts: [...(prospect.contacts || []), contact] });
     setNewContact({});
     setShowAddContact(false);
-    toast.success("Contact added");
+    toast.success("👤 Contact added!");
   };
 
   const updateContact = (updated: Contact) => {
@@ -346,7 +346,7 @@ export default function ProspectPage() {
 
   const removeContact = (contactId: string) => {
     update(prospect.id, { contacts: (prospect.contacts || []).filter((c) => c.id !== contactId) });
-    toast.success("Contact removed");
+    toast("👤 Contact removed");
   };
 
   const logInteraction = () => {
@@ -359,12 +359,12 @@ export default function ProspectPage() {
     };
     update(prospect.id, { interactions: [...(prospect.interactions || []), interaction] });
     setInteractionNotes("");
-    toast.success("Interaction logged");
+    toast.success("📝 Activity logged!");
   };
 
   const handleDelete = () => {
     remove(prospect.id);
-    toast.success(`"${prospect.name}" deleted`);
+    toast("🗑️ Prospect removed", { description: `"${prospect.name}" has been deleted` });
     navigate("/");
   };
 
@@ -377,7 +377,7 @@ export default function ProspectPage() {
     };
     update(prospect.id, { noteLog: [...(prospect.noteLog || []), entry] });
     setNewNote("");
-    toast.success("Note added");
+    toast.success("📌 Note saved!");
   };
 
   const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -402,8 +402,8 @@ export default function ProspectPage() {
             website={prospect.website}
             size={40}
             customLogo={prospect.customLogo}
-            onUpload={(b64) => { update(prospect.id, { customLogo: b64 }); toast.success("Logo uploaded"); }}
-            onRemove={prospect.customLogo ? () => { update(prospect.id, { customLogo: undefined }); toast.success("Logo removed"); } : undefined}
+            onUpload={(b64) => { update(prospect.id, { customLogo: b64 }); toast.success("🖼️ Logo updated!"); }}
+            onRemove={prospect.customLogo ? () => { update(prospect.id, { customLogo: undefined }); toast("🖼️ Logo removed"); } : undefined}
           />
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
@@ -414,7 +414,7 @@ export default function ProspectPage() {
                   ? "bg-destructive/15 text-destructive"
                   : "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]"
               )}>
-                {prospect.status}
+                {prospect.status === "Churned" ? "💀 Churned" : "🎯 Prospect"}
               </span>
               {prospect.competitor && (
                 <span className="px-3 py-1 text-sm font-bold rounded-lg bg-[hsl(var(--warning))]/15 text-[hsl(var(--warning))]">
@@ -428,7 +428,7 @@ export default function ProspectPage() {
                   prospect.tier === "Tier 2" ? "bg-secondary text-secondary-foreground" :
                   "bg-muted text-muted-foreground"
                 )}>
-                  {prospect.tier}
+                  {prospect.tier === "Tier 1" ? "⭐" : prospect.tier === "Tier 2" ? "🥈" : "🥉"} {prospect.tier}
                 </span>
               )}
             </div>

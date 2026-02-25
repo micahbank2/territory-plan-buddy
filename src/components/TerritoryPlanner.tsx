@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "next-themes";
 import {
   STAGES,
   INDUSTRIES,
@@ -14,6 +15,7 @@ import {
 } from "@/data/prospects";
 import { useProspects } from "@/hooks/useProspects";
 import { MultiSelect } from "@/components/MultiSelect";
+import { ProspectSheet } from "@/components/ProspectSheet";
 import { cn } from "@/lib/utils";
 import {
   Search,
@@ -43,6 +45,8 @@ import {
   ChevronDown,
   ChevronUp as ChevronUpIcon,
   SlidersHorizontal,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
@@ -128,6 +132,11 @@ const STAGE_COLORS: Record<string, string> = {
   "Closed Won": "hsl(152, 65%, 38%)",
   "Closed Lost": "hsl(0, 65%, 55%)",
   "On Hold": "hsl(225, 15%, 40%)",
+};
+
+const STAGE_EMOJI: Record<string, string> = {
+  "Not Started": "⬜", "Researching": "🔍", "Contacted": "📧", "Meeting Set": "📅",
+  "Proposal Sent": "📄", "Negotiating": "🤝", "Closed Won": "🏆", "Closed Lost": "❌", "On Hold": "⏸️",
 };
 
 // --- Logo component with upload support ---
@@ -320,8 +329,9 @@ function relativeTime(dateStr: string): string {
 const PAGE_SIZE = 25;
 
 export default function TerritoryPlanner() {
-  const { data, ok, reset, add, update, bulkUpdate, bulkRemove } = useProspects();
+  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove } = useProspects();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const searchRef = useRef<HTMLInputElement>(null);
   const [q, setQ] = useState("");
   const [fIndustry, setFIndustry] = useState<string[]>([]);
@@ -369,6 +379,9 @@ export default function TerritoryPlanner() {
 
   // Home page cards collapsed state
   const [cardsOpen, setCardsOpen] = useState(true);
+
+  // Slide-over panel
+  const [sheetProspectId, setSheetProspectId] = useState<number | null>(null);
 
   // Keyboard shortcut for Cmd+K → command palette
   useEffect(() => {
@@ -521,7 +534,7 @@ export default function TerritoryPlanner() {
       status: newStatus,
       tier: newTier,
     });
-    toast.success(`"${newName.trim()}" added`);
+    toast.success("🎉 Added to your territory!", { description: `"${newName.trim()}" is ready to go` });
     setShowAdd(false);
     setNewName(""); setNewWebsite(""); setNewIndustry(""); setNewLocs(""); setNewStatus("Prospect"); setNewTier("");
     setDuplicateWarning(null);
@@ -539,7 +552,7 @@ export default function TerritoryPlanner() {
     const a = document.createElement("a");
     a.href = url; a.download = "prospects.csv"; a.click();
     URL.revokeObjectURL(url);
-    toast.success("CSV exported");
+    toast.success("📊 CSV downloaded!", { description: "Your data is ready" });
   };
 
   // --- Save View ---
@@ -555,7 +568,7 @@ export default function TerritoryPlanner() {
     saveViews(updated);
     setShowSaveView(false);
     setViewName("");
-    toast.success(`View "${view.name}" saved`);
+    toast.success("💾 View saved!", { description: `"${view.name}" is ready to use` });
   };
 
   const loadView = (v: SavedView) => {
@@ -563,7 +576,7 @@ export default function TerritoryPlanner() {
     setFCompetitor(v.filters.fCompetitor); setFTier(v.filters.fTier);
     setFLocRange(v.filters.fLocRange || [0, maxLocs]);
     setFOutreach(v.filters.fOutreach);
-    toast(`Loaded view "${v.name}"`);
+    toast(`📂 Loaded "${v.name}"`);
   };
 
   const deleteView = (id: string) => {
@@ -576,20 +589,21 @@ export default function TerritoryPlanner() {
   const handleBulkStage = () => {
     if (!bulkStage || selected.size === 0) return;
     bulkUpdate(Array.from(selected), { outreach: bulkStage });
-    toast.success(`Updated ${selected.size} prospects to "${bulkStage}"`);
+    toast.success("🚀 Stage updated!", { description: `${selected.size} prospects moved to "${bulkStage}"` });
     setSelected(new Set()); setBulkStage("");
   };
 
   const handleBulkTier = () => {
     if (!bulkTier || selected.size === 0) return;
     bulkUpdate(Array.from(selected), { tier: bulkTier });
-    toast.success(`Updated ${selected.size} prospects to "${bulkTier}"`);
+    toast.success("🏷️ Tier updated!", { description: `${selected.size} prospects tagged` });
     setSelected(new Set()); setBulkTier("");
   };
 
   const handleBulkDelete = () => {
+    const count = selected.size;
     bulkRemove(Array.from(selected));
-    toast.success(`Deleted ${selected.size} prospects`);
+    toast("🗑️ Cleaned up!", { description: `${count} prospects removed` });
     setSelected(new Set());
     setShowBulkDelete(false);
   };
@@ -598,18 +612,18 @@ export default function TerritoryPlanner() {
   const handleInlineChange = (id: number, field: string, value: string) => {
     update(id, { [field]: value });
     setEditingCell(null);
-    toast.success("Updated");
+    toast.success("✅ Updated!");
   };
 
   // --- Logo upload ---
   const handleLogoUpload = (id: number, base64: string) => {
     update(id, { customLogo: base64 });
-    toast.success("Logo uploaded");
+    toast.success("🖼️ Logo updated!");
   };
 
   const handleLogoRemove = (id: number) => {
     update(id, { customLogo: undefined });
-    toast.success("Logo removed");
+    toast("🖼️ Logo removed");
   };
 
   // --- Kanban ---
@@ -625,7 +639,7 @@ export default function TerritoryPlanner() {
     e.preventDefault();
     if (dragId != null) {
       bulkUpdate([dragId], { outreach: stage });
-      toast.success("Stage updated");
+      toast.success("🎯 Moved!", { description: `Now in "${stage}"` });
     }
     setDragId(null);
   };
@@ -721,7 +735,7 @@ export default function TerritoryPlanner() {
                 </CommandGroup>
                 <CommandGroup heading="Prospects">
                   {data.slice(0, 20).map((p) => (
-                    <CommandItem key={p.id} onSelect={() => { setCmdOpen(false); navigate(`/prospect/${p.id}`); }}>
+                    <CommandItem key={p.id} onSelect={() => { setCmdOpen(false); setSheetProspectId(p.id); }}>
                       <LogoImg website={p.website} size={16} customLogo={p.customLogo} />
                       <span className="ml-2">{p.name}</span>
                       {p.industry && <span className="ml-auto text-xs text-muted-foreground">{p.industry}</span>}
@@ -773,7 +787,14 @@ export default function TerritoryPlanner() {
                 </button>
               </div>
               <button
-                onClick={() => { if (confirm("Reset ALL data?")) { reset(); toast.success("Data reset"); } }}
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="p-2 rounded-lg text-primary-foreground/60 hover:text-primary-foreground/80 hover:bg-primary/10 transition-all"
+                title="Toggle theme"
+              >
+                {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={() => { if (confirm("Reset ALL data?")) { reset(); toast("🔄 Data reset to defaults"); } }}
                 className="p-2 rounded-lg text-primary-foreground/40 hover:text-primary-foreground/80 hover:bg-primary/10 transition-all"
                 title="Reset data"
               >
@@ -810,7 +831,7 @@ export default function TerritoryPlanner() {
                   onClick={() => { clr(); setFOutreach([s.stage]); }}
                 >
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
-                  {s.stage} ({s.count})
+                  {STAGE_EMOJI[s.stage] || ""} {s.stage} ({s.count})
                 </button>
               ))}
             </div>
@@ -820,14 +841,14 @@ export default function TerritoryPlanner() {
         {/* Stat pills */}
         <div className="flex items-center gap-2.5 mb-6 flex-wrap">
           {([
-            ["Total", stats.t, () => { clr(); }],
-            ["50+ Locs", stats.o50, () => { clr(); setFLocRange([50, maxLocs]); }],
-            ["100+ Locs", stats.o100, () => { clr(); setFLocRange([100, maxLocs]); }],
-            ["500+ Locs", stats.o500, () => { clr(); setFLocRange([500, maxLocs]); }],
-            ["Hot", stats.hot, () => { clr(); }],
-            ["Warm", stats.warm, () => { clr(); }],
-            ["Prospects", stats.prospects, () => { clr(); setFStatus(["Prospect"]); }],
-            ["Churned", stats.ch, () => { clr(); setFStatus(["Churned"]); }],
+            ["📊 Total", stats.t, () => { clr(); }],
+            ["📍 50+ Locs", stats.o50, () => { clr(); setFLocRange([50, maxLocs]); }],
+            ["📍 100+", stats.o100, () => { clr(); setFLocRange([100, maxLocs]); }],
+            ["🏢 500+", stats.o500, () => { clr(); setFLocRange([500, maxLocs]); }],
+            ["🔥 Hot", stats.hot, () => { clr(); }],
+            ["☀️ Warm", stats.warm, () => { clr(); }],
+            ["🎯 Prospects", stats.prospects, () => { clr(); setFStatus(["Prospect"]); }],
+            ["💀 Churned", stats.ch, () => { clr(); setFStatus(["Churned"]); }],
           ] as [string, number, () => void][]).map(([label, value, fn], i) => (
             <button
               key={i}
@@ -847,7 +868,7 @@ export default function TerritoryPlanner() {
             <CollapsibleTrigger asChild>
               <button className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-3 uppercase tracking-wider">
                 {cardsOpen ? <ChevronUpIcon className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                Action Items
+                🎯 Action Items
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -858,16 +879,16 @@ export default function TerritoryPlanner() {
                     <div className="p-1.5 rounded-lg bg-primary/10">
                       <Zap className="w-4 h-4 text-primary" />
                     </div>
-                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Top Scored — Never Contacted</h3>
+                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">⚡ Top Scored — Never Contacted</h3>
                   </div>
                   {homeCards.untouched.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">All prospects contacted 🎉</p>
+                    <p className="text-xs text-muted-foreground">🎉 All prospects contacted!</p>
                   ) : (
                     <div className="space-y-1.5">
                       {homeCards.untouched.map((p) => (
                         <button
                           key={p.id}
-                          onClick={() => navigate(`/prospect/${p.id}`)}
+                          onClick={() => setSheetProspectId(p.id)}
                           className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors text-left"
                         >
                           <LogoImg website={p.website} size={20} customLogo={p.customLogo} />
@@ -885,16 +906,16 @@ export default function TerritoryPlanner() {
                     <div className="p-1.5 rounded-lg bg-destructive/10">
                       <AlertTriangle className="w-4 h-4 text-destructive" />
                     </div>
-                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Stale Accounts (30+ days)</h3>
+                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">🕸️ Stale Accounts (30+ days)</h3>
                   </div>
                   {homeCards.stale.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No stale accounts 💪</p>
+                    <p className="text-xs text-muted-foreground">💪 No stale accounts!</p>
                   ) : (
                     <div className="space-y-1.5">
                       {homeCards.stale.map((p) => (
                         <button
                           key={p.id}
-                          onClick={() => navigate(`/prospect/${p.id}`)}
+                          onClick={() => setSheetProspectId(p.id)}
                           className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors text-left"
                         >
                           <LogoImg website={p.website} size={20} customLogo={p.customLogo} />
@@ -1077,7 +1098,7 @@ export default function TerritoryPlanner() {
                     <td className="px-3 py-4" onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
                     </td>
-                    <td className="px-5 py-4" onClick={() => navigate(`/prospect/${p.id}`)}>
+                    <td className="px-5 py-4" onClick={() => setSheetProspectId(p.id)}>
                       <div className="flex items-center gap-3 flex-wrap">
                         <span className={cn("aging-dot", getAgingClass(p.interactions))} title={getAgingLabel(p.interactions)} />
                         <LogoImg
@@ -1111,8 +1132,8 @@ export default function TerritoryPlanner() {
                         )}
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-muted-foreground" onClick={() => navigate(`/prospect/${p.id}`)}>{p.locationCount || "—"}</td>
-                    <td className="px-5 py-4 text-muted-foreground" onClick={() => navigate(`/prospect/${p.id}`)}>{p.industry || "—"}</td>
+                    <td className="px-5 py-4 text-muted-foreground" onClick={() => setSheetProspectId(p.id)}>{p.locationCount || "—"}</td>
+                    <td className="px-5 py-4 text-muted-foreground" onClick={() => setSheetProspectId(p.id)}>{p.industry || "—"}</td>
                     <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
                       {editingCell?.id === p.id && editingCell?.field === "outreach" ? (
                         <select
@@ -1134,7 +1155,7 @@ export default function TerritoryPlanner() {
                         </span>
                       )}
                     </td>
-                    <td className="px-5 py-4" onClick={() => navigate(`/prospect/${p.id}`)}>
+                    <td className="px-5 py-4" onClick={() => setSheetProspectId(p.id)}>
                       <ScoreBadge score={p.ps} />
                     </td>
                     <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
@@ -1161,7 +1182,7 @@ export default function TerritoryPlanner() {
                         </span>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-muted-foreground" onClick={() => navigate(`/prospect/${p.id}`)}>{p.lastTouched || "—"}</td>
+                    <td className="px-5 py-4 text-muted-foreground" onClick={() => setSheetProspectId(p.id)}>{p.lastTouched || "—"}</td>
                   </tr>
                 ))}
                 {paged.length === 0 && (
@@ -1169,7 +1190,7 @@ export default function TerritoryPlanner() {
                     <td colSpan={8} className="px-5 py-16 text-center">
                       <div className="flex flex-col items-center gap-3 text-muted-foreground">
                         <FileSearch className="w-12 h-12 opacity-30" />
-                        <p className="text-sm font-medium">No prospects match your filters</p>
+                        <p className="text-sm font-medium">🔍 No prospects match your filters</p>
                         <button onClick={clr} className="text-xs text-primary hover:underline">Clear all filters</button>
                       </div>
                     </td>
@@ -1200,7 +1221,7 @@ export default function TerritoryPlanner() {
                   onDrop={(e) => handleDrop(e, stage)}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{stage}</h3>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{STAGE_EMOJI[stage] || ""} {stage}</h3>
                     <span className="text-xs font-bold text-primary bg-primary/10 rounded-full px-2 py-0.5">{cards.length}</span>
                   </div>
                   <div className="space-y-2 min-h-[60px]">
@@ -1209,7 +1230,7 @@ export default function TerritoryPlanner() {
                         key={p.id}
                         draggable
                         onDragStart={(e) => handleDragStart(e, p.id)}
-                        onClick={() => navigate(`/prospect/${p.id}`)}
+                        onClick={() => setSheetProspectId(p.id)}
                         className={cn("kanban-card bg-card border border-border rounded-lg p-3 cursor-pointer relative overflow-hidden", dragId === p.id && "dragging")}
                       >
                         {/* Left accent strip */}
@@ -1353,6 +1374,15 @@ export default function TerritoryPlanner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Prospect Slide-Over Sheet */}
+      <ProspectSheet
+        prospectId={sheetProspectId}
+        onClose={() => setSheetProspectId(null)}
+        data={data}
+        update={update}
+        remove={(id) => { remove(id); setSheetProspectId(null); toast("🗑️ Prospect removed"); }}
+      />
     </div>
   );
 }
