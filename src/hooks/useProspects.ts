@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { STORAGE_KEY, SEED, type Prospect } from "@/data/prospects";
+import { STORAGE_KEY, SEED, initProspect, type Prospect } from "@/data/prospects";
 
 export function useProspects() {
   const [data, setData] = useState<Prospect[]>([]);
@@ -11,13 +11,14 @@ export function useProspects() {
       if (raw) {
         const p = JSON.parse(raw);
         if (Array.isArray(p) && p.length > 0) {
-          // Migrate old data: add missing fields
           const migrated = p.map((item: any) => ({
             ...item,
             competitor: item.competitor || "",
             tier: item.tier || "",
             contacts: item.contacts || [],
             interactions: item.interactions || [],
+            noteLog: item.noteLog || [],
+            createdAt: item.createdAt || "",
           }));
           setData(migrated);
           setOk(true);
@@ -46,8 +47,27 @@ export function useProspects() {
     );
   }, []);
 
+  const add = useCallback((partial: Partial<Prospect> & { name: string }) => {
+    setData((prev) => {
+      const maxId = prev.reduce((m, p) => Math.max(m, p.id), 0);
+      const newProspect = initProspect({ ...partial, id: maxId + 1 });
+      return [newProspect, ...prev];
+    });
+  }, []);
+
   const remove = useCallback((id: number) => {
     setData((prev) => prev.filter((p) => p.id !== id));
+  }, []);
+
+  const bulkUpdate = useCallback((ids: number[], u: Partial<Prospect>) => {
+    const ts = new Date().toISOString().split("T")[0];
+    setData((prev) =>
+      prev.map((p) => (ids.includes(p.id) ? { ...p, ...u, lastTouched: ts } : p))
+    );
+  }, []);
+
+  const bulkRemove = useCallback((ids: number[]) => {
+    setData((prev) => prev.filter((p) => !ids.includes(p.id)));
   }, []);
 
   const reset = useCallback(() => {
@@ -55,5 +75,5 @@ export function useProspects() {
     setData(SEED.map((p) => ({ ...p })));
   }, []);
 
-  return { data, ok, update, remove, reset };
+  return { data, ok, update, add, remove, bulkUpdate, bulkRemove, reset };
 }

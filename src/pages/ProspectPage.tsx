@@ -9,8 +9,10 @@ import {
   COMPETITORS,
   INTERACTION_TYPES,
   scoreProspect,
+  getLogoUrl,
   type Contact,
   type InteractionLog,
+  type NoteEntry,
 } from "@/data/prospects";
 import { cn } from "@/lib/utils";
 import {
@@ -24,24 +26,38 @@ import {
   Pencil,
   Check,
   Building2,
+  MessageSquare,
+  PhoneCall,
+  Linkedin,
+  Clock,
 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
+// --- Logo using Google favicons ---
 function LogoImg({ website, size = 32 }: { website?: string; size?: number }) {
   const [err, setErr] = useState(false);
-  if (!website || err) {
+  const url = getLogoUrl(website, size >= 32 ? 64 : 32);
+  if (!website || err || !url) {
     return (
-      <div
-        className="rounded-lg bg-muted flex items-center justify-center shrink-0"
-        style={{ width: size, height: size }}
-      >
+      <div className="rounded-lg bg-muted flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
         <Building2 className="text-muted-foreground" style={{ width: size * 0.5, height: size * 0.5 }} />
       </div>
     );
   }
-  const domain = website.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
   return (
     <img
-      src={`https://logo.clearbit.com/${domain}`}
+      src={url}
       alt=""
       className="rounded-lg shrink-0 bg-muted object-contain"
       style={{ width: size, height: size }}
@@ -67,7 +83,7 @@ function EditableContact({
 
   if (editing) {
     return (
-      <div className="p-3 border border-primary/30 rounded-lg bg-primary/5 space-y-2">
+      <div className="p-3 border border-primary/30 rounded-lg bg-primary/5 space-y-2 animate-fade-in-up">
         <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Name *" className={inputClass} />
         <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="Title" className={inputClass} />
         <input value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="Email" className={inputClass} />
@@ -75,7 +91,7 @@ function EditableContact({
         <input value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} placeholder="Notes" className={inputClass} />
         <div className="flex gap-2">
           <button
-            onClick={() => { onSave(draft); setEditing(false); }}
+            onClick={() => { onSave(draft); setEditing(false); toast.success("Contact updated"); }}
             className="px-3 py-1.5 bg-primary text-primary-foreground text-xs rounded-md hover:bg-primary/90 flex items-center gap-1"
           >
             <Check className="w-3 h-3" /> Save
@@ -92,7 +108,7 @@ function EditableContact({
   }
 
   return (
-    <div className="p-3 border border-border rounded-lg group relative">
+    <div className="p-3 border border-border rounded-lg group relative hover:border-primary/20 transition-colors">
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
         <button onClick={() => setEditing(true)} className="p-0.5 rounded hover:bg-accent">
           <Pencil className="w-3 h-3 text-muted-foreground" />
@@ -118,6 +134,26 @@ function EditableContact({
   );
 }
 
+// --- Relative time helper ---
+function relativeTime(dateStr: string): string {
+  const now = new Date();
+  const then = new Date(dateStr);
+  const diffMs = now.getTime() - then.getTime();
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  return `${Math.floor(diffDays / 30)} months ago`;
+}
+
+// --- Interaction icon ---
+function InteractionIcon({ type }: { type: string }) {
+  if (type === "Email") return <MessageSquare className="w-3.5 h-3.5" />;
+  if (type === "Call") return <PhoneCall className="w-3.5 h-3.5" />;
+  return <Linkedin className="w-3.5 h-3.5" />;
+}
+
 export default function ProspectPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -132,14 +168,40 @@ export default function ProspectPage() {
   const [showAddContact, setShowAddContact] = useState(false);
   const [interactionType, setInteractionType] = useState(INTERACTION_TYPES[0]);
   const [interactionNotes, setInteractionNotes] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [newNote, setNewNote] = useState("");
 
-  if (!ok) return <div className="flex items-center justify-center h-screen text-muted-foreground">Loading...</div>;
+  if (!ok) return (
+    <div className="bg-background min-h-screen">
+      <header className="border-b border-border px-6 py-4 bg-card flex items-center gap-4">
+        <div className="h-10 w-10 skeleton-shimmer rounded-lg" />
+        <div className="space-y-2 flex-1">
+          <div className="h-5 w-48 skeleton-shimmer rounded" />
+          <div className="h-3 w-32 skeleton-shimmer rounded" />
+        </div>
+      </header>
+      <div className="max-w-5xl mx-auto p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            {[200, 160, 120].map((h, i) => (
+              <div key={i} className="skeleton-shimmer rounded-xl" style={{ height: h }} />
+            ))}
+          </div>
+          <div className="space-y-6">
+            <div className="skeleton-shimmer rounded-xl h-48" />
+            <div className="skeleton-shimmer rounded-xl h-32" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
   if (!prospect) return <div className="flex items-center justify-center h-screen text-muted-foreground">Prospect not found</div>;
 
   const score = scoreProspect(prospect);
 
   const handleUpdate = (field: string, value: any) => {
     update(prospect.id, { [field]: value });
+    toast.success("Updated");
   };
 
   const addContact = () => {
@@ -155,6 +217,7 @@ export default function ProspectPage() {
     update(prospect.id, { contacts: [...(prospect.contacts || []), contact] });
     setNewContact({});
     setShowAddContact(false);
+    toast.success("Contact added");
   };
 
   const updateContact = (updated: Contact) => {
@@ -165,6 +228,7 @@ export default function ProspectPage() {
 
   const removeContact = (contactId: string) => {
     update(prospect.id, { contacts: (prospect.contacts || []).filter((c) => c.id !== contactId) });
+    toast.success("Contact removed");
   };
 
   const logInteraction = () => {
@@ -177,13 +241,26 @@ export default function ProspectPage() {
     };
     update(prospect.id, { interactions: [...(prospect.interactions || []), interaction] });
     setInteractionNotes("");
+    toast.success("Interaction logged");
   };
 
   const handleDelete = () => {
-    if (confirm(`Delete "${prospect.name}" permanently?`)) {
-      remove(prospect.id);
-      navigate("/");
-    }
+    remove(prospect.id);
+    toast.success(`"${prospect.name}" deleted`);
+    navigate("/");
+  };
+
+  // Threaded notes
+  const addNote = () => {
+    if (!newNote.trim()) return;
+    const entry: NoteEntry = {
+      id: Date.now().toString(),
+      text: newNote.trim(),
+      timestamp: new Date().toISOString(),
+    };
+    update(prospect.id, { noteLog: [...(prospect.noteLog || []), entry] });
+    setNewNote("");
+    toast.success("Note added");
   };
 
   const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -212,12 +289,12 @@ export default function ProspectPage() {
                 "px-2 py-0.5 text-xs font-bold rounded-md uppercase",
                 prospect.status === "Churned"
                   ? "bg-destructive/10 text-destructive"
-                  : "bg-[hsl(152,60%,42%)]/10 text-[hsl(152,60%,42%)]"
+                  : "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]"
               )}>
                 {prospect.status}
               </span>
               {prospect.competitor && (
-                <span className="px-2 py-0.5 text-xs font-bold rounded-md bg-warning/10 text-[hsl(38,92%,40%)]">
+                <span className="px-2 py-0.5 text-xs font-bold rounded-md bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))]">
                   Now w/ {prospect.competitor}
                 </span>
               )}
@@ -244,13 +321,17 @@ export default function ProspectPage() {
           <div className="text-center px-4">
             <div className="text-[10px] text-muted-foreground uppercase">Score</div>
             <div className={cn(
-              "text-2xl font-black",
-              score >= 40 ? "text-[hsl(152,60%,42%)]" : score >= 20 ? "text-primary" : "text-muted-foreground"
+              "text-2xl font-black animate-count-up",
+              score >= 40 ? "text-[hsl(var(--success))]" : score >= 20 ? "text-primary" : "text-muted-foreground"
             )}>
               {score}
             </div>
           </div>
-          <button onClick={handleDelete} className="p-2 rounded-md text-destructive hover:bg-destructive/5 transition-colors" title="Delete prospect">
+          <button
+            onClick={() => setShowDeleteDialog(true)}
+            className="p-2 rounded-md text-destructive hover:bg-destructive/5 transition-colors delete-glow"
+            title="Delete prospect"
+          >
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
@@ -261,7 +342,7 @@ export default function ProspectPage() {
           {/* Left: Details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Account Info */}
-            <div className="bg-card rounded-xl border border-border p-5 space-y-4">
+            <div className="bg-card rounded-xl border border-border p-5 space-y-4 animate-fade-in-up">
               <h2 className="text-sm font-semibold text-foreground">Account Details</h2>
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Locations">
@@ -305,20 +386,48 @@ export default function ProspectPage() {
               </div>
             </div>
 
-            {/* Notes */}
-            <div className="bg-card rounded-xl border border-border p-5 space-y-4">
+            {/* Threaded Notes */}
+            <div className="bg-card rounded-xl border border-border p-5 space-y-4 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
               <h2 className="text-sm font-semibold text-foreground">Notes</h2>
-              <textarea
-                value={prospect.notes || ""}
-                onChange={(e) => handleUpdate("notes", e.target.value)}
-                rows={4}
-                className={cn(inputClass, "resize-y")}
-                placeholder="Add notes about this prospect..."
-              />
+              <div className="flex gap-2">
+                <input
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Add a note..."
+                  className={cn(inputClass, "flex-1")}
+                  onKeyDown={(e) => e.key === "Enter" && addNote()}
+                />
+                <Button size="sm" onClick={addNote} disabled={!newNote.trim()}>Add</Button>
+              </div>
+              {(prospect.noteLog || []).length > 0 && (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {[...(prospect.noteLog || [])].reverse().map((note) => (
+                    <div key={note.id} className="p-3 rounded-lg bg-muted/50 border border-border">
+                      <p className="text-xs text-foreground">{note.text}</p>
+                      <div className="flex items-center gap-1 mt-1.5">
+                        <Clock className="w-2.5 h-2.5 text-muted-foreground" />
+                        <span className="text-[10px] text-muted-foreground">{relativeTime(note.timestamp)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* Legacy notes field */}
+              {prospect.notes && (
+                <div className="pt-3 border-t border-border">
+                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Legacy Notes</label>
+                  <textarea
+                    value={prospect.notes || ""}
+                    onChange={(e) => update(prospect.id, { notes: e.target.value })}
+                    rows={3}
+                    className={cn(inputClass, "resize-y mt-1")}
+                  />
+                </div>
+              )}
               <Field label="Location Source / Notes">
                 <textarea
                   value={prospect.locationNotes || ""}
-                  onChange={(e) => handleUpdate("locationNotes", e.target.value)}
+                  onChange={(e) => update(prospect.id, { locationNotes: e.target.value })}
                   rows={2}
                   className={cn(inputClass, "resize-y")}
                   placeholder="Where did the location data come from?"
@@ -326,9 +435,9 @@ export default function ProspectPage() {
               </Field>
             </div>
 
-            {/* Log Interaction */}
-            <div className="bg-card rounded-xl border border-border p-5 space-y-3">
-              <h2 className="text-sm font-semibold text-foreground">Log Interaction</h2>
+            {/* Activity Timeline */}
+            <div className="bg-card rounded-xl border border-border p-5 space-y-3 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
+              <h2 className="text-sm font-semibold text-foreground">Activity Timeline</h2>
               <div className="flex gap-3">
                 <select value={interactionType} onChange={(e) => setInteractionType(e.target.value)} className={cn(selectClass, "w-40")}>
                   {INTERACTION_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -340,29 +449,37 @@ export default function ProspectPage() {
                   className={cn(inputClass, "flex-1")}
                   onKeyDown={(e) => e.key === "Enter" && logInteraction()}
                 />
-                <button onClick={logInteraction} className="px-4 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-lg hover:bg-primary/90 transition-colors">
-                  Log
-                </button>
+                <Button onClick={logInteraction} size="sm">Log</Button>
               </div>
               {(prospect.interactions || []).length > 0 && (
-                <div className="space-y-2 mt-3">
-                  {[...(prospect.interactions || [])].reverse().map((i) => (
-                    <div key={i.id} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
-                      <div className={cn(
-                        "px-2 py-0.5 rounded text-[10px] font-semibold shrink-0 mt-0.5",
-                        i.type === "Email" ? "bg-primary/10 text-primary" :
-                        i.type === "Call" ? "bg-[hsl(152,60%,42%)]/10 text-[hsl(152,60%,42%)]" :
-                        "bg-secondary text-secondary-foreground"
-                      )}>
-                        {i.type}
+                <div className="relative mt-4">
+                  {/* Timeline line */}
+                  <div className="absolute left-[15px] top-0 bottom-0 w-px bg-border" />
+                  <div className="space-y-4">
+                    {[...(prospect.interactions || [])].reverse().map((i, idx) => (
+                      <div key={i.id} className="flex items-start gap-3 relative animate-slide-in-right" style={{ animationDelay: `${idx * 50}ms` }}>
+                        <div className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10",
+                          i.type === "Email" ? "bg-primary/10 text-primary" :
+                          i.type === "Call" ? "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]" :
+                          "bg-secondary text-secondary-foreground"
+                        )}>
+                          <InteractionIcon type={i.type} />
+                        </div>
+                        <div className="flex-1 pb-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-foreground">{i.type}</span>
+                            <span className="text-[10px] text-muted-foreground">{relativeTime(i.date)}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">{i.notes}</p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <div className="text-xs text-foreground">{i.notes}</div>
-                        <div className="text-[10px] text-muted-foreground mt-0.5">{i.date}</div>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
+              )}
+              {(prospect.interactions || []).length === 0 && (
+                <p className="text-xs text-muted-foreground py-4 text-center">No interactions logged yet.</p>
               )}
             </div>
           </div>
@@ -370,7 +487,7 @@ export default function ProspectPage() {
           {/* Right: Contacts + Meta */}
           <div className="space-y-6">
             {/* Contacts */}
-            <div className="bg-card rounded-xl border border-border p-5">
+            <div className="bg-card rounded-xl border border-border p-5 animate-fade-in-up" style={{ animationDelay: "50ms" }}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-foreground">Contacts</h2>
                 <button onClick={() => setShowAddContact(true)} className="p-1 rounded-md hover:bg-muted transition-colors">
@@ -379,7 +496,7 @@ export default function ProspectPage() {
               </div>
 
               {showAddContact && (
-                <div className="space-y-2 mb-4 p-3 border border-border rounded-lg bg-muted/30">
+                <div className="space-y-2 mb-4 p-3 border border-border rounded-lg bg-muted/30 animate-fade-in-up">
                   <input value={newContact.name || ""} onChange={(e) => setNewContact({ ...newContact, name: e.target.value })} placeholder="Name *" className={cn(inputClass, "text-xs py-1.5")} />
                   <input value={newContact.title || ""} onChange={(e) => setNewContact({ ...newContact, title: e.target.value })} placeholder="Title" className={cn(inputClass, "text-xs py-1.5")} />
                   <input value={newContact.email || ""} onChange={(e) => setNewContact({ ...newContact, email: e.target.value })} placeholder="Email" className={cn(inputClass, "text-xs py-1.5")} />
@@ -409,15 +526,34 @@ export default function ProspectPage() {
             </div>
 
             {/* Metadata */}
-            <div className="bg-card rounded-xl border border-border p-5 space-y-2">
+            <div className="bg-card rounded-xl border border-border p-5 space-y-2 animate-fade-in-up" style={{ animationDelay: "150ms" }}>
               <h2 className="text-sm font-semibold text-foreground mb-3">Details</h2>
               <div className="text-xs text-muted-foreground">Owner: <span className="text-foreground">{prospect.transitionOwner || "—"}</span></div>
               <div className="text-xs text-muted-foreground">Modified: <span className="text-foreground">{prospect.lastModified || "—"}</span></div>
               {prospect.lastTouched && <div className="text-xs text-muted-foreground">Last Touched: <span className="text-foreground">{prospect.lastTouched}</span></div>}
+              {prospect.createdAt && <div className="text-xs text-muted-foreground">Created: <span className="text-foreground">{relativeTime(prospect.createdAt)}</span></div>}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{prospect.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This prospect and all associated contacts, interactions, and notes will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
