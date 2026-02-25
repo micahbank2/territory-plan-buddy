@@ -1,58 +1,114 @@
 
 
-# Replace Account Data, Fix Tooltip Clipping, and Multi-Select Stat Pills
+# Multi-Feature Update Plan
 
-## 1. Replace All Account Data with New CSV
+## 1. Allow Activity Logging Without Notes
 
-Replace the hardcoded `RAW_SEED` array in `src/data/prospects.ts` with the 309 accounts from the uploaded CSV. The CSV has three columns:
+**Problem**: `logInteraction()` in ProspectSheet.tsx (line 98-99) and ProspectPage.tsx (line 352-353) requires `interactionNotes.trim()` to be non-empty.
 
-- `Account Name` --> `name`
-- `Enterprise Client Status` --> `status` (values: "Prospect" or "Churned")
-- `Website` --> `website` (strip `http://www.` prefix to store clean domain)
+**Fix**: Remove the `if (!interactionNotes.trim()) return;` guard in both files. If notes are empty, log with an empty string or a default like the interaction type name.
 
-Each record will be initialized with `initProspect()` so all other fields (industry, locationCount, contacts, interactions, etc.) start empty/default and can be filled in manually via the app.
+**Files**: `src/components/ProspectSheet.tsx`, `src/pages/ProspectPage.tsx`
 
-Logos will automatically pull in via the existing `getLogoUrl()` function which uses Google Favicons based on the website domain -- no changes needed there.
+---
 
-Scoring, filtering, and all downstream features remain intact since they all read from the same `Prospect` interface and compute dynamically.
+## 2. Remove Est. Revenue Field
 
-Also bump the `STORAGE_KEY` from `"tp-data-v5"` to `"tp-data-v6"` so existing localStorage is ignored and the fresh seed data loads on next visit.
+Remove the "Est. Revenue" field from:
+- ProspectSheet.tsx (line 221-224) -- the sidebar panel
+- ProspectPage.tsx (line 521-523) -- the full page view
 
-## 2. Fix Score Tooltip Clipping
+**Files**: `src/components/ProspectSheet.tsx`, `src/pages/ProspectPage.tsx`
 
-The tooltips are being cut off because the table container at line 1085 of `TerritoryPlanner.tsx` has `overflow-hidden` in its `rounded-xl` class. Radix tooltips render via a Portal so they should escape the container, but the issue is likely the combination of `overflow-hidden` on ancestors.
+---
 
-**Fix**: Update the `TooltipContent` component in `src/components/ui/tooltip.tsx` to always use `collisionPadding={12}` and add `z-[9999]` to ensure it renders above everything and respects viewport boundaries. Also ensure the `avoidCollisions` prop is true (it is by default).
+## 3. Fix Toast on Every Keystroke
 
-Additionally, in `ScoreBadge`, change `side="top"` to `side="left"` so the tooltip opens to the side rather than above, which avoids clipping against the top of the viewport and the table edges.
+**Problem**: `handleUpdate()` calls `update()` + `toast.success()` on every `onChange` for text/number inputs (locations, next step action, est. revenue). Selects are fine since they fire once on selection.
 
-## 3. Multi-Select Stat Pills
+**Fix**: For text/number inputs, switch from `onChange` calling `handleUpdate` to using local state + `onBlur` to commit (debounced save). Specifically:
+- Location count input, Next Step action input, and any other free-text fields that call `handleUpdate` on every keystroke
+- Apply this pattern in both ProspectSheet.tsx and ProspectPage.tsx
+- Keep selects as-is (they only fire once)
 
-Currently each stat pill calls `clr()` then sets one filter, replacing all other filters. The user wants toggle behavior where clicking a pill adds/removes that filter without clearing others.
+**Files**: `src/components/ProspectSheet.tsx`, `src/pages/ProspectPage.tsx`
 
-**Changes to `TerritoryPlanner.tsx`**:
-- "Hot" pill: toggle "Hot" in/out of a priority filter (add `fPriority` state, or reuse by filtering on priority field)
-  - Actually, since there's no `fPriority` filter state, the simplest approach is to make the stat pills that map to existing filter dimensions toggle those filters:
-    - "50+ Locs", "100+ Locs", "500+ Locs" --> toggle location range
-    - "Prospects" --> toggle "Prospect" in `fStatus`
-    - "Churned" --> toggle "Churned" in `fStatus`
-    - "Hot", "Warm" --> these need a new `fPriority` filter state since priority filtering doesn't currently exist as a multi-select
-- Add `fPriority` state (`useState<string[]>([])`) and include it in the filter chain
-- Add a Priority `MultiSelect` dropdown next to the existing filter dropdowns
-- Update each stat pill's `onClick` to toggle its value in the corresponding filter array instead of calling `clr()`
-- "Total Accounts" pill will still clear all filters (acts as a reset)
+---
 
-## Files to Modify
+## 4. Competitor Field: Add "Unknown" + Custom "Other" Input
 
-1. **`src/data/prospects.ts`**: Replace `RAW_SEED` array with 309 new accounts from CSV. Bump `STORAGE_KEY` to `"tp-data-v6"`.
+**Problem**: COMPETITORS array has "Other" but no "Unknown", and selecting "Other" doesn't allow typing a custom value.
 
-2. **`src/components/ui/tooltip.tsx`**: Add `collisionPadding={12}` as default prop, increase z-index to `z-[9999]`.
+**Fix**:
+- Add "Unknown" to the COMPETITORS array in `src/data/prospects.ts`
+- In ProspectSheet.tsx and ProspectPage.tsx: when "Other" is selected, show a text input below the select for typing a custom competitor name. Store the custom value in the `competitor` field directly (e.g., "Other: CustomName" or just the custom name).
 
-3. **`src/components/TerritoryPlanner.tsx`**:
-   - Add `fPriority` state and wire it into the filter chain
-   - Add Priority `MultiSelect` in the filter bar
-   - Update stat pill click handlers to toggle filters instead of replacing them
-   - Change `ScoreBadge` tooltip `side` from `"top"` to `"left"`
-   - Include `fPriority` in `clr()`, `hasFilters`, saved views, etc.
+**Files**: `src/data/prospects.ts`, `src/components/ProspectSheet.tsx`, `src/pages/ProspectPage.tsx`
 
-4. **`src/pages/InsightsPage.tsx`**: Same `ScoreBadge` tooltip side fix if present.
+---
+
+## 5. Unified Activity Log (Merge Next Step Completions + Interactions)
+
+**Problem**: Marking a next step complete clears the fields but doesn't record it in the activity timeline.
+
+**Fix**:
+- When "Mark complete" is clicked, log an interaction entry of type "Task Completed" with the next step text as the notes, then clear the fields.
+- Add "Task Completed" to INTERACTION_TYPES in prospects.ts (or handle it as a special type with a CheckCircle icon)
+- The activity timeline already renders all interactions, so completed tasks will appear automatically.
+- Add an `InteractionIcon` case for "Task Completed" using a Check/CheckCircle icon.
+
+**Files**: `src/data/prospects.ts`, `src/components/ProspectSheet.tsx`, `src/pages/ProspectPage.tsx`
+
+---
+
+## 6. Upcoming/Open/Overdue Tasks Section
+
+Add a tasks/actions section showing upcoming, open, and overdue next steps:
+
+### Homepage Action Items
+- Add a third card in the Action Items collapsible: "Upcoming Tasks" showing prospects with `nextStepDate` set, sorted by date (overdue first, then soonest).
+- Color-code: overdue = red, due today = yellow, upcoming = default.
+
+### Full Page View (ProspectPage.tsx)
+- Already shows Next Step with overdue badge. No major change needed beyond the activity log merge above.
+
+### Side Panel (ProspectSheet.tsx)
+- Already shows Next Step with overdue badge. The activity log merge covers completed tasks appearing in the timeline.
+
+**Files**: `src/components/TerritoryPlanner.tsx` (homepage action items card)
+
+---
+
+## 7. Add "Cold" Stat Pill
+
+**Problem**: Missing "Cold" from the stat pills row at the top.
+
+**Fix**: Add a "Cold" entry to the stat pills array after "Warm":
+```
+["🧊 Cold", stats.cold, () => toggle "Cold" in fPriority, fPriority.includes("Cold")]
+```
+Also add `cold: data.filter(p => p.priority === "Cold").length` to the stats computation.
+
+**Files**: `src/components/TerritoryPlanner.tsx`
+
+---
+
+## 8. Search Bar Clear (X) Button
+
+**Problem**: No way to quickly clear the search field.
+
+**Fix**: Add an X button inside the search input (absolutely positioned on the right, before the Cmd+K shortcut badge) that appears when `q` is non-empty and clears it on click.
+
+**Files**: `src/components/TerritoryPlanner.tsx`
+
+---
+
+## Summary of All File Changes
+
+| File | Changes |
+|------|---------|
+| `src/data/prospects.ts` | Add "Unknown" to COMPETITORS, add "Task Completed" to INTERACTION_TYPES |
+| `src/components/ProspectSheet.tsx` | Remove revenue field, allow empty activity notes, debounce text inputs, custom competitor input, log completed tasks to timeline |
+| `src/pages/ProspectPage.tsx` | Same as ProspectSheet changes |
+| `src/components/TerritoryPlanner.tsx` | Add Cold stat pill, add search X button, add Upcoming Tasks action card, add `cold` to stats |
+
