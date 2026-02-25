@@ -46,6 +46,7 @@ import {
   GitCompare,
   Upload,
   Zap,
+  Target,
   ChevronDown,
   ChevronUp as ChevronUpIcon,
   SlidersHorizontal,
@@ -505,7 +506,12 @@ export default function TerritoryPlanner() {
       .map((p) => ({ ...p, score: scoreProspect(p) }))
       .sort((a, b) => b.score - a.score)
       .slice(0, 5);
-    return { untouched, stale };
+    const upcoming = data
+      .filter((p) => p.nextStepDate)
+      .map((p) => ({ ...p, score: scoreProspect(p) }))
+      .sort((a, b) => new Date(a.nextStepDate!).getTime() - new Date(b.nextStepDate!).getTime())
+      .slice(0, 5);
+    return { untouched, stale, upcoming };
   }, [data]);
 
   const stats = useMemo(() => {
@@ -517,6 +523,7 @@ export default function TerritoryPlanner() {
       o500: wl.filter((p) => p.locationCount! >= 500).length,
       hot: data.filter((p) => p.priority === "Hot").length,
       warm: data.filter((p) => p.priority === "Warm").length,
+      cold: data.filter((p) => p.priority === "Cold").length,
       ch: data.filter((p) => p.status === "Churned").length,
       prospects: data.filter((p) => p.status === "Prospect").length,
     };
@@ -873,6 +880,7 @@ export default function TerritoryPlanner() {
             ["🏢 500+ Locs", stats.o500, () => { setFLocRange((prev) => prev[0] === 500 ? [0, maxLocs] : [500, maxLocs]); }, fLocRange[0] === 500],
             ["🔥 Hot", stats.hot, () => { setFPriority((prev) => prev.includes("Hot") ? prev.filter(x => x !== "Hot") : [...prev, "Hot"]); }, fPriority.includes("Hot")],
             ["☀️ Warm", stats.warm, () => { setFPriority((prev) => prev.includes("Warm") ? prev.filter(x => x !== "Warm") : [...prev, "Warm"]); }, fPriority.includes("Warm")],
+            ["🧊 Cold", stats.cold, () => { setFPriority((prev) => prev.includes("Cold") ? prev.filter(x => x !== "Cold") : [...prev, "Cold"]); }, fPriority.includes("Cold")],
             ["🎯 Prospects", stats.prospects, () => { setFStatus((prev) => prev.includes("Prospect") ? prev.filter(x => x !== "Prospect") : [...prev, "Prospect"]); }, fStatus.includes("Prospect")],
             ["💀 Churned", stats.ch, () => { setFStatus((prev) => prev.includes("Churned") ? prev.filter(x => x !== "Churned") : [...prev, "Churned"]); }, fStatus.includes("Churned")],
           ] as [string, number, () => void, boolean][]).map(([label, value, fn, active], i) => (
@@ -892,7 +900,7 @@ export default function TerritoryPlanner() {
         </div>
 
         {/* Action Items */}
-        {(homeCards.untouched.length > 0 || homeCards.stale.length > 0) && (
+        {(homeCards.untouched.length > 0 || homeCards.stale.length > 0 || homeCards.upcoming.length > 0) && (
           <Collapsible open={cardsOpen} onOpenChange={setCardsOpen} className="mb-6">
             <CollapsibleTrigger asChild>
               <button className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-3 uppercase tracking-wider">
@@ -901,7 +909,7 @@ export default function TerritoryPlanner() {
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in-up">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in-up">
                 {/* Top Scored Never Contacted */}
                 <div className="glass-card rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-3">
@@ -959,6 +967,44 @@ export default function TerritoryPlanner() {
                     </div>
                   )}
                 </div>
+
+                {/* Upcoming Tasks */}
+                <div className="glass-card rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-1.5 rounded-lg bg-[hsl(var(--warning))]/10">
+                      <Target className="w-4 h-4 text-[hsl(var(--warning))]" />
+                    </div>
+                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Upcoming Tasks</h3>
+                  </div>
+                  {homeCards.upcoming.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">📋 No upcoming tasks</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {homeCards.upcoming.map((p) => {
+                        const isOverdue = new Date(p.nextStepDate!) < new Date();
+                        const isToday = p.nextStepDate === new Date().toISOString().split("T")[0];
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={() => setSheetProspectId(p.id)}
+                            className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors text-left"
+                          >
+                            <LogoImg website={p.website} size={20} customLogo={p.customLogo} />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-xs font-medium text-foreground truncate block">{p.name}</span>
+                              <span className="text-[10px] text-muted-foreground truncate block">{p.nextStep}</span>
+                            </div>
+                            <span className={cn("text-[10px] font-semibold shrink-0",
+                              isOverdue ? "text-destructive" : isToday ? "text-[hsl(var(--warning))]" : "text-muted-foreground"
+                            )}>
+                              {isOverdue ? "⚠️ Overdue" : isToday ? "📅 Today" : p.nextStepDate}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </CollapsibleContent>
           </Collapsible>
@@ -993,6 +1039,14 @@ export default function TerritoryPlanner() {
               className="w-full pl-10 pr-20 py-2.5 text-sm rounded-xl border border-border bg-card/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all backdrop-blur-sm"
               onFocus={() => {}}
             />
+            {q && (
+              <button
+                onClick={() => setQ("")}
+                className="absolute right-14 top-1/2 -translate-y-1/2 p-0.5 rounded-md hover:bg-muted transition-colors"
+              >
+                <X className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            )}
             <button
               onClick={() => setCmdOpen(true)}
               className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground bg-muted rounded border border-border hover:bg-accent hover:border-primary/30 transition-all cursor-pointer"

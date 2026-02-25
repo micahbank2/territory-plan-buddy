@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import {
@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import {
   ExternalLink, Plus, X, Mail, Phone, Building2, MessageSquare, PhoneCall,
-  Linkedin, Clock, CalendarIcon, Target, ArrowRight, Check,
+  Linkedin, Clock, CalendarIcon, Target, ArrowRight, Check, CheckCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,7 @@ function relativeTime(dateStr: string): string {
 function InteractionIcon({ type }: { type: string }) {
   if (type === "Email") return <MessageSquare className="w-3.5 h-3.5" />;
   if (type === "Call") return <PhoneCall className="w-3.5 h-3.5" />;
+  if (type === "Task Completed") return <CheckCircle className="w-3.5 h-3.5" />;
   return <Linkedin className="w-3.5 h-3.5" />;
 }
 
@@ -69,6 +70,25 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
   const [interactionNotes, setInteractionNotes] = useState("");
   const [newNote, setNewNote] = useState("");
 
+  // Local state for debounced text inputs
+  const [localLocCount, setLocalLocCount] = useState("");
+  const [localNextStep, setLocalNextStep] = useState("");
+  const [localCustomCompetitor, setLocalCustomCompetitor] = useState("");
+
+  // Sync local state when prospect changes
+  useEffect(() => {
+    if (prospect) {
+      setLocalLocCount(prospect.locationCount != null ? String(prospect.locationCount) : "");
+      setLocalNextStep(prospect.nextStep || "");
+      // If competitor starts with "Other: ", extract the custom part
+      if (prospect.competitor && !COMPETITORS.includes(prospect.competitor) && prospect.competitor.startsWith("Other: ")) {
+        setLocalCustomCompetitor(prospect.competitor.replace("Other: ", ""));
+      } else {
+        setLocalCustomCompetitor("");
+      }
+    }
+  }, [prospect?.id]);
+
   if (!prospect) return null;
 
   const score = scoreProspect(prospect);
@@ -78,6 +98,35 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
     update(prospect.id, { [field]: value });
     toast.success("✅ Updated!");
   };
+
+  // Commit debounced fields on blur
+  const commitLocCount = () => {
+    const val = localLocCount ? parseInt(localLocCount) : null;
+    if (val !== prospect.locationCount) {
+      update(prospect.id, { locationCount: val });
+      toast.success("✅ Updated!");
+    }
+  };
+
+  const commitNextStep = () => {
+    if (localNextStep !== (prospect.nextStep || "")) {
+      update(prospect.id, { nextStep: localNextStep });
+      toast.success("✅ Updated!");
+    }
+  };
+
+  const commitCustomCompetitor = () => {
+    const val = localCustomCompetitor.trim() ? `Other: ${localCustomCompetitor.trim()}` : "Other";
+    if (val !== prospect.competitor) {
+      update(prospect.id, { competitor: val });
+      toast.success("✅ Updated!");
+    }
+  };
+
+  // Determine displayed competitor value for select
+  const competitorSelectValue = prospect.competitor && !COMPETITORS.includes(prospect.competitor) && prospect.competitor.startsWith("Other: ")
+    ? "Other" : prospect.competitor;
+  const showCustomCompetitorInput = competitorSelectValue === "Other" || (prospect.competitor && prospect.competitor.startsWith("Other: "));
 
   const addContact = () => {
     if (!newContact.name) return;
@@ -96,14 +145,27 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
   };
 
   const logInteraction = () => {
-    if (!interactionNotes.trim()) return;
     const interaction: InteractionLog = {
       id: Date.now().toString(), type: interactionType,
-      date: new Date().toISOString().split("T")[0], notes: interactionNotes,
+      date: new Date().toISOString().split("T")[0], notes: interactionNotes || `${interactionType} logged`,
     };
     update(prospect.id, { interactions: [...(prospect.interactions || []), interaction] });
     setInteractionNotes("");
     toast.success("📝 Activity logged!");
+  };
+
+  const markNextStepComplete = () => {
+    const taskText = prospect.nextStep || "Task";
+    const interaction: InteractionLog = {
+      id: Date.now().toString(), type: "Task Completed",
+      date: new Date().toISOString().split("T")[0], notes: taskText,
+    };
+    update(prospect.id, {
+      interactions: [...(prospect.interactions || []), interaction],
+      nextStep: "",
+      nextStepDate: "",
+    });
+    toast.success("✅ Next step completed!");
   };
 
   const addNote = () => {
@@ -177,7 +239,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase">Locations</label>
-                <input type="number" value={prospect.locationCount || ""} onChange={e => handleUpdate("locationCount", e.target.value ? parseInt(e.target.value) : null)} className={inputClass} placeholder="# of locations" />
+                <input type="number" value={localLocCount} onChange={e => setLocalLocCount(e.target.value)} onBlur={commitLocCount} className={inputClass} placeholder="# of locations" />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase">Industry</label>
@@ -214,13 +276,21 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase">Competitor</label>
-                <select value={prospect.competitor} onChange={e => handleUpdate("competitor", e.target.value)} className={selectClass}>
+                <select value={competitorSelectValue} onChange={e => {
+                  const val = e.target.value;
+                  if (val === "Other") {
+                    handleUpdate("competitor", "Other");
+                    setLocalCustomCompetitor("");
+                  } else {
+                    handleUpdate("competitor", val);
+                    setLocalCustomCompetitor("");
+                  }
+                }} className={selectClass}>
                   {COMPETITORS.map(c => <option key={c} value={c}>{c || "None"}</option>)}
                 </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Est. Revenue ($)</label>
-                <input type="number" value={prospect.estimatedRevenue || ""} onChange={e => handleUpdate("estimatedRevenue", e.target.value ? parseInt(e.target.value) : null)} className={inputClass} />
+                {showCustomCompetitorInput && (
+                  <input value={localCustomCompetitor} onChange={e => setLocalCustomCompetitor(e.target.value)} onBlur={commitCustomCompetitor} placeholder="Type competitor name..." className={cn(inputClass, "mt-1 text-xs")} />
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase">Status</label>
@@ -244,7 +314,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase">Action</label>
-                <input value={prospect.nextStep || ""} onChange={e => handleUpdate("nextStep", e.target.value)} placeholder="e.g. Send follow-up" className={inputClass} />
+                <input value={localNextStep} onChange={e => setLocalNextStep(e.target.value)} onBlur={commitNextStep} placeholder="e.g. Send follow-up" className={inputClass} />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase">Due Date</label>
@@ -263,7 +333,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
               </div>
             </div>
             {prospect.nextStep && (
-              <button onClick={() => { handleUpdate("nextStep", ""); handleUpdate("nextStepDate", ""); toast("✅ Next step completed!"); }}
+              <button onClick={markNextStepComplete}
                 className="text-xs text-primary hover:underline inline-flex items-center gap-1">
                 <Check className="w-3 h-3" /> Mark complete
               </button>
@@ -326,7 +396,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activity Timeline</h3>
             <div className="flex gap-2">
               <select value={interactionType} onChange={e => setInteractionType(e.target.value)} className={cn(selectClass, "w-32 text-xs")}>
-                {INTERACTION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                {INTERACTION_TYPES.filter(t => t !== "Task Completed").map(t => <option key={t} value={t}>{t}</option>)}
               </select>
               <input value={interactionNotes} onChange={e => setInteractionNotes(e.target.value)} placeholder="What happened?" className={cn(inputClass, "flex-1 text-xs")} onKeyDown={e => e.key === "Enter" && logInteraction()} />
               <Button onClick={logInteraction} size="sm" className="text-xs">Log</Button>
@@ -338,11 +408,14 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
                   {[...(prospect.interactions || [])].reverse().map((i, idx) => (
                     <div key={i.id} className="flex items-start gap-2.5 relative animate-slide-in-right" style={{ animationDelay: `${idx * 40}ms` }}>
                       <div className={cn("w-7 h-7 rounded-full flex items-center justify-center shrink-0 z-10",
-                        i.type === "Email" ? "bg-primary/10 text-primary" : i.type === "Call" ? "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]" : "bg-secondary text-secondary-foreground"
+                        i.type === "Email" ? "bg-primary/10 text-primary" :
+                        i.type === "Call" ? "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]" :
+                        i.type === "Task Completed" ? "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]" :
+                        "bg-secondary text-secondary-foreground"
                       )}><InteractionIcon type={i.type} /></div>
                       <div>
                         <div className="flex items-center gap-2"><span className="text-xs font-semibold text-foreground">{i.type}</span><span className="text-[10px] text-muted-foreground">{relativeTime(i.date)}</span></div>
-                        <p className="text-xs text-muted-foreground mt-0.5">{i.notes}</p>
+                        {i.notes && <p className="text-xs text-muted-foreground mt-0.5">{i.notes}</p>}
                       </div>
                     </div>
                   ))}
