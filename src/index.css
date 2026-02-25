@@ -165,3 +165,59 @@
   opacity: 0.5;
   transform: rotate(2deg);
 }
+
+/* Command palette overlay */
+@keyframes cmd-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes cmd-slide-up {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.cmd-overlay {
+  animation: cmd-fade-in 0.15s ease-out;
+}
+.cmd-dialog {
+  animation: cmd-slide-up 0.2s ease-out;
+}
+
+/* Aging dots */
+.aging-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.aging-green { background-color: hsl(var(--success)); }
+.aging-yellow { background-color: hsl(var(--warning)); }
+.aging-red { background-color: hsl(var(--destructive)); }
+.aging-gray { background-color: hsl(var(--muted-foreground) / 0.4); }
+
+/* Pipeline bar segment */
+.pipeline-segment {
+  transition: flex 0.3s ease, opacity 0.15s ease;
+  cursor: pointer;
+}
+.pipeline-segment:hover {
+  opacity: 0.85;
+}
+
+/* Inline edit cell */
+.inline-edit-cell {
+  cursor: pointer;
+}
+.inline-edit-cell:hover {
+  background: hsl(var(--primary) / 0.04);
+  border-radius: 6px;
+}
+
+/* Overdue flag pulse */
+@keyframes overdue-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.overdue-flag {
+  animation: overdue-pulse 2s ease-in-out infinite;
+}

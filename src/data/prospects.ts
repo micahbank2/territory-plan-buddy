@@ -104,6 +104,8 @@ export interface Prospect {
   contacts: Contact[];
   interactions: InteractionLog[];
   createdAt?: string;
+  nextStep?: string;
+  nextStepDate?: string;
 }
 
 export type EnrichedProspect = Prospect & { ps: number };
