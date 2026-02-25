@@ -29,8 +29,8 @@ interface ProspectSheetProps {
 }
 
 const STAGE_EMOJI: Record<string, string> = {
-  "Not Started": "⬜", "Researching": "🔍", "Contacted": "📧", "Meeting Set": "📅",
-  "Proposal Sent": "📄", "Negotiating": "🤝", "Closed Won": "🏆", "Closed Lost": "❌", "On Hold": "⏸️",
+  "Not Started": "⬜", "Actively Prospecting": "🔍", "Meeting Booked": "📅",
+  "Closed Lost": "❌", "Closed Won": "🏆",
 };
 
 function relativeTime(dateStr: string): string {
@@ -87,7 +87,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
         setLocalCustomCompetitor("");
       }
     }
-  }, [prospect?.id]);
+  }, [prospect?.id, prospect?.nextStep, prospect?.locationCount, prospect?.competitor]);
 
   if (!prospect) return null;
 
@@ -165,6 +165,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
       nextStep: "",
       nextStepDate: "",
     });
+    setLocalNextStep("");
     toast.success("✅ Next step completed!");
   };
 
