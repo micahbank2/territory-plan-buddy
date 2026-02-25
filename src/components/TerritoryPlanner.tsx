@@ -384,6 +384,7 @@ export default function TerritoryPlanner() {
   const [savedViews, setSavedViews] = useState<SavedView[]>(loadViews);
   const [showSaveView, setShowSaveView] = useState(false);
   const [viewName, setViewName] = useState("");
+  const [activeViewId, setActiveViewId] = useState<string | null>(null);
 
   // Bulk delete confirm
   const [showBulkDelete, setShowBulkDelete] = useState(false);
@@ -607,7 +608,17 @@ export default function TerritoryPlanner() {
     setFLocRange(v.filters.fLocRange || [0, maxLocs]);
     setFOutreach(v.filters.fOutreach);
     setFPriority(v.filters.fPriority || []);
+    setActiveViewId(v.id);
     toast(`📂 Loaded "${v.name}"`);
+  };
+
+  const toggleView = (v: SavedView) => {
+    if (activeViewId === v.id) {
+      clr();
+      setActiveViewId(null);
+    } else {
+      loadView(v);
+    }
   };
 
   const deleteView = (id: string) => {
@@ -918,6 +929,7 @@ export default function TerritoryPlanner() {
                     </div>
                     <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Top Scored — Never Contacted</h3>
                   </div>
+                  <p className="text-[10px] text-muted-foreground mb-2">Highest-potential accounts you haven't reached out to yet.</p>
                   {homeCards.untouched.length === 0 ? (
                     <p className="text-xs text-muted-foreground">🎉 All prospects contacted!</p>
                   ) : (
@@ -945,6 +957,7 @@ export default function TerritoryPlanner() {
                     </div>
                     <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Stale Accounts (30+ days)</h3>
                   </div>
+                  <p className="text-[10px] text-muted-foreground mb-2">Accounts with no logged activity in the last 30 days.</p>
                   {homeCards.stale.length === 0 ? (
                     <p className="text-xs text-muted-foreground">💪 No stale accounts!</p>
                   ) : (
@@ -960,7 +973,7 @@ export default function TerritoryPlanner() {
                           <span className="text-[10px] text-muted-foreground">
                             {p.interactions?.length
                               ? relativeTime(p.interactions[p.interactions.length - 1].date)
-                              : "Never"}
+                              : "No activity yet"}
                           </span>
                         </button>
                       ))}
@@ -976,6 +989,7 @@ export default function TerritoryPlanner() {
                     </div>
                     <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Upcoming Tasks</h3>
                   </div>
+                  <p className="text-[10px] text-muted-foreground mb-2">Next steps and follow-ups sorted by due date.</p>
                   {homeCards.upcoming.length === 0 ? (
                     <p className="text-xs text-muted-foreground">📋 No upcoming tasks</p>
                   ) : (
@@ -1016,7 +1030,11 @@ export default function TerritoryPlanner() {
             <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Views:</span>
             {savedViews.map((v) => (
               <div key={v.id} className="flex items-center gap-1 group">
-                <button onClick={() => loadView(v)} className="px-3 py-1 text-xs rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/15 transition-all font-medium glow-blue">
+                <button onClick={() => toggleView(v)} className={cn("px-3 py-1 text-xs rounded-full border transition-all font-medium",
+                  activeViewId === v.id
+                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                    : "border-primary/30 bg-primary/5 text-primary hover:bg-primary/15 glow-blue"
+                )}>
                   {v.name}
                 </button>
                 <button onClick={() => deleteView(v.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded-full hover:bg-destructive/10">
