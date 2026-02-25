@@ -1,36 +1,42 @@
 
-# Saved Views UX + Action Items Descriptions
 
-## 1. Saved Views: Deselect Without Deleting
+# Industries Alphabetized, Outreach Stages Updated, Next Step Fix
 
-**Problem**: The only way to dismiss a saved view is the red X which permanently deletes it. Users need to click a view to apply it, then click it again (or click elsewhere) to deselect it without losing it.
+## 1. Alphabetize Industries Dropdown
 
-**Fix** in `TerritoryPlanner.tsx`:
-- Track which saved view is currently active: add `const [activeViewId, setActiveViewId] = useState<string | null>(null)`
-- When a saved view button is clicked:
-  - If it's already active (`activeViewId === v.id`), **deselect** it: call `clr()` to reset filters and set `activeViewId` to `null`
-  - If it's not active, **apply** it: call `loadView(v)` and set `activeViewId` to `v.id`
-- Style the active view pill with a highlighted/selected appearance (e.g., `bg-primary text-primary-foreground` instead of `bg-primary/5 text-primary`)
-- Keep the red X for permanent deletion, but move it behind a right-click or long-press, or keep it as-is since it only shows on hover -- this is fine as long as toggling works
+Sort the `INDUSTRIES` array in `src/data/prospects.ts` alphabetically, keeping "Other" at the end.
 
-## 2. "Never" Label in Stale Accounts
+## 2. Replace Outreach Stages
 
-**Problem**: Line 963 shows `"Never"` for prospects with no interactions. This is confusing in the stale accounts context.
+Replace the current `STAGES` array in `src/data/prospects.ts` with:
+- "Not Started"
+- "Actively Prospecting"
+- "Meeting Booked"
+- "Closed Lost"
+- "Closed Won"
 
-**Fix**: Change `"Never"` to `"No activity yet"` on line 963. This is clearer about what it means.
+Update `STAGE_COLORS` and `STAGE_EMOJI` in `TerritoryPlanner.tsx` to match the new stage names. Remove old entries (Researching, Contacted, Meeting Set, Proposal Sent, Negotiating, On Hold).
 
-## 3. Add Description Text Under Action Item Cards
+Update scoring in `scoreBreakdown()` and `scoreProspect()` in `prospects.ts`:
+- Old: "Meeting Set" / "Proposal Sent" gave +15, "Contacted" gave +5
+- New: "Meeting Booked" gives +15, "Actively Prospecting" gives +5
 
-Add a small helper sentence under each card's title so users immediately understand what each section means:
+## 3. Fix Next Step "Logging" Experience
 
-- **Top Scored -- Never Contacted**: Add `"Highest-potential accounts you haven't reached out to yet."` as a subtitle below the heading
-- **Stale Accounts (30+ days)**: Add `"Accounts with no logged activity in the last 30 days."` as a subtitle below the heading
-- **Upcoming Tasks** (if it exists): Add `"Next steps and follow-ups sorted by due date."` as a subtitle
+The problem: when you mark a next step complete in the sidebar panel (`ProspectSheet.tsx`), the local state `localNextStep` doesn't clear because the `useEffect` sync only runs on `prospect?.id` change, not on field changes. Also, the user wants to be able to "log" a next step and immediately start entering another one.
 
-Each subtitle will be a `<p>` tag with `text-[10px] text-muted-foreground mb-2` styling, placed right after the heading `div`.
+Fix in `ProspectSheet.tsx`:
+- Add `setLocalNextStep("")` to `markNextStepComplete()` (ProspectPage already has this)
+- Change the `useEffect` dependency from `[prospect?.id]` to `[prospect?.id, prospect?.nextStep, prospect?.locationCount, prospect?.competitor]` so local state re-syncs when the underlying data changes after a complete action
+
+Same dependency fix in `ProspectPage.tsx` for consistency.
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/TerritoryPlanner.tsx` | Add `activeViewId` state, toggle logic on saved view click, active styling, change "Never" to "No activity yet", add description text under all 3 action item card headings |
+| `src/data/prospects.ts` | Alphabetize INDUSTRIES, replace STAGES with 5 new values, update scoring for new stage names |
+| `src/components/TerritoryPlanner.tsx` | Update STAGE_COLORS and STAGE_EMOJI maps to match new stages |
+| `src/components/ProspectSheet.tsx` | Add `setLocalNextStep("")` in markNextStepComplete, expand useEffect deps |
+| `src/pages/ProspectPage.tsx` | Expand useEffect deps for consistency |
+
