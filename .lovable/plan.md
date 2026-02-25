@@ -1,35 +1,36 @@
 
 
-# Restore All 303 Prospects from CSV
+# Location Range Slider + Drag-and-Drop Logo Upload
 
-## Problem
-The `RAW_SEED` array in `src/data/prospects.ts` currently only has 120 entries (IDs 1-120). The remaining 183 entries (IDs 121-303) were lost during a previous edit. Your Lovable preview shows 303 because it reads stale localStorage data, but the live/published version seeds from the truncated array.
+## 1. Location Count Range Slider
 
-## Solution
-Append the missing 183 prospect entries (IDs 121-303) to the `RAW_SEED` array in `src/data/prospects.ts`, parsed directly from your uploaded CSV. Each entry will include `id`, `name`, `website`, `transitionOwner`, `status`, and where available: `locationCount`, `industry`, and `locationNotes`.
+Replace the text-based "min locations" filter with a dual-handle range slider for more intuitive filtering.
 
-Notable prospects being restored include:
-- Whole Foods Market Canada (500 locations)
-- Shake Shack (420+ locations)
-- Piggly Wiggly (493 stores)
-- Key Food Stores (450 stores)
-- Petro Canada (1,500+ stations)
-- Wind Hotels / Wyndham (9,100+ hotels)
-- Office Depot (810 stores)
-- PODS Moving & Storage (230+ centers)
-- And 175 more
+### Changes in `src/components/TerritoryPlanner.tsx`:
+- Replace `fMinLocs: string` state with `fLocRange: [number, number]` initialized to `[0, maxLocs]`
+- Compute `maxLocs` from the dataset (highest `locationCount` across all prospects)
+- Add a "Locations" filter button that opens a Popover containing a dual-thumb Radix Slider
+- Slider shows live min/max labels with comma-formatted numbers (e.g., "1,500")
+- Step size of 10, with "Reset" link inside the popover
+- Update all references: `clr()`, `hasFilters`, `handleSaveView()`, `loadView()`, `SavedView` type, and the stat pill click handlers (50+, 100+, 500+ Locs set the lower bound accordingly)
+- Filter logic changes from `>= parseInt(fMinLocs)` to `>= fLocRange[0] && <= fLocRange[1]`
 
-## Industry Mapping
-Some CSV industries don't match the existing `INDUSTRIES` array. These will be mapped to the closest match or "Other":
-- "Convenience Store/Gas" -> "Gas Stations"
-- "Grocery/Supermarket" -> "Grocery"
-- "Childcare/Education Franchise" -> "Daycare/Tutoring"
-- "Fast Casual/Bakery-Cafe" -> "QSR/Fast Casual"
-- Niche categories (Video Rental, Attractions/Zoo, etc.) -> "Other"
+## 2. Drag-and-Drop Logo Upload
+
+Upgrade the `LogoImg` component from a file-picker button to a drag-and-drop zone.
+
+### Changes in `src/components/TerritoryPlanner.tsx` (LogoImg component):
+- Add `onDragOver` and `onDrop` event handlers to the logo container divs
+- When a file is dragged over, show a visual highlight (border glow / overlay)
+- On drop, read the file as base64 and call `onUpload`
+- Keep the click-to-browse as a secondary option (the hidden file input stays)
+- The fallback state (Building2 icon) shows "Drop logo here" text on drag-over
+- Works in both the list view and the ProspectPage detail view
+
+### Changes in `src/pages/ProspectPage.tsx`:
+- Same drag-and-drop upgrade for the larger logo on the detail page header
 
 ## Files to modify
-1. **`src/data/prospects.ts`** -- Add 183 entries to the `RAW_SEED` array (IDs 121-303)
-
-## Additional: Bump Storage Key
-Change `STORAGE_KEY` from `"tp-data-v4"` to `"tp-data-v5"` so that both the preview and live version re-seed from the now-complete array, ensuring all 303 prospects appear everywhere.
+1. `src/components/TerritoryPlanner.tsx` -- Range slider filter + drag-and-drop on LogoImg
+2. `src/pages/ProspectPage.tsx` -- Drag-and-drop on detail page logo
 
