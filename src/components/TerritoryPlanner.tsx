@@ -8,6 +8,7 @@ import {
   scoreProspect,
   getLogoUrl,
   stringSimilarity,
+  getScoreLabel,
   type Prospect,
   type EnrichedProspect,
 } from "@/data/prospects";
@@ -37,6 +38,10 @@ import {
   FileSearch,
   BarChart3,
   GitCompare,
+  Upload,
+  Zap,
+  ChevronDown,
+  ChevronUp as ChevronUpIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -60,6 +65,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Command as CmdK, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // --- Saved Views ---
 const VIEWS_KEY = "tp-saved-views";
@@ -120,25 +127,117 @@ const STAGE_COLORS: Record<string, string> = {
   "On Hold": "hsl(220, 14%, 50%)",
 };
 
-// --- Logo component using Google favicons ---
-function LogoImg({ website, size = 24 }: { website?: string; size?: number }) {
+// --- Logo component with upload support ---
+function LogoImg({
+  website,
+  size = 24,
+  customLogo,
+  onUpload,
+  onRemove,
+}: {
+  website?: string;
+  size?: number;
+  customLogo?: string;
+  onUpload?: (base64: string) => void;
+  onRemove?: () => void;
+}) {
   const [err, setErr] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const url = getLogoUrl(website, size >= 32 ? 64 : 32);
-  if (!website || err || !url) {
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !onUpload) return;
+    const reader = new FileReader();
+    reader.onload = () => onUpload(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  // Custom logo takes priority
+  if (customLogo) {
     return (
-      <div className="rounded-md bg-muted flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
-        <Building2 className="text-muted-foreground" style={{ width: size * 0.5, height: size * 0.5 }} />
+      <div className="relative group shrink-0" style={{ width: size, height: size }}>
+        <img src={customLogo} alt="" className="rounded-md bg-muted object-contain w-full h-full" />
+        {onRemove && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+            className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <X className="w-2.5 h-2.5" />
+          </button>
+        )}
       </div>
     );
   }
+
+  const showFallback = !website || err || !url;
+
+  if (showFallback) {
+    return (
+      <div className="relative group shrink-0" style={{ width: size, height: size }}>
+        <div className="rounded-md bg-muted flex items-center justify-center w-full h-full">
+          <Building2 className="text-muted-foreground" style={{ width: size * 0.5, height: size * 0.5 }} />
+        </div>
+        {onUpload && (
+          <>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+            <button
+              onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
+              className="absolute inset-0 rounded-md bg-primary/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Upload logo"
+            >
+              <Upload className="w-3 h-3 text-primary" />
+            </button>
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <img
-      src={url}
-      alt=""
-      className="rounded-md shrink-0 bg-muted object-contain"
-      style={{ width: size, height: size }}
-      onError={() => setErr(true)}
-    />
+    <div className="relative group shrink-0" style={{ width: size, height: size }}>
+      <img
+        src={url}
+        alt=""
+        className="rounded-md bg-muted object-contain w-full h-full"
+        onError={() => setErr(true)}
+      />
+      {onUpload && (
+        <>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+          <button
+            onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
+            className="absolute inset-0 rounded-md bg-primary/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Upload custom logo"
+          >
+            <Upload className="w-3 h-3 text-primary" />
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// --- Score Badge ---
+function ScoreBadge({ score, compact = false }: { score: number; compact?: boolean }) {
+  const info = getScoreLabel(score);
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: info.color }} />
+            <span className="font-bold text-foreground">{score}</span>
+            {!compact && <span className="text-[10px] font-semibold" style={{ color: info.color }}>{info.short}</span>}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="text-xs">
+          <p className="font-bold">{info.label} ({score} pts)</p>
+          <p className="text-muted-foreground mt-0.5">60+ Excellent · 40-59 Strong · 20-39 Moderate · 1-19 Low · ≤0 Needs Work</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
@@ -157,6 +256,19 @@ function SkeletonRows({ count = 8 }: { count?: number }) {
       ))}
     </>
   );
+}
+
+// --- Relative time ---
+function relativeTime(dateStr: string): string {
+  const now = new Date();
+  const then = new Date(dateStr);
+  const diffMs = now.getTime() - then.getTime();
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "yesterday";
+  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+  return `${Math.floor(diffDays / 30)}mo ago`;
 }
 
 const PAGE_SIZE = 25;
@@ -208,6 +320,9 @@ export default function TerritoryPlanner() {
 
   // Comparison view
   const [showCompare, setShowCompare] = useState(false);
+
+  // Home page cards collapsed state
+  const [cardsOpen, setCardsOpen] = useState(true);
 
   // Keyboard shortcut for Cmd+K → command palette
   useEffect(() => {
@@ -274,6 +389,26 @@ export default function TerritoryPlanner() {
     })).filter((s) => s.count > 0);
   }, [data]);
   const pipelineTotal = data.length;
+
+  // Stale + top scored for home cards
+  const homeCards = useMemo(() => {
+    const now = new Date();
+    const untouched = data
+      .filter((p) => !p.interactions || p.interactions.length === 0)
+      .map((p) => ({ ...p, score: scoreProspect(p) }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+    const stale = data
+      .filter((p) => {
+        if (!p.interactions?.length) return true;
+        const latest = Math.max(...p.interactions.map((i) => new Date(i.date).getTime()));
+        return now.getTime() - latest > 30 * 86400000;
+      })
+      .map((p) => ({ ...p, score: scoreProspect(p) }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+    return { untouched, stale };
+  }, [data]);
 
   const stats = useMemo(() => {
     const wl = data.filter((p) => p.locationCount && p.locationCount > 0);
@@ -403,6 +538,17 @@ export default function TerritoryPlanner() {
     toast.success("Updated");
   };
 
+  // --- Logo upload ---
+  const handleLogoUpload = (id: number, base64: string) => {
+    update(id, { customLogo: base64 });
+    toast.success("Logo uploaded");
+  };
+
+  const handleLogoRemove = (id: number) => {
+    update(id, { customLogo: undefined });
+    toast.success("Logo removed");
+  };
+
   // --- Kanban ---
   const [dragId, setDragId] = useState<number | null>(null);
   const kanbanStages = STAGES;
@@ -513,7 +659,7 @@ export default function TerritoryPlanner() {
                 <CommandGroup heading="Prospects">
                   {data.slice(0, 20).map((p) => (
                     <CommandItem key={p.id} onSelect={() => { setCmdOpen(false); navigate(`/prospect/${p.id}`); }}>
-                      <LogoImg website={p.website} size={16} />
+                      <LogoImg website={p.website} size={16} customLogo={p.customLogo} />
                       <span className="ml-2">{p.name}</span>
                       {p.industry && <span className="ml-auto text-xs text-muted-foreground">{p.industry}</span>}
                     </CommandItem>
@@ -620,6 +766,76 @@ export default function TerritoryPlanner() {
           ))}
         </div>
 
+        {/* Stale + Top Scored Home Cards */}
+        {(homeCards.untouched.length > 0 || homeCards.stale.length > 0) && (
+          <Collapsible open={cardsOpen} onOpenChange={setCardsOpen} className="mb-6">
+            <CollapsibleTrigger asChild>
+              <button className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-3">
+                {cardsOpen ? <ChevronUpIcon className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                Action Items
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in-up">
+                {/* Top Scored Never Contacted */}
+                <div className="bg-card rounded-xl border border-border p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Zap className="w-4 h-4 text-[hsl(var(--warning))]" />
+                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Top Scored — Never Contacted</h3>
+                  </div>
+                  {homeCards.untouched.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">All prospects contacted 🎉</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {homeCards.untouched.map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => navigate(`/prospect/${p.id}`)}
+                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                        >
+                          <LogoImg website={p.website} size={20} customLogo={p.customLogo} />
+                          <span className="text-xs font-medium text-foreground truncate flex-1">{p.name}</span>
+                          <ScoreBadge score={p.score} compact />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Stale Accounts */}
+                <div className="bg-card rounded-xl border border-border p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AlertTriangle className="w-4 h-4 text-destructive" />
+                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Stale Accounts (30+ days)</h3>
+                  </div>
+                  {homeCards.stale.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No stale accounts 💪</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {homeCards.stale.map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => navigate(`/prospect/${p.id}`)}
+                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                        >
+                          <LogoImg website={p.website} size={20} customLogo={p.customLogo} />
+                          <span className="text-xs font-medium text-foreground truncate flex-1">{p.name}</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {p.interactions?.length
+                              ? relativeTime(p.interactions[p.interactions.length - 1].date)
+                              : "Never"}
+                          </span>
+                          <ScoreBadge score={p.score} compact />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
         {/* Saved Views */}
         {savedViews.length > 0 && (
           <div className="flex items-center gap-2 mb-4 flex-wrap">
@@ -712,7 +928,7 @@ export default function TerritoryPlanner() {
                     ["locationCount", "Locations", "w-28"],
                     ["industry", "Industry", "w-28"],
                     ["outreach", "Outreach", "w-32"],
-                    ["ps", "Priority", "w-24"],
+                    ["ps", "Score", "w-28"],
                     ["tier", "Tier", "w-24"],
                     ["lastTouched", "Last Touched", "w-32"],
                   ] as [string, string, string][]).map(([k, l, w]) => (
@@ -741,7 +957,13 @@ export default function TerritoryPlanner() {
                     <td className="px-5 py-4" onClick={() => navigate(`/prospect/${p.id}`)}>
                       <div className="flex items-center gap-3 flex-wrap">
                         <span className={cn("aging-dot", getAgingClass(p.interactions))} title={getAgingLabel(p.interactions)} />
-                        <LogoImg website={p.website} size={28} />
+                        <LogoImg
+                          website={p.website}
+                          size={28}
+                          customLogo={p.customLogo}
+                          onUpload={(b64) => handleLogoUpload(p.id, b64)}
+                          onRemove={p.customLogo ? () => handleLogoRemove(p.id) : undefined}
+                        />
                         <span className="font-semibold text-foreground group-hover:text-primary transition-colors">{p.name}</span>
                         {p.website && (
                           <a href={`https://${p.website}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-primary transition-colors">
@@ -756,8 +978,15 @@ export default function TerritoryPlanner() {
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 mt-1.5">
-                        <span className={cn("inline-flex px-2 py-0.5 text-[11px] font-semibold rounded-md", p.status === "Churned" ? "bg-destructive/10 text-destructive" : "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]")}>{p.status}</span>
-                        {p.competitor && <span className="inline-flex px-2 py-0.5 text-[11px] font-semibold rounded-md bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))]">w/ {p.competitor}</span>}
+                        <span className={cn(
+                          "inline-flex px-2.5 py-1 text-xs font-bold rounded-lg",
+                          p.status === "Churned" ? "bg-destructive/15 text-destructive" : "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]"
+                        )}>{p.status}</span>
+                        {p.competitor && (
+                          <span className="inline-flex px-2.5 py-1 text-xs font-bold rounded-lg bg-[hsl(var(--warning))]/15 text-[hsl(var(--warning))]">
+                            w/ {p.competitor}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-5 py-4 text-muted-foreground" onClick={() => navigate(`/prospect/${p.id}`)}>{p.locationCount || "—"}</td>
@@ -784,7 +1013,10 @@ export default function TerritoryPlanner() {
                         </span>
                       )}
                     </td>
-                    <td className="px-5 py-4 font-semibold text-foreground" onClick={() => navigate(`/prospect/${p.id}`)}>{p.ps}</td>
+                    {/* Score with context */}
+                    <td className="px-5 py-4" onClick={() => navigate(`/prospect/${p.id}`)}>
+                      <ScoreBadge score={p.ps} />
+                    </td>
                     {/* Inline editable: Tier */}
                     <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
                       {editingCell?.id === p.id && editingCell?.field === "tier" ? (
@@ -800,7 +1032,7 @@ export default function TerritoryPlanner() {
                       ) : (
                         <span
                           className={cn(
-                            "inline-edit-cell px-2 py-0.5 text-[11px] font-medium rounded-md",
+                            "inline-edit-cell px-2.5 py-1 text-xs font-bold rounded-lg",
                             p.tier === "Tier 1" ? "bg-primary/10 text-primary" : p.tier === "Tier 2" ? "bg-secondary text-secondary-foreground" : "text-muted-foreground"
                           )}
                           onDoubleClick={() => setEditingCell({ id: p.id, field: "tier" })}
@@ -862,14 +1094,14 @@ export default function TerritoryPlanner() {
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <GripVertical className="w-3 h-3 text-muted-foreground/40 shrink-0" />
-                          <LogoImg website={p.website} size={20} />
+                          <LogoImg website={p.website} size={20} customLogo={p.customLogo} />
                           <span className="text-xs font-semibold text-foreground truncate">{p.name}</span>
                           <span className={cn("aging-dot ml-auto", getAgingClass(p.interactions))} title={getAgingLabel(p.interactions)} />
                         </div>
                         <div className="flex items-center gap-1.5 ml-5">
-                          {p.tier && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">{p.tier}</span>}
+                          {p.tier && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold">{p.tier}</span>}
                           <span className="text-[10px] text-muted-foreground">{p.locationCount ? `${p.locationCount} locs` : ""}</span>
-                          <span className="text-[10px] font-bold text-foreground ml-auto">{p.ps}</span>
+                          <span className="ml-auto"><ScoreBadge score={p.ps} compact /></span>
                         </div>
                       </div>
                     ))}

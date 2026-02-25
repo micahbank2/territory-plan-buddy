@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProspects } from "@/hooks/useProspects";
-import { scoreProspect, STAGES, type Prospect } from "@/data/prospects";
+import { scoreProspect, getScoreLabel, STAGES, type Prospect } from "@/data/prospects";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, TrendingUp, Users, MessageSquare, Zap, AlertTriangle, BarChart3 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
@@ -217,19 +217,26 @@ export default function InsightsPage() {
               <p className="text-xs text-muted-foreground">All prospects have been contacted. 🎉</p>
             ) : (
               <div className="space-y-2">
-                {insights.untouched.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => navigate(`/prospect/${p.id}`)}
-                    className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/50 transition-colors text-left"
-                  >
-                    <div>
-                      <div className="text-xs font-semibold text-foreground">{p.name}</div>
-                      <div className="text-[10px] text-muted-foreground">{p.industry || "No industry"} · {p.locationCount || 0} locs</div>
-                    </div>
-                    <span className="text-sm font-bold text-primary">{p.score}</span>
-                  </button>
-                ))}
+                {insights.untouched.map((p) => {
+                  const info = getScoreLabel(p.score);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => navigate(`/prospect/${p.id}`)}
+                      className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                    >
+                      <div>
+                        <div className="text-xs font-semibold text-foreground">{p.name}</div>
+                        <div className="text-[10px] text-muted-foreground">{p.industry || "No industry"} · {p.locationCount || 0} locs</div>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: info.color }} />
+                        <span className="text-sm font-bold" style={{ color: info.color }}>{p.score}</span>
+                        <span className="text-[10px] font-semibold" style={{ color: info.color }}>{info.short}</span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -244,23 +251,30 @@ export default function InsightsPage() {
               <p className="text-xs text-muted-foreground">No stale accounts. Keep it up! 💪</p>
             ) : (
               <div className="space-y-2">
-                {insights.stale.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => navigate(`/prospect/${p.id}`)}
-                    className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/50 transition-colors text-left"
-                  >
-                    <div>
-                      <div className="text-xs font-semibold text-foreground">{p.name}</div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {p.interactions?.length
-                          ? `Last: ${relativeTime(p.interactions[p.interactions.length - 1].date)}`
-                          : "Never contacted"}
+                {insights.stale.map((p) => {
+                  const info = getScoreLabel(p.score);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => navigate(`/prospect/${p.id}`)}
+                      className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                    >
+                      <div>
+                        <div className="text-xs font-semibold text-foreground">{p.name}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {p.interactions?.length
+                            ? `Last: ${relativeTime(p.interactions[p.interactions.length - 1].date)}`
+                            : "Never contacted"}
+                        </div>
                       </div>
-                    </div>
-                    <span className="text-sm font-bold text-foreground">{p.score}</span>
-                  </button>
-                ))}
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: info.color }} />
+                        <span className="text-sm font-bold" style={{ color: info.color }}>{p.score}</span>
+                        <span className="text-[10px] font-semibold" style={{ color: info.color }}>{info.short}</span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
