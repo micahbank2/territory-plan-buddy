@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useProspects } from "@/hooks/useProspects";
 import { format } from "date-fns";
@@ -10,6 +10,8 @@ import {
   COMPETITORS,
   INTERACTION_TYPES,
   scoreProspect,
+  scoreBreakdown,
+  getScoreLabel,
   getLogoUrl,
   type Contact,
   type InteractionLog,
@@ -33,6 +35,7 @@ import {
   Clock,
   CalendarIcon,
   Target,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -48,26 +51,91 @@ import {
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-// --- Logo using Google favicons ---
-function LogoImg({ website, size = 32 }: { website?: string; size?: number }) {
+// --- Logo with upload ---
+function LogoImg({
+  website,
+  size = 32,
+  customLogo,
+  onUpload,
+  onRemove,
+}: {
+  website?: string;
+  size?: number;
+  customLogo?: string;
+  onUpload?: (base64: string) => void;
+  onRemove?: () => void;
+}) {
   const [err, setErr] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const url = getLogoUrl(website, size >= 32 ? 64 : 32);
-  if (!website || err || !url) {
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !onUpload) return;
+    const reader = new FileReader();
+    reader.onload = () => onUpload(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  if (customLogo) {
     return (
-      <div className="rounded-lg bg-muted flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
-        <Building2 className="text-muted-foreground" style={{ width: size * 0.5, height: size * 0.5 }} />
+      <div className="relative group shrink-0" style={{ width: size, height: size }}>
+        <img src={customLogo} alt="" className="rounded-lg bg-muted object-contain w-full h-full" />
+        {onRemove && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+            className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <X className="w-2.5 h-2.5" />
+          </button>
+        )}
       </div>
     );
   }
+
+  const showFallback = !website || err || !url;
+
+  if (showFallback) {
+    return (
+      <div className="relative group shrink-0" style={{ width: size, height: size }}>
+        <div className="rounded-lg bg-muted flex items-center justify-center w-full h-full">
+          <Building2 className="text-muted-foreground" style={{ width: size * 0.5, height: size * 0.5 }} />
+        </div>
+        {onUpload && (
+          <>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+            <button
+              onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
+              className="absolute inset-0 rounded-lg bg-primary/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Upload logo"
+            >
+              <Upload className="w-4 h-4 text-primary" />
+            </button>
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <img
-      src={url}
-      alt=""
-      className="rounded-lg shrink-0 bg-muted object-contain"
-      style={{ width: size, height: size }}
-      onError={() => setErr(true)}
-    />
+    <div className="relative group shrink-0" style={{ width: size, height: size }}>
+      <img src={url} alt="" className="rounded-lg bg-muted object-contain w-full h-full" onError={() => setErr(true)} />
+      {onUpload && (
+        <>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+          <button
+            onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
+            className="absolute inset-0 rounded-lg bg-primary/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Upload custom logo"
+          >
+            <Upload className="w-4 h-4 text-primary" />
+          </button>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -203,6 +271,8 @@ export default function ProspectPage() {
   if (!prospect) return <div className="flex items-center justify-center h-screen text-muted-foreground">Prospect not found</div>;
 
   const score = scoreProspect(prospect);
+  const breakdown = scoreBreakdown(prospect);
+  const scoreInfo = getScoreLabel(score);
 
   const handleUpdate = (field: string, value: any) => {
     update(prospect.id, { [field]: value });
@@ -286,27 +356,33 @@ export default function ProspectPage() {
           <button onClick={() => navigate("/")} className="p-1.5 rounded-md hover:bg-muted transition-colors">
             <ArrowLeft className="w-4 h-4 text-muted-foreground" />
           </button>
-          <LogoImg website={prospect.website} size={40} />
+          <LogoImg
+            website={prospect.website}
+            size={40}
+            customLogo={prospect.customLogo}
+            onUpload={(b64) => { update(prospect.id, { customLogo: b64 }); toast.success("Logo uploaded"); }}
+            onRemove={prospect.customLogo ? () => { update(prospect.id, { customLogo: undefined }); toast.success("Logo removed"); } : undefined}
+          />
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-lg font-bold text-foreground">{prospect.name}</h1>
               <span className={cn(
-                "px-2 py-0.5 text-xs font-bold rounded-md uppercase",
+                "px-3 py-1 text-sm font-bold rounded-lg uppercase",
                 prospect.status === "Churned"
-                  ? "bg-destructive/10 text-destructive"
-                  : "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]"
+                  ? "bg-destructive/15 text-destructive"
+                  : "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]"
               )}>
                 {prospect.status}
               </span>
               {prospect.competitor && (
-                <span className="px-2 py-0.5 text-xs font-bold rounded-md bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))]">
+                <span className="px-3 py-1 text-sm font-bold rounded-lg bg-[hsl(var(--warning))]/15 text-[hsl(var(--warning))]">
                   Now w/ {prospect.competitor}
                 </span>
               )}
               {prospect.tier && (
                 <span className={cn(
-                  "px-2 py-0.5 text-xs font-semibold rounded-md",
-                  prospect.tier === "Tier 1" ? "bg-primary/10 text-primary" :
+                  "px-3 py-1 text-sm font-bold rounded-lg",
+                  prospect.tier === "Tier 1" ? "bg-primary/15 text-primary" :
                   prospect.tier === "Tier 2" ? "bg-secondary text-secondary-foreground" :
                   "bg-muted text-muted-foreground"
                 )}>
@@ -323,15 +399,37 @@ export default function ProspectPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="text-center px-4">
-            <div className="text-[10px] text-muted-foreground uppercase">Score</div>
-            <div className={cn(
-              "text-2xl font-black animate-count-up",
-              score >= 40 ? "text-[hsl(var(--success))]" : score >= 20 ? "text-primary" : "text-muted-foreground"
-            )}>
-              {score}
-            </div>
-          </div>
+          {/* Score with breakdown tooltip */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="text-center px-4 cursor-help">
+                  <div className="text-[10px] text-muted-foreground uppercase">Score</div>
+                  <div className="text-2xl font-black animate-count-up" style={{ color: scoreInfo.color }}>
+                    {score}
+                  </div>
+                  <div className="text-[10px] font-bold" style={{ color: scoreInfo.color }}>{scoreInfo.label}</div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                <p className="font-bold text-xs mb-2">Score Breakdown</p>
+                {breakdown.length === 0 ? (
+                  <p className="text-[10px] text-muted-foreground">No scoring factors</p>
+                ) : (
+                  <div className="space-y-1">
+                    {breakdown.map((item, i) => (
+                      <div key={i} className="flex justify-between text-[11px] gap-4">
+                        <span className="text-muted-foreground">{item.label}</span>
+                        <span className={cn("font-bold", item.value >= 0 ? "text-[hsl(var(--success))]" : "text-destructive")}>
+                          {item.value > 0 ? "+" : ""}{item.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <button
             onClick={() => setShowDeleteDialog(true)}
             className="p-2 rounded-md text-destructive hover:bg-destructive/5 transition-colors delete-glow"

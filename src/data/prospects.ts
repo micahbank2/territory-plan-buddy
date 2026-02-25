@@ -106,6 +106,41 @@ export interface Prospect {
   createdAt?: string;
   nextStep?: string;
   nextStepDate?: string;
+  customLogo?: string;
+}
+
+// --- Score helpers ---
+export interface ScoreBreakdownItem {
+  label: string;
+  value: number;
+}
+
+export function scoreBreakdown(p: Prospect): ScoreBreakdownItem[] {
+  const items: ScoreBreakdownItem[] = [];
+  const lc = p.locationCount || 0;
+  if (lc >= 500) items.push({ label: "500+ locations", value: 40 });
+  else if (lc >= 100) items.push({ label: "100+ locations", value: 30 });
+  else if (lc >= 50) items.push({ label: "50+ locations", value: 20 });
+  else if (lc > 0) items.push({ label: "Has locations", value: 10 });
+  if (["QSR/Fast Casual","Grocery","Casual Dining","Gas Stations","Hospitality/Hotels","Healthcare","Car Wash Chain"].includes(p.industry))
+    items.push({ label: `${p.industry} industry`, value: 20 });
+  if (p.outreach === "Meeting Set" || p.outreach === "Proposal Sent") items.push({ label: `Outreach: ${p.outreach}`, value: 15 });
+  else if (p.outreach === "Contacted") items.push({ label: "Outreach: Contacted", value: 5 });
+  if (p.priority === "Hot") items.push({ label: "Hot priority", value: 25 });
+  else if (p.priority === "Warm") items.push({ label: "Warm priority", value: 10 });
+  else if (p.priority === "Dead") items.push({ label: "Dead priority", value: -30 });
+  if (p.status === "Churned") items.push({ label: "Churned status", value: -10 });
+  if (lc === 0 && p.locationNotes && p.locationNotes.includes("CLOSED"))
+    items.push({ label: "Closed locations", value: -50 });
+  return items;
+}
+
+export function getScoreLabel(score: number): { label: string; short: string; color: string } {
+  if (score >= 60) return { label: "Excellent", short: "A+", color: "hsl(152, 60%, 38%)" };
+  if (score >= 40) return { label: "Strong", short: "A", color: "hsl(152, 50%, 45%)" };
+  if (score >= 20) return { label: "Moderate", short: "B", color: "hsl(220, 80%, 55%)" };
+  if (score >= 1) return { label: "Low", short: "C", color: "hsl(220, 14%, 55%)" };
+  return { label: "Needs Work", short: "D", color: "hsl(0, 72%, 51%)" };
 }
 
 export type EnrichedProspect = Prospect & { ps: number };
