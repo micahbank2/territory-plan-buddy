@@ -613,7 +613,6 @@ export default function ProspectPage() {
                   <input
                     value={localNextStep}
                     onChange={(e) => setLocalNextStep(e.target.value)}
-                    onBlur={commitNextStep}
                     placeholder="e.g. Send follow-up email"
                     className={inputClass}
                   />
@@ -638,14 +637,22 @@ export default function ProspectPage() {
                   </Popover>
                 </Field>
               </div>
-              {prospect.nextStep && (
-                <button
-                  onClick={markNextStepComplete}
-                  className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-                >
-                  <Check className="w-3 h-3" /> Mark complete
-                </button>
-              )}
+              <div className="flex items-center gap-3">
+                {localNextStep && localNextStep !== (prospect.nextStep || "") && (
+                  <button onClick={() => { commitNextStep(); toast.success("✅ Next step saved!"); }}
+                    className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 font-medium">
+                    <Plus className="w-3 h-3" /> Save Next Step
+                  </button>
+                )}
+                {prospect.nextStep && (
+                  <button
+                    onClick={markNextStepComplete}
+                    className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                  >
+                    <Check className="w-3 h-3" /> Mark complete
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Notes */}

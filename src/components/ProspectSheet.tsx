@@ -315,7 +315,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase">Action</label>
-                <input value={localNextStep} onChange={e => setLocalNextStep(e.target.value)} onBlur={commitNextStep} placeholder="e.g. Send follow-up" className={inputClass} />
+                <input value={localNextStep} onChange={e => setLocalNextStep(e.target.value)} placeholder="e.g. Send follow-up" className={inputClass} />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase">Due Date</label>
@@ -333,12 +333,20 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
                 </Popover>
               </div>
             </div>
-            {prospect.nextStep && (
-              <button onClick={markNextStepComplete}
-                className="text-xs text-primary hover:underline inline-flex items-center gap-1">
-                <Check className="w-3 h-3" /> Mark complete
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {localNextStep && localNextStep !== (prospect.nextStep || "") && (
+                <button onClick={() => { commitNextStep(); toast.success("✅ Next step saved!"); }}
+                  className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 font-medium">
+                  <Plus className="w-3 h-3" /> Save Next Step
+                </button>
+              )}
+              {prospect.nextStep && (
+                <button onClick={markNextStepComplete}
+                  className="text-xs text-primary hover:underline inline-flex items-center gap-1">
+                  <Check className="w-3 h-3" /> Mark complete
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Notes */}
