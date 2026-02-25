@@ -1,143 +1,80 @@
 
-# Make It Pop: Animations, Slide-Over Panel, Dark Theme Refinement, Emojis & Toasts
+# Polish Pass: Yext Logos, Light Mode Fix, Score Tooltips, UI Refinements
 
-## 1. Prospect Slide-Over Panel (Airtable-style)
+## 1. Add Yext Logo Assets
 
-Instead of navigating to a new page when clicking a prospect, open a **right-side slide-over panel** that overlays the list view. The user stays on the main page, can edit fields, and close it to return to the list.
+Copy both uploaded Yext logo files into the project:
+- `user-uploads://Yext_Logo_Black-8000x8000-64f762d_1.jpg` to `src/assets/yext-logo-black.jpg`
+- `user-uploads://Yext_Logo_White-8000x8000-64f762d_1.jpg` to `src/assets/yext-logo-white.jpg`
 
-### How it works:
-- Use the existing Sheet (Radix Dialog) component with `side="right"` and a wider width (~700px)
-- Clicking a prospect row opens the sheet instead of `navigate(`/prospect/${p.id}`)`
-- The sheet contains **all the same fields** from ProspectPage: Account Details, Next Step, Notes, Contacts, Activity Timeline, Score breakdown
-- The sheet has a header with logo, name, status badges, and a "Open Full Page" link for those who still want the dedicated page
-- Closing the sheet (X button, clicking overlay, or pressing Escape) returns focus to the list
-- This applies to both table rows and kanban cards
+Create a `YextLogo` component that renders the black logo in light mode and white logo in dark mode using `next-themes` `useTheme()`. Place it in the header next to the title.
 
-### State changes in TerritoryPlanner.tsx:
-- New state: `const [sheetProspectId, setSheetProspectId] = useState<number | null>(null)`
-- Replace all `navigate(`/prospect/${p.id}`)` calls with `setSheetProspectId(p.id)`
-- Add a `ProspectSheet` component at the bottom of the page that renders the Sheet with prospect detail content
-- Keep ProspectPage.tsx intact for direct URL access (`/prospect/:id`)
+## 2. Fix Light Mode Text Visibility
 
-## 2. Refined Dark Theme + Light/Dark Toggle
+Replace all `text-primary-foreground` classes in the header, buttons, and toggles across `TerritoryPlanner.tsx` and `InsightsPage.tsx` with `text-foreground` (which correctly adapts to both themes). This fixes the invisible text issue in light mode.
 
-### Theme refinement:
-- Update the dark palette to use richer, deeper blacks (not pure black): `#0C0E14` background, `#12151E` cards
-- Slightly more blue-tinted borders for depth
-- Keep the periwinkle primary accent
+Affected areas:
+- Header title, subtitle, buttons, view toggles, theme toggle, reset button
+- Insights page header title, back arrow
+- All header action buttons (`Insights`, `CSV`, `Compare`, etc.)
 
-### Light mode palette:
-- Clean white background with soft gray cards
-- Same periwinkle primary accent
-- Properly styled glass-card and glow effects for light mode
+## 3. Bigger Header Title + Yext Logo
 
-### Toggle:
-- Add a Sun/Moon icon toggle button in the header bar (next to the reset button)
-- Use `next-themes` (already installed) ThemeProvider to wrap the app
-- Clicking toggles between `light` and `dark` class on HTML
-- Remove the hardcoded `class="dark"` from index.html, let next-themes manage it
-- Persist preference to localStorage
+- Increase header title from `text-2xl` to `text-4xl font-black`
+- Center the header content (logo + title + subtitle) using flex centering
+- Add the `YextLogo` component (about 40px tall) to the left of the title
+- Remove the small "Yext" pill badge (redundant now that the logo is present)
+- Make the subtitle slightly larger (`text-sm` instead of `text-xs`)
 
-### Files:
-- `src/App.tsx` -- wrap with ThemeProvider
-- `index.html` -- remove hardcoded `class="dark"`
-- `src/index.css` -- refine both light and dark palettes
-- `src/components/TerritoryPlanner.tsx` -- add toggle button in header
+The Insights page header will get the same treatment -- bigger title (`text-2xl`), Yext logo, remove the redundant pill badge.
 
-## 3. Animations for Actions
+## 4. Emoji/Icon Duplication Cleanup
 
-Add satisfying micro-animations when things happen:
+Remove redundant emojis where Lucide icons already exist:
+- "Action Items" header: Remove the target emoji, keep the collapsible chevron icon
+- "Top Scored -- Never Contacted": Remove the lightning emoji, keep the `Zap` icon
+- "Stale Accounts (30+ days)": Remove the spider web emoji, keep the `AlertTriangle` icon
+- Insights page: Same cleanup for section headers that have both icons and emojis
+- Pipeline stage labels in the summary bar: Remove `STAGE_EMOJI` prefix since the colored dots already indicate stage
 
-### Stage changes (inline edit or kanban drag):
-- Brief green checkmark flash animation on the cell/card when stage is updated
+## 5. Score Tooltip with Breakdown
 
-### Adding a prospect:
-- The dialog closes with a scale-out animation
-- The new row in the table briefly highlights with a green pulse
+Upgrade the `ScoreBadge` component to show a detailed breakdown tooltip:
+- Import `scoreBreakdown` from `@/data/prospects`
+- Accept the full `prospect` object (not just `score`)
+- Render each breakdown item as a line: `+40 500+ locations`
+- Add a footer note: "Higher scores are prioritized in Action Items and Insights"
 
-### Deleting:
-- Row fades out with a slide-left + fade animation before being removed
-- Kanban card shrinks and fades
+This requires passing the prospect to `ScoreBadge` everywhere it's used (table rows, kanban cards, action item lists, ProspectSheet).
 
-### Bulk actions:
-- Bulk update shows a brief ripple/pulse across all affected rows
+## 6. Table Column Text -- More Prominent
 
-### Saving a view:
-- The new view pill animates in with a bounce/scale effect
+Change lines 1135-1136 in TerritoryPlanner.tsx:
+- Locations: `text-muted-foreground` to `text-foreground font-medium`
+- Industry: `text-muted-foreground` to `text-foreground font-medium`
 
-### Completing/clearing next step:
-- Confetti-style checkmark animation (a brief CSS-only pulse)
+## 7. Grid Background -- More Visible
 
-### Implementation:
-- Add new CSS keyframes in `index.css`: `@keyframes success-flash`, `@keyframes delete-slide`, `@keyframes bounce-in`
-- Use React state to temporarily apply animation classes, then remove them after the animation completes
-- Add a small `useAnimation` pattern: set a `animatingId` state, apply class, clear after 600ms
+In `src/index.css`, update `.yext-grid-bg`:
+- Increase grid-line opacity from `0.04` to `0.08`
+- Add a subtle radial gradient glow overlay at the center for depth:
+  `radial-gradient(ellipse at 50% 0%, hsl(var(--primary) / 0.06) 0%, transparent 70%)`
 
-## 4. Emojis Throughout
+## 8. Stat Pill Label + Sizing Fixes
 
-Sprinkle emojis contextually across the app:
-
-### Stat pills:
-- "Total" -> "Total" (no emoji needed), "50+ Locs" -> "📍 50+ Locs", "100+ Locs" -> "📍 100+", "500+ Locs" -> "🏢 500+", "Hot" -> "🔥 Hot", "Warm" -> "☀️ Warm", "Prospects" -> "🎯 Prospects", "Churned" -> "💀 Churned"
-
-### Pipeline stages:
-- "Not Started" -> "⬜ Not Started", "Researching" -> "🔍 Researching", "Contacted" -> "📧 Contacted", "Meeting Set" -> "📅 Meeting Set", "Proposal Sent" -> "📄 Proposal Sent", "Negotiating" -> "🤝 Negotiating", "Closed Won" -> "🏆 Closed Won", "Closed Lost" -> "❌ Closed Lost", "On Hold" -> "⏸️ On Hold"
-
-### Status badges:
-- "Prospect" -> "🎯 Prospect", "Churned" -> "💀 Churned"
-
-### Tier badges:
-- "Tier 1" -> "⭐ Tier 1", "Tier 2" -> "🥈 Tier 2", "Tier 3" -> "🥉 Tier 3"
-
-### Priority:
-- "Hot" -> "🔥 Hot", "Warm" -> "☀️ Warm", "Cold" -> "🧊 Cold"
-
-### Action items section headers:
-- "Top Scored -- Never Contacted" -> "⚡ Top Scored -- Never Contacted"
-- "Stale Accounts" -> "🕸️ Stale Accounts (30+ days)"
-- "Action Items" -> "🎯 Action Items"
-
-### Score labels:
-- Add emoji to score label (Excellent -> "🚀 Excellent", etc.)
-
-### Empty states:
-- "No prospects match" -> "🔍 No prospects match your filters"
-- "All contacted" -> "🎉 All prospects contacted!"
-
-## 5. Fun Toast Bars with Emojis
-
-Replace all `toast.success("...")` calls with emoji-enhanced, more descriptive toasts:
-
-### Examples:
-- Add prospect: `toast.success("🎉 Added to your territory!", { description: `"${name}" is ready to go` })`
-- Delete prospect: `toast("🗑️ Prospect removed", { description: `"${name}" has been deleted` })`
-- Bulk delete: `toast("🗑️ Cleaned up!", { description: `${count} prospects removed` })`
-- Stage update: `toast.success("🚀 Stage updated!", { description: `Moved to "${stage}"` })`
-- CSV export: `toast.success("📊 CSV downloaded!", { description: "Your data is ready" })`
-- View saved: `toast.success("💾 View saved!", { description: `"${name}" is ready to use` })`
-- Logo uploaded: `toast.success("🖼️ Logo updated!")`
-- Logo removed: `toast("🖼️ Logo removed")`
-- Contact added: `toast.success("👤 Contact added!")`
-- Contact removed: `toast("👤 Contact removed")`
-- Interaction logged: `toast.success("📝 Activity logged!")`
-- Note added: `toast.success("📌 Note saved!")`
-- Data reset: `toast("🔄 Data reset to defaults")`
-- Inline edit: `toast.success("✅ Updated!")`
-- Kanban drag: `toast.success("🎯 Moved!", { description: `Now in "${stage}"` })`
-- Bulk tier update: `toast.success("🏷️ Tier updated!", { description: `${count} prospects tagged` })`
-- Next step cleared: `toast("✅ Next step completed!")`
+Update the stat pills array:
+- `"Total"` becomes `"Total Accounts"`
+- `"100+"` becomes `"100+ Locs"`
+- `"500+"` becomes `"500+ Locs"`
+- Increase pill padding from `px-4 py-2.5` to `px-5 py-3.5`
+- Increase number font from `text-lg` to `text-xl`
+- Increase label font from `text-xs` to `text-sm`
 
 ## Files to Modify
 
-1. **`index.html`** -- Remove hardcoded `class="dark"`, let next-themes manage
-2. **`src/index.css`** -- Refined dark palette, improved light palette, new animation keyframes (success-flash, delete-slide, bounce-in)
-3. **`src/App.tsx`** -- Wrap with ThemeProvider from next-themes
-4. **`src/components/TerritoryPlanner.tsx`** -- Major changes:
-   - Add theme toggle in header
-   - Replace `navigate()` with slide-over sheet
-   - Add ProspectSheet component with all detail fields
-   - Add emojis to stat pills, pipeline labels, badges
-   - Enhance all toast calls with emojis + descriptions
-   - Add animation states for CRUD operations
-5. **`src/pages/ProspectPage.tsx`** -- Add emojis to badges/labels, enhance toast calls
-6. **`src/pages/InsightsPage.tsx`** -- Add emojis to section headers, enhance stat cards
+1. **Copy assets**: `src/assets/yext-logo-black.jpg` and `src/assets/yext-logo-white.jpg`
+2. **`src/index.css`**: Grid background opacity + radial glow
+3. **`src/components/TerritoryPlanner.tsx`**: Header redesign (bigger title, Yext logo, light mode fix), stat pill labels/sizing, emoji cleanup, score tooltip upgrade, table column text prominence
+4. **`src/components/ProspectSheet.tsx`**: Score tooltip upgrade, emoji cleanup
+5. **`src/pages/InsightsPage.tsx`**: Header light mode fix, bigger title, Yext logo, emoji cleanup
+6. **`src/data/prospects.ts`**: No changes needed (scoreBreakdown already exists)
