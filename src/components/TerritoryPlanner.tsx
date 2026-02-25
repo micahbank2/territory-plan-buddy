@@ -92,6 +92,7 @@ interface SavedView {
     fTier: string[];
     fLocRange: [number, number];
     fOutreach: string[];
+    fPriority: string[];
   };
 }
 function loadViews(): SavedView[] {
@@ -292,7 +293,7 @@ function ScoreBadge({ score, prospect, compact = false }: { score: number; prosp
             {!compact && <span className="text-[10px] font-semibold" style={{ color: info.color }}>{info.short}</span>}
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top" align="center" collisionPadding={16} className="text-xs max-w-[220px] p-3 z-[100]">
+        <TooltipContent side="left" align="center" collisionPadding={16} className="text-xs max-w-[220px] p-3 z-[100]">
           <p className="font-bold mb-1.5" style={{ color: info.color }}>{info.label} — {score} pts</p>
           {breakdown.length > 0 ? (
             <div className="space-y-0.5 border-t border-border pt-1.5 mb-1.5">
@@ -357,6 +358,7 @@ export default function TerritoryPlanner() {
   const [fTier, setFTier] = useState<string[]>([]);
   const [fLocRange, setFLocRange] = useState<[number, number]>([0, 0]);
   const [fOutreach, setFOutreach] = useState<string[]>([]);
+  const [fPriority, setFPriority] = useState<string[]>([]);
   const [sK, setSK] = useState<string>("ps");
   const [sD, setSD] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
@@ -456,6 +458,7 @@ export default function TerritoryPlanner() {
     if (fStatus.length) r = r.filter((p) => fStatus.includes(p.status));
     if (fCompetitor.length) r = r.filter((p) => fCompetitor.includes(p.competitor));
     if (fTier.length) r = r.filter((p) => fTier.includes(p.tier));
+    if (fPriority.length) r = r.filter((p) => fPriority.includes(p.priority));
     if (locFilterActive) r = r.filter((p) => {
       const lc = p.locationCount || 0;
       return lc >= fLocRange[0] && lc <= fLocRange[1];
@@ -468,9 +471,9 @@ export default function TerritoryPlanner() {
       return sD === "asc" ? (av < bv ? -1 : av > bv ? 1 : 0) : (av > bv ? -1 : av < bv ? 1 : 0);
     });
     return r;
-  }, [enriched, q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fLocRange, locFilterActive, sK, sD]);
+  }, [enriched, q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fPriority, fLocRange, locFilterActive, sK, sD]);
 
-  useMemo(() => setPage(1), [q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fLocRange]);
+  useMemo(() => setPage(1), [q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fPriority, fLocRange]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -525,10 +528,10 @@ export default function TerritoryPlanner() {
   };
 
   const clr = () => {
-    setQ(""); setFIndustry([]); setFOutreach([]); setFStatus([]); setFCompetitor([]); setFTier([]); setFLocRange([0, maxLocs]);
+    setQ(""); setFIndustry([]); setFOutreach([]); setFStatus([]); setFCompetitor([]); setFTier([]); setFPriority([]); setFLocRange([0, maxLocs]);
   };
 
-  const hasFilters = fIndustry.length || fOutreach.length || fStatus.length || fCompetitor.length || fTier.length || locFilterActive;
+  const hasFilters = fIndustry.length || fOutreach.length || fStatus.length || fCompetitor.length || fTier.length || fPriority.length || locFilterActive;
 
   const toggleSelect = (id: number) => {
     setSelected((prev) => {
@@ -581,7 +584,7 @@ export default function TerritoryPlanner() {
     const view: SavedView = {
       id: Date.now().toString(),
       name: viewName.trim(),
-      filters: { q, fIndustry, fStatus, fCompetitor, fTier, fLocRange, fOutreach },
+      filters: { q, fIndustry, fStatus, fCompetitor, fTier, fLocRange, fOutreach, fPriority },
     };
     const updated = [...savedViews, view];
     setSavedViews(updated);
@@ -596,6 +599,7 @@ export default function TerritoryPlanner() {
     setFCompetitor(v.filters.fCompetitor); setFTier(v.filters.fTier);
     setFLocRange(v.filters.fLocRange || [0, maxLocs]);
     setFOutreach(v.filters.fOutreach);
+    setFPriority(v.filters.fPriority || []);
     toast(`📂 Loaded "${v.name}"`);
   };
 
@@ -863,19 +867,22 @@ export default function TerritoryPlanner() {
         {/* Stat pills */}
         <div className="flex items-center gap-2.5 mb-6 flex-wrap">
           {([
-            ["📊 Total Accounts", stats.t, () => { clr(); }],
-            ["📍 50+ Locs", stats.o50, () => { clr(); setFLocRange([50, maxLocs]); }],
-            ["📍 100+ Locs", stats.o100, () => { clr(); setFLocRange([100, maxLocs]); }],
-            ["🏢 500+ Locs", stats.o500, () => { clr(); setFLocRange([500, maxLocs]); }],
-            ["🔥 Hot", stats.hot, () => { clr(); }],
-            ["☀️ Warm", stats.warm, () => { clr(); }],
-            ["🎯 Prospects", stats.prospects, () => { clr(); setFStatus(["Prospect"]); }],
-            ["💀 Churned", stats.ch, () => { clr(); setFStatus(["Churned"]); }],
-          ] as [string, number, () => void][]).map(([label, value, fn], i) => (
+            ["📊 Total Accounts", stats.t, () => { clr(); }, false],
+            ["📍 50+ Locs", stats.o50, () => { setFLocRange((prev) => prev[0] === 50 ? [0, maxLocs] : [50, maxLocs]); }, fLocRange[0] === 50],
+            ["📍 100+ Locs", stats.o100, () => { setFLocRange((prev) => prev[0] === 100 ? [0, maxLocs] : [100, maxLocs]); }, fLocRange[0] === 100],
+            ["🏢 500+ Locs", stats.o500, () => { setFLocRange((prev) => prev[0] === 500 ? [0, maxLocs] : [500, maxLocs]); }, fLocRange[0] === 500],
+            ["🔥 Hot", stats.hot, () => { setFPriority((prev) => prev.includes("Hot") ? prev.filter(x => x !== "Hot") : [...prev, "Hot"]); }, fPriority.includes("Hot")],
+            ["☀️ Warm", stats.warm, () => { setFPriority((prev) => prev.includes("Warm") ? prev.filter(x => x !== "Warm") : [...prev, "Warm"]); }, fPriority.includes("Warm")],
+            ["🎯 Prospects", stats.prospects, () => { setFStatus((prev) => prev.includes("Prospect") ? prev.filter(x => x !== "Prospect") : [...prev, "Prospect"]); }, fStatus.includes("Prospect")],
+            ["💀 Churned", stats.ch, () => { setFStatus((prev) => prev.includes("Churned") ? prev.filter(x => x !== "Churned") : [...prev, "Churned"]); }, fStatus.includes("Churned")],
+          ] as [string, number, () => void, boolean][]).map(([label, value, fn, active], i) => (
             <button
               key={i}
               onClick={() => fn()}
-              className="flex items-center gap-3 px-5 py-3.5 rounded-xl glass-card cursor-pointer group animate-fade-in-up glow-blue"
+              className={cn(
+                "flex items-center gap-3 px-5 py-3.5 rounded-xl glass-card cursor-pointer group animate-fade-in-up",
+                active ? "ring-2 ring-primary/50 glow-blue" : "glow-blue"
+              )}
               style={{ animationDelay: `${i * 50}ms` }}
             >
               <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors font-medium">{label}</span>
@@ -999,6 +1006,7 @@ export default function TerritoryPlanner() {
           <MultiSelect options={["Prospect", "Churned"]} selected={fStatus} onChange={setFStatus} placeholder="Status" />
           <MultiSelect options={COMPETITORS.filter(Boolean)} selected={fCompetitor} onChange={setFCompetitor} placeholder="Competitor" />
           <MultiSelect options={TIERS.filter(Boolean)} selected={fTier} onChange={setFTier} placeholder="Tier" />
+          <MultiSelect options={["Hot", "Warm", "Cold", "Dead"]} selected={fPriority} onChange={setFPriority} placeholder="Priority" />
 
           {/* Location Range Slider */}
           <Popover>
