@@ -16,6 +16,7 @@ import {
   type Contact,
   type InteractionLog,
   type NoteEntry,
+  type Task,
 } from "@/data/prospects";
 import { cn } from "@/lib/utils";
 import {
@@ -289,20 +290,20 @@ export default function ProspectPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [newNote, setNewNote] = useState("");
   const [localLocCount, setLocalLocCount] = useState("");
-  const [localNextStep, setLocalNextStep] = useState("");
   const [localCustomCompetitor, setLocalCustomCompetitor] = useState("");
+  const [newTaskText, setNewTaskText] = useState("");
+  const [newTaskDate, setNewTaskDate] = useState("");
 
   useEffect(() => {
     if (prospect) {
       setLocalLocCount(prospect.locationCount != null ? String(prospect.locationCount) : "");
-      setLocalNextStep(prospect.nextStep || "");
       if (prospect.competitor && !COMPETITORS.includes(prospect.competitor) && prospect.competitor.startsWith("Other: ")) {
         setLocalCustomCompetitor(prospect.competitor.replace("Other: ", ""));
       } else {
         setLocalCustomCompetitor("");
       }
     }
-  }, [prospect?.id, prospect?.nextStep, prospect?.locationCount, prospect?.competitor]);
+  }, [prospect?.id, prospect?.locationCount, prospect?.competitor]);
 
   if (!ok) return (
     <div className="bg-background min-h-screen yext-grid-bg">
@@ -343,13 +344,6 @@ export default function ProspectPage() {
     const val = localLocCount ? parseInt(localLocCount) : null;
     if (val !== prospect.locationCount) {
       update(prospect.id, { locationCount: val });
-      toast.success("✅ Updated!");
-    }
-  };
-
-  const commitNextStep = () => {
-    if (localNextStep !== (prospect.nextStep || "")) {
-      update(prospect.id, { nextStep: localNextStep });
       toast.success("✅ Updated!");
     }
   };
@@ -405,19 +399,30 @@ export default function ProspectPage() {
     toast.success("📝 Activity logged!");
   };
 
-  const markNextStepComplete = () => {
-    const taskText = prospect.nextStep || "Task";
+  const addTask = () => {
+    if (!newTaskText.trim()) return;
+    const task: Task = { id: Date.now().toString(), text: newTaskText.trim(), dueDate: newTaskDate };
+    update(prospect.id, { tasks: [...(prospect.tasks || []), task] });
+    setNewTaskText("");
+    setNewTaskDate("");
+    toast.success("✅ Task added!");
+  };
+
+  const completeTask = (task: Task) => {
     const interaction: InteractionLog = {
       id: Date.now().toString(), type: "Task Completed",
-      date: new Date().toISOString().split("T")[0], notes: taskText,
+      date: new Date().toISOString().split("T")[0], notes: task.text,
     };
     update(prospect.id, {
+      tasks: (prospect.tasks || []).filter(t => t.id !== task.id),
       interactions: [...(prospect.interactions || []), interaction],
-      nextStep: "",
-      nextStepDate: "",
     });
-    setLocalNextStep("");
-    toast.success("✅ Next step completed!");
+    toast.success("✅ Task completed!");
+  };
+
+  const removeTask = (taskId: string) => {
+    update(prospect.id, { tasks: (prospect.tasks || []).filter(t => t.id !== taskId) });
+    toast("🗑️ Task removed");
   };
 
   const handleDelete = () => {
@@ -597,39 +602,38 @@ export default function ProspectPage() {
               </div>
             </div>
 
-            {/* Next Step */}
+            {/* Tasks */}
             <div className="glass-card rounded-xl p-5 space-y-4 animate-fade-in-up" style={{ animationDelay: "75ms" }}>
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-primary/10">
                   <Target className="w-4 h-4 text-primary" />
                 </div>
-                <h2 className="text-sm font-semibold text-foreground">Next Step</h2>
-                {prospect.nextStepDate && new Date(prospect.nextStepDate) < new Date() && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive overdue-flag">Overdue</span>
-                )}
+                <h2 className="text-sm font-semibold text-foreground">Tasks</h2>
               </div>
+              {/* Add task form */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label="Action">
                   <input
-                    value={localNextStep}
-                    onChange={(e) => setLocalNextStep(e.target.value)}
+                    value={newTaskText}
+                    onChange={(e) => setNewTaskText(e.target.value)}
                     placeholder="e.g. Send follow-up email"
                     className={inputClass}
+                    onKeyDown={e => e.key === "Enter" && addTask()}
                   />
                 </Field>
                 <Field label="Due Date">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <button className={cn(inputClass, "flex items-center gap-2 text-left", !prospect.nextStepDate && "text-muted-foreground")}>
+                      <button className={cn(inputClass, "flex items-center gap-2 text-left", !newTaskDate && "text-muted-foreground")}>
                         <CalendarIcon className="w-4 h-4 shrink-0" />
-                        {prospect.nextStepDate ? format(new Date(prospect.nextStepDate), "PPP") : "Pick a date"}
+                        {newTaskDate ? format(new Date(newTaskDate), "PPP") : "Pick a date"}
                       </button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={prospect.nextStepDate ? new Date(prospect.nextStepDate) : undefined}
-                        onSelect={(date) => handleUpdate("nextStepDate", date ? date.toISOString().split("T")[0] : "")}
+                        selected={newTaskDate ? new Date(newTaskDate) : undefined}
+                        onSelect={(date) => setNewTaskDate(date ? date.toISOString().split("T")[0] : "")}
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
                       />
@@ -637,22 +641,42 @@ export default function ProspectPage() {
                   </Popover>
                 </Field>
               </div>
-              <div className="flex items-center gap-3">
-                {localNextStep && localNextStep !== (prospect.nextStep || "") && (
-                  <button onClick={() => { commitNextStep(); toast.success("✅ Next step saved!"); }}
-                    className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 font-medium">
-                    <Plus className="w-3 h-3" /> Save Next Step
-                  </button>
-                )}
-                {prospect.nextStep && (
-                  <button
-                    onClick={markNextStepComplete}
-                    className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-                  >
-                    <Check className="w-3 h-3" /> Mark complete
-                  </button>
-                )}
-              </div>
+              {newTaskText.trim() && (
+                <button onClick={addTask}
+                  className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 font-medium">
+                  <Plus className="w-3 h-3" /> Add Task
+                </button>
+              )}
+              {/* Open tasks list */}
+              {(prospect.tasks || []).length > 0 && (
+                <div className="space-y-1.5 pt-3 border-t border-border">
+                  <label className="text-[10px] font-semibold text-muted-foreground uppercase">Open Tasks</label>
+                  {(prospect.tasks || [])
+                    .slice()
+                    .sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999"))
+                    .map(task => {
+                      const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
+                      return (
+                        <div key={task.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-primary/5 group">
+                          <button onClick={() => completeTask(task)} className="shrink-0 w-4 h-4 rounded border border-primary/40 hover:bg-primary/20 flex items-center justify-center transition-colors" title="Mark complete">
+                            <Check className="w-2.5 h-2.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs text-foreground">{task.text}</span>
+                          </div>
+                          {task.dueDate && (
+                            <span className={cn("text-[10px] shrink-0", isOverdue ? "text-destructive font-semibold" : "text-muted-foreground")}>
+                              {isOverdue ? "⚠️ " : ""}{task.dueDate}
+                            </span>
+                          )}
+                          <button onClick={() => removeTask(task.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10">
+                            <X className="w-3 h-3 text-destructive" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
             </div>
 
             {/* Notes */}

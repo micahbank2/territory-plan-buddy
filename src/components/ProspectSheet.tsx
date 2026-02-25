@@ -7,7 +7,7 @@ import {
 import {
   INDUSTRIES, STAGES, PRIORITIES, TIERS, COMPETITORS, INTERACTION_TYPES,
   scoreProspect, scoreBreakdown, getScoreLabel, getLogoUrl,
-  type Prospect, type Contact, type InteractionLog, type NoteEntry,
+  type Prospect, type Contact, type InteractionLog, type NoteEntry, type Task,
 } from "@/data/prospects";
 import { cn } from "@/lib/utils";
 import {
@@ -72,22 +72,22 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
 
   // Local state for debounced text inputs
   const [localLocCount, setLocalLocCount] = useState("");
-  const [localNextStep, setLocalNextStep] = useState("");
   const [localCustomCompetitor, setLocalCustomCompetitor] = useState("");
+  // Task manager state
+  const [newTaskText, setNewTaskText] = useState("");
+  const [newTaskDate, setNewTaskDate] = useState("");
 
   // Sync local state when prospect changes
   useEffect(() => {
     if (prospect) {
       setLocalLocCount(prospect.locationCount != null ? String(prospect.locationCount) : "");
-      setLocalNextStep(prospect.nextStep || "");
-      // If competitor starts with "Other: ", extract the custom part
       if (prospect.competitor && !COMPETITORS.includes(prospect.competitor) && prospect.competitor.startsWith("Other: ")) {
         setLocalCustomCompetitor(prospect.competitor.replace("Other: ", ""));
       } else {
         setLocalCustomCompetitor("");
       }
     }
-  }, [prospect?.id, prospect?.nextStep, prospect?.locationCount, prospect?.competitor]);
+  }, [prospect?.id, prospect?.locationCount, prospect?.competitor]);
 
   if (!prospect) return null;
 
@@ -108,19 +108,38 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
     }
   };
 
-  const commitNextStep = () => {
-    if (localNextStep !== (prospect.nextStep || "")) {
-      update(prospect.id, { nextStep: localNextStep });
-      toast.success("✅ Updated!");
-    }
-  };
-
   const commitCustomCompetitor = () => {
     const val = localCustomCompetitor.trim() ? `Other: ${localCustomCompetitor.trim()}` : "Other";
     if (val !== prospect.competitor) {
       update(prospect.id, { competitor: val });
       toast.success("✅ Updated!");
     }
+  };
+
+  const addTask = () => {
+    if (!newTaskText.trim()) return;
+    const task: Task = { id: Date.now().toString(), text: newTaskText.trim(), dueDate: newTaskDate };
+    update(prospect.id, { tasks: [...(prospect.tasks || []), task] });
+    setNewTaskText("");
+    setNewTaskDate("");
+    toast.success("✅ Task added!");
+  };
+
+  const completeTask = (task: Task) => {
+    const interaction: InteractionLog = {
+      id: Date.now().toString(), type: "Task Completed",
+      date: new Date().toISOString().split("T")[0], notes: task.text,
+    };
+    update(prospect.id, {
+      tasks: (prospect.tasks || []).filter(t => t.id !== task.id),
+      interactions: [...(prospect.interactions || []), interaction],
+    });
+    toast.success("✅ Task completed!");
+  };
+
+  const removeTask = (taskId: string) => {
+    update(prospect.id, { tasks: (prospect.tasks || []).filter(t => t.id !== taskId) });
+    toast("🗑️ Task removed");
   };
 
   // Determine displayed competitor value for select
@@ -152,21 +171,6 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
     update(prospect.id, { interactions: [...(prospect.interactions || []), interaction] });
     setInteractionNotes("");
     toast.success("📝 Activity logged!");
-  };
-
-  const markNextStepComplete = () => {
-    const taskText = prospect.nextStep || "Task";
-    const interaction: InteractionLog = {
-      id: Date.now().toString(), type: "Task Completed",
-      date: new Date().toISOString().split("T")[0], notes: taskText,
-    };
-    update(prospect.id, {
-      interactions: [...(prospect.interactions || []), interaction],
-      nextStep: "",
-      nextStepDate: "",
-    });
-    setLocalNextStep("");
-    toast.success("✅ Next step completed!");
   };
 
   const addNote = () => {
@@ -303,53 +307,72 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
             </div>
           </div>
 
-          {/* Next Step */}
+          {/* Tasks */}
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "50ms" }}>
             <div className="flex items-center gap-2">
               <Target className="w-4 h-4 text-primary" />
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Next Step</h3>
-              {prospect.nextStepDate && new Date(prospect.nextStepDate) < new Date() && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive overdue-flag">⚠️ Overdue</span>
-              )}
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tasks</h3>
             </div>
+            {/* Add task form */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase">Action</label>
-                <input value={localNextStep} onChange={e => setLocalNextStep(e.target.value)} placeholder="e.g. Send follow-up" className={inputClass} />
+                <input value={newTaskText} onChange={e => setNewTaskText(e.target.value)} placeholder="e.g. Send follow-up" className={inputClass}
+                  onKeyDown={e => e.key === "Enter" && addTask()} />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase">Due Date</label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <button className={cn(inputClass, "flex items-center gap-2 text-left", !prospect.nextStepDate && "text-muted-foreground")}>
+                    <button className={cn(inputClass, "flex items-center gap-2 text-left", !newTaskDate && "text-muted-foreground")}>
                       <CalendarIcon className="w-4 h-4 shrink-0" />
-                      {prospect.nextStepDate ? format(new Date(prospect.nextStepDate), "PPP") : "Pick a date"}
+                      {newTaskDate ? format(new Date(newTaskDate), "PPP") : "Pick a date"}
                     </button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 z-[60]" align="start">
-                    <Calendar mode="single" selected={prospect.nextStepDate ? new Date(prospect.nextStepDate) : undefined}
-                      onSelect={date => handleUpdate("nextStepDate", date ? date.toISOString().split("T")[0] : "")} initialFocus className="p-3 pointer-events-auto" />
+                    <Calendar mode="single" selected={newTaskDate ? new Date(newTaskDate) : undefined}
+                      onSelect={date => setNewTaskDate(date ? date.toISOString().split("T")[0] : "")} initialFocus className="p-3 pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              {localNextStep && localNextStep !== (prospect.nextStep || "") && (
-                <button onClick={() => { commitNextStep(); toast.success("✅ Next step saved!"); }}
-                  className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 font-medium">
-                  <Plus className="w-3 h-3" /> Save Next Step
-                </button>
-              )}
-              {prospect.nextStep && (
-                <button onClick={markNextStepComplete}
-                  className="text-xs text-primary hover:underline inline-flex items-center gap-1">
-                  <Check className="w-3 h-3" /> Mark complete
-                </button>
-              )}
-            </div>
+            {newTaskText.trim() && (
+              <button onClick={addTask}
+                className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 font-medium">
+                <Plus className="w-3 h-3" /> Add Task
+              </button>
+            )}
+            {/* Open tasks list */}
+            {(prospect.tasks || []).length > 0 && (
+              <div className="space-y-1.5 pt-2 border-t border-border">
+                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Open Tasks</label>
+                {(prospect.tasks || [])
+                  .slice()
+                  .sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999"))
+                  .map(task => {
+                    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
+                    return (
+                      <div key={task.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-primary/5 group">
+                        <button onClick={() => completeTask(task)} className="shrink-0 w-4 h-4 rounded border border-primary/40 hover:bg-primary/20 flex items-center justify-center transition-colors" title="Mark complete">
+                          <Check className="w-2.5 h-2.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs text-foreground">{task.text}</span>
+                        </div>
+                        {task.dueDate && (
+                          <span className={cn("text-[10px] shrink-0", isOverdue ? "text-destructive font-semibold" : "text-muted-foreground")}>
+                            {isOverdue ? "⚠️ " : ""}{task.dueDate}
+                          </span>
+                        )}
+                        <button onClick={() => removeTask(task.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10">
+                          <X className="w-3 h-3 text-destructive" />
+                        </button>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
           </div>
-
-          {/* Notes */}
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Notes</h3>
             <div className="flex gap-2">

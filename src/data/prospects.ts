@@ -77,6 +77,12 @@ export interface NoteEntry {
   timestamp: string;
 }
 
+export interface Task {
+  id: string;
+  text: string;
+  dueDate: string;
+}
+
 export interface Prospect {
   id: number;
   name: string;
@@ -100,7 +106,10 @@ export interface Prospect {
   contacts: Contact[];
   interactions: InteractionLog[];
   createdAt?: string;
+  tasks: Task[];
+  /** @deprecated use tasks[] instead */
   nextStep?: string;
+  /** @deprecated use tasks[] instead */
   nextStepDate?: string;
   customLogo?: string;
 }
@@ -174,7 +183,7 @@ export function scoreProspect(p: Prospect): number {
 }
 
 export function initProspect(p: Partial<Prospect> & { id: number; name: string }): Prospect {
-  return {
+  const base: Prospect = {
     website: "",
     lastModified: "",
     transitionOwner: "",
@@ -192,6 +201,7 @@ export function initProspect(p: Partial<Prospect> & { id: number; name: string }
     tier: "",
     contacts: [],
     interactions: [],
+    tasks: [],
     createdAt: new Date().toISOString(),
     ...p,
     outreach: p.outreach || "Not Started",
@@ -203,6 +213,10 @@ export function initProspect(p: Partial<Prospect> & { id: number; name: string }
         ? "Warm"
         : ""),
   };
+  if (!base.tasks.length && p.nextStep) {
+    base.tasks = [{ id: Date.now().toString(), text: p.nextStep, dueDate: p.nextStepDate || "" }];
+  }
+  return base;
 }
 
 // Helper: get domain from website string
