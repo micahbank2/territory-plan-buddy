@@ -35,6 +35,8 @@ import {
   Command,
   GripVertical,
   FileSearch,
+  BarChart3,
+  GitCompare,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -57,6 +59,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Command as CmdK, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 
 // --- Saved Views ---
 const VIEWS_KEY = "tp-saved-views";
@@ -84,6 +87,38 @@ function loadViews(): SavedView[] {
 function saveViews(views: SavedView[]) {
   localStorage.setItem(VIEWS_KEY, JSON.stringify(views));
 }
+
+// --- Aging helper ---
+function getAgingClass(interactions: Prospect["interactions"]): string {
+  if (!interactions || interactions.length === 0) return "aging-gray";
+  const latest = Math.max(...interactions.map((i) => new Date(i.date).getTime()));
+  const days = Math.floor((Date.now() - latest) / 86400000);
+  if (days < 7) return "aging-green";
+  if (days <= 30) return "aging-yellow";
+  return "aging-red";
+}
+
+function getAgingLabel(interactions: Prospect["interactions"]): string {
+  if (!interactions || interactions.length === 0) return "Never contacted";
+  const latest = Math.max(...interactions.map((i) => new Date(i.date).getTime()));
+  const days = Math.floor((Date.now() - latest) / 86400000);
+  if (days === 0) return "Contacted today";
+  if (days === 1) return "1 day ago";
+  return `${days} days ago`;
+}
+
+// --- Pipeline colors ---
+const STAGE_COLORS: Record<string, string> = {
+  "Not Started": "hsl(220, 14%, 70%)",
+  "Researching": "hsl(220, 80%, 50%)",
+  "Contacted": "hsl(38, 92%, 50%)",
+  "Meeting Set": "hsl(152, 60%, 42%)",
+  "Proposal Sent": "hsl(280, 60%, 50%)",
+  "Negotiating": "hsl(340, 70%, 50%)",
+  "Closed Won": "hsl(152, 60%, 32%)",
+  "Closed Lost": "hsl(0, 72%, 51%)",
+  "On Hold": "hsl(220, 14%, 50%)",
+};
 
 // --- Logo component using Google favicons ---
 function LogoImg({ website, size = 24 }: { website?: string; size?: number }) {
@@ -113,7 +148,7 @@ function SkeletonRows({ count = 8 }: { count?: number }) {
     <>
       {Array.from({ length: count }).map((_, i) => (
         <tr key={i} className="border-b border-border last:border-0">
-          {Array.from({ length: 6 }).map((_, j) => (
+          {Array.from({ length: 7 }).map((_, j) => (
             <td key={j} className="px-5 py-4">
               <div className="skeleton-shimmer rounded-md h-4 w-full" style={{ maxWidth: j === 0 ? 200 : 80 }} />
             </td>
@@ -127,7 +162,7 @@ function SkeletonRows({ count = 8 }: { count?: number }) {
 const PAGE_SIZE = 25;
 
 export default function TerritoryPlanner() {
-  const { data, ok, reset, add, bulkUpdate, bulkRemove } = useProspects();
+  const { data, ok, reset, add, update, bulkUpdate, bulkRemove } = useProspects();
   const navigate = useNavigate();
   const searchRef = useRef<HTMLInputElement>(null);
   const [q, setQ] = useState("");
@@ -165,12 +200,21 @@ export default function TerritoryPlanner() {
   // Bulk delete confirm
   const [showBulkDelete, setShowBulkDelete] = useState(false);
 
-  // Keyboard shortcut for search (Cmd+K)
+  // Command Palette
+  const [cmdOpen, setCmdOpen] = useState(false);
+
+  // Inline editing
+  const [editingCell, setEditingCell] = useState<{ id: number; field: string } | null>(null);
+
+  // Comparison view
+  const [showCompare, setShowCompare] = useState(false);
+
+  // Keyboard shortcut for Cmd+K → command palette
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        searchRef.current?.focus();
+        setCmdOpen((o) => !o);
       }
     };
     window.addEventListener("keydown", handler);
@@ -220,6 +264,16 @@ export default function TerritoryPlanner() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Pipeline summary
+  const pipelineCounts = useMemo(() => {
+    return STAGES.map((stage) => ({
+      stage,
+      count: data.filter((p) => p.outreach === stage).length,
+      color: STAGE_COLORS[stage] || "hsl(220, 14%, 70%)",
+    })).filter((s) => s.count > 0);
+  }, [data]);
+  const pipelineTotal = data.length;
 
   const stats = useMemo(() => {
     const wl = data.filter((p) => p.locationCount && p.locationCount > 0);
@@ -342,6 +396,13 @@ export default function TerritoryPlanner() {
     setShowBulkDelete(false);
   };
 
+  // --- Inline edit ---
+  const handleInlineChange = (id: number, field: string, value: string) => {
+    update(id, { [field]: value });
+    setEditingCell(null);
+    toast.success("Updated");
+  };
+
   // --- Kanban ---
   const [dragId, setDragId] = useState<number | null>(null);
   const kanbanStages = STAGES;
@@ -362,6 +423,11 @@ export default function TerritoryPlanner() {
 
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
 
+  // --- Comparison ---
+  const comparisonProspects = useMemo(() => {
+    return data.filter((p) => selected.has(p.id)).map((p) => ({ ...p, score: scoreProspect(p) }));
+  }, [data, selected]);
+
   const SortIcon = ({ f }: { f: string }) =>
     sK !== f ? (
       <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground/40" />
@@ -373,6 +439,34 @@ export default function TerritoryPlanner() {
 
   const inputClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground";
   const selectClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring appearance-none cursor-pointer";
+
+  // Pagination component to reuse
+  const Pagination = () => (
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-muted-foreground">
+        Showing {Math.min((page - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} prospects
+      </span>
+      {totalPages > 1 && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="p-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="text-sm text-muted-foreground px-2">Page {page} of {totalPages}</span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="p-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   if (!ok)
     return (
@@ -393,6 +487,44 @@ export default function TerritoryPlanner() {
 
   return (
     <div className="bg-background min-h-screen text-foreground">
+      {/* Command Palette */}
+      {cmdOpen && (
+        <div className="fixed inset-0 z-50 cmd-overlay" onClick={() => setCmdOpen(false)}>
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" />
+          <div className="fixed top-[20%] left-1/2 -translate-x-1/2 w-full max-w-lg z-50 cmd-dialog" onClick={(e) => e.stopPropagation()}>
+            <CmdK className="rounded-xl border border-border shadow-2xl bg-popover text-popover-foreground overflow-hidden">
+              <CommandInput placeholder="Search prospects, actions..." className="h-12" />
+              <CommandList className="max-h-80">
+                <CommandEmpty>No results found.</CommandEmpty>
+                <CommandGroup heading="Actions">
+                  <CommandItem onSelect={() => { setCmdOpen(false); setShowAdd(true); }}>
+                    <Plus className="w-4 h-4 mr-2" /> Add Prospect
+                  </CommandItem>
+                  <CommandItem onSelect={() => { setCmdOpen(false); exportCSV(); }}>
+                    <Download className="w-4 h-4 mr-2" /> Export CSV
+                  </CommandItem>
+                  <CommandItem onSelect={() => { setCmdOpen(false); navigate("/insights"); }}>
+                    <BarChart3 className="w-4 h-4 mr-2" /> Open Insights
+                  </CommandItem>
+                  <CommandItem onSelect={() => { setCmdOpen(false); setViewMode(viewMode === "table" ? "kanban" : "table"); }}>
+                    <LayoutGrid className="w-4 h-4 mr-2" /> Toggle {viewMode === "table" ? "Kanban" : "Table"} View
+                  </CommandItem>
+                </CommandGroup>
+                <CommandGroup heading="Prospects">
+                  {data.slice(0, 20).map((p) => (
+                    <CommandItem key={p.id} onSelect={() => { setCmdOpen(false); navigate(`/prospect/${p.id}`); }}>
+                      <LogoImg website={p.website} size={16} />
+                      <span className="ml-2">{p.name}</span>
+                      {p.industry && <span className="ml-auto text-xs text-muted-foreground">{p.industry}</span>}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </CmdK>
+          </div>
+        </div>
+      )}
+
       {/* Top bar */}
       <div className="px-8 pt-8 pb-2">
         <div className="flex items-center justify-between mb-6">
@@ -403,9 +535,17 @@ export default function TerritoryPlanner() {
             </Button>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="gap-1.5">
+              <BarChart3 className="w-3.5 h-3.5" /> Insights
+            </Button>
             <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
               <Download className="w-3.5 h-3.5" /> CSV
             </Button>
+            {selected.size >= 2 && selected.size <= 3 && (
+              <Button variant="outline" size="sm" onClick={() => setShowCompare(true)} className="gap-1.5">
+                <GitCompare className="w-3.5 h-3.5" /> Compare ({selected.size})
+              </Button>
+            )}
             <div className="flex items-center border border-border rounded-lg overflow-hidden">
               <button onClick={() => setViewMode("table")} className={cn("p-2 transition-colors", viewMode === "table" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground")}>
                 <List className="w-4 h-4" />
@@ -423,6 +563,38 @@ export default function TerritoryPlanner() {
             </button>
           </div>
         </div>
+
+        {/* Pipeline Summary Bar */}
+        {pipelineTotal > 0 && (
+          <div className="mb-6 animate-fade-in-up">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pipeline</span>
+            </div>
+            <div className="flex h-3 rounded-full overflow-hidden bg-muted border border-border">
+              {pipelineCounts.map((s) => (
+                <div
+                  key={s.stage}
+                  className="pipeline-segment"
+                  style={{ flex: s.count, backgroundColor: s.color }}
+                  title={`${s.stage}: ${s.count}`}
+                  onClick={() => { clr(); setFOutreach([s.stage]); }}
+                />
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-3 mt-2">
+              {pipelineCounts.map((s) => (
+                <button
+                  key={s.stage}
+                  className="flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => { clr(); setFOutreach([s.stage]); }}
+                >
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                  {s.stage} ({s.count})
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Stat pills with animation */}
         <div className="flex items-center gap-2 mb-6 flex-wrap">
@@ -475,10 +647,14 @@ export default function TerritoryPlanner() {
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search companies, industries..."
               className="w-full pl-10 pr-20 py-2.5 text-sm rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-primary/40 transition-all"
+              onFocus={() => {}}
             />
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground bg-muted rounded border border-border">
+            <button
+              onClick={() => setCmdOpen(true)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground bg-muted rounded border border-border hover:bg-accent transition-colors cursor-pointer"
+            >
               <Command className="w-2.5 h-2.5" />K
-            </kbd>
+            </button>
           </div>
 
           <MultiSelect options={INDUSTRIES} selected={fIndustry} onChange={setFIndustry} placeholder="Industry" />
@@ -519,32 +695,6 @@ export default function TerritoryPlanner() {
             <button onClick={() => setSelected(new Set())} className="text-xs text-muted-foreground hover:text-foreground transition-colors">Deselect</button>
           </div>
         )}
-
-        {/* Results count + pagination */}
-        <div className="flex items-center justify-between mt-4 mb-2">
-          <span className="text-sm text-muted-foreground">
-            Showing {Math.min((page - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} prospects
-          </span>
-          {totalPages > 1 && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="p-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="text-sm text-muted-foreground px-2">Page {page} of {totalPages}</span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="p-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* TABLE VIEW */}
@@ -563,6 +713,7 @@ export default function TerritoryPlanner() {
                     ["industry", "Industry", "w-28"],
                     ["outreach", "Outreach", "w-32"],
                     ["ps", "Priority", "w-24"],
+                    ["tier", "Tier", "w-24"],
                     ["lastTouched", "Last Touched", "w-32"],
                   ] as [string, string, string][]).map(([k, l, w]) => (
                     <th
@@ -589,6 +740,7 @@ export default function TerritoryPlanner() {
                     </td>
                     <td className="px-5 py-4" onClick={() => navigate(`/prospect/${p.id}`)}>
                       <div className="flex items-center gap-3 flex-wrap">
+                        <span className={cn("aging-dot", getAgingClass(p.interactions))} title={getAgingLabel(p.interactions)} />
                         <LogoImg website={p.website} size={28} />
                         <span className="font-semibold text-foreground group-hover:text-primary transition-colors">{p.name}</span>
                         {p.website && (
@@ -596,25 +748,74 @@ export default function TerritoryPlanner() {
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
                         )}
+                        {/* Overdue next step flag */}
+                        {p.nextStepDate && new Date(p.nextStepDate) < new Date() && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive overdue-flag" title={`Overdue: ${p.nextStep}`}>
+                            ⚠ Overdue
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-1.5 mt-1.5">
                         <span className={cn("inline-flex px-2 py-0.5 text-[11px] font-semibold rounded-md", p.status === "Churned" ? "bg-destructive/10 text-destructive" : "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]")}>{p.status}</span>
                         {p.competitor && <span className="inline-flex px-2 py-0.5 text-[11px] font-semibold rounded-md bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))]">w/ {p.competitor}</span>}
-                        {p.tier && <span className={cn("inline-flex px-2 py-0.5 text-[11px] font-medium rounded-md", p.tier === "Tier 1" ? "bg-primary/10 text-primary" : p.tier === "Tier 2" ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground")}>{p.tier}</span>}
                       </div>
                     </td>
                     <td className="px-5 py-4 text-muted-foreground" onClick={() => navigate(`/prospect/${p.id}`)}>{p.locationCount || "—"}</td>
                     <td className="px-5 py-4 text-muted-foreground" onClick={() => navigate(`/prospect/${p.id}`)}>{p.industry || "—"}</td>
-                    <td className="px-5 py-4" onClick={() => navigate(`/prospect/${p.id}`)}>
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-muted text-muted-foreground">{p.outreach}</span>
+                    {/* Inline editable: Outreach */}
+                    <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
+                      {editingCell?.id === p.id && editingCell?.field === "outreach" ? (
+                        <select
+                          autoFocus
+                          value={p.outreach}
+                          onChange={(e) => handleInlineChange(p.id, "outreach", e.target.value)}
+                          onBlur={() => setEditingCell(null)}
+                          className="px-2 py-1 text-xs rounded-md border border-primary bg-background text-foreground focus:outline-none"
+                        >
+                          {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      ) : (
+                        <span
+                          className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-muted text-muted-foreground inline-edit-cell"
+                          onDoubleClick={() => setEditingCell({ id: p.id, field: "outreach" })}
+                          title="Double-click to edit"
+                        >
+                          {p.outreach}
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-4 font-semibold text-foreground" onClick={() => navigate(`/prospect/${p.id}`)}>{p.ps}</td>
+                    {/* Inline editable: Tier */}
+                    <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
+                      {editingCell?.id === p.id && editingCell?.field === "tier" ? (
+                        <select
+                          autoFocus
+                          value={p.tier}
+                          onChange={(e) => handleInlineChange(p.id, "tier", e.target.value)}
+                          onBlur={() => setEditingCell(null)}
+                          className="px-2 py-1 text-xs rounded-md border border-primary bg-background text-foreground focus:outline-none"
+                        >
+                          {TIERS.map((t) => <option key={t} value={t}>{t || "None"}</option>)}
+                        </select>
+                      ) : (
+                        <span
+                          className={cn(
+                            "inline-edit-cell px-2 py-0.5 text-[11px] font-medium rounded-md",
+                            p.tier === "Tier 1" ? "bg-primary/10 text-primary" : p.tier === "Tier 2" ? "bg-secondary text-secondary-foreground" : "text-muted-foreground"
+                          )}
+                          onDoubleClick={() => setEditingCell({ id: p.id, field: "tier" })}
+                          title="Double-click to edit"
+                        >
+                          {p.tier || "—"}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-5 py-4 text-muted-foreground" onClick={() => navigate(`/prospect/${p.id}`)}>{p.lastTouched || "—"}</td>
                   </tr>
                 ))}
                 {paged.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-5 py-16 text-center">
+                    <td colSpan={8} className="px-5 py-16 text-center">
                       <div className="flex flex-col items-center gap-3 text-muted-foreground">
                         <FileSearch className="w-12 h-12 opacity-30" />
                         <p className="text-sm font-medium">No prospects match your filters</p>
@@ -625,6 +826,10 @@ export default function TerritoryPlanner() {
                 )}
               </tbody>
             </table>
+          </div>
+          {/* Pagination at bottom */}
+          <div className="mt-4">
+            <Pagination />
           </div>
         </div>
       )}
@@ -659,6 +864,7 @@ export default function TerritoryPlanner() {
                           <GripVertical className="w-3 h-3 text-muted-foreground/40 shrink-0" />
                           <LogoImg website={p.website} size={20} />
                           <span className="text-xs font-semibold text-foreground truncate">{p.name}</span>
+                          <span className={cn("aging-dot ml-auto", getAgingClass(p.interactions))} title={getAgingLabel(p.interactions)} />
                         </div>
                         <div className="flex items-center gap-1.5 ml-5">
                           {p.tier && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">{p.tier}</span>}
@@ -744,6 +950,55 @@ export default function TerritoryPlanner() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* --- Comparison View --- */}
+      <Dialog open={showCompare} onOpenChange={setShowCompare}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Compare Prospects</DialogTitle>
+            <DialogDescription>Side-by-side comparison of selected prospects.</DialogDescription>
+          </DialogHeader>
+          {comparisonProspects.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Metric</th>
+                    {comparisonProspects.map((p) => (
+                      <th key={p.id} className="px-4 py-2 text-left text-xs font-semibold text-foreground">{p.name}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {([
+                    ["Score", (p: any) => p.score],
+                    ["Locations", (p: any) => p.locationCount || "—"],
+                    ["Industry", (p: any) => p.industry || "—"],
+                    ["Tier", (p: any) => p.tier || "—"],
+                    ["Outreach", (p: any) => p.outreach],
+                    ["Priority", (p: any) => p.priority || "—"],
+                    ["Competitor", (p: any) => p.competitor || "—"],
+                    ["Status", (p: any) => p.status],
+                    ["Est. Revenue", (p: any) => p.estimatedRevenue ? `$${p.estimatedRevenue.toLocaleString()}` : "—"],
+                    ["Contacts", (p: any) => (p.contacts || []).length],
+                    ["Interactions", (p: any) => (p.interactions || []).length],
+                  ] as [string, (p: any) => any][]).map(([label, fn]) => (
+                    <tr key={label} className="border-b border-border">
+                      <td className="px-4 py-2 text-xs text-muted-foreground font-medium">{label}</td>
+                      {comparisonProspects.map((p) => (
+                        <td key={p.id} className="px-4 py-2 text-xs text-foreground">{fn(p)}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCompare(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

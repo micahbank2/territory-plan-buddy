@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useProspects } from "@/hooks/useProspects";
+import { format } from "date-fns";
 import {
   INDUSTRIES,
   STAGES,
@@ -30,6 +31,8 @@ import {
   PhoneCall,
   Linkedin,
   Clock,
+  CalendarIcon,
+  Target,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -43,6 +46,8 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 // --- Logo using Google favicons ---
 function LogoImg({ website, size = 32 }: { website?: string; size?: number }) {
@@ -386,7 +391,53 @@ export default function ProspectPage() {
               </div>
             </div>
 
-            {/* Threaded Notes */}
+            {/* Next Step / Follow-up */}
+            <div className="bg-card rounded-xl border border-border p-5 space-y-4 animate-fade-in-up" style={{ animationDelay: "75ms" }}>
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-primary" />
+                <h2 className="text-sm font-semibold text-foreground">Next Step</h2>
+                {prospect.nextStepDate && new Date(prospect.nextStepDate) < new Date() && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive overdue-flag">Overdue</span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Field label="Action">
+                  <input
+                    value={prospect.nextStep || ""}
+                    onChange={(e) => handleUpdate("nextStep", e.target.value)}
+                    placeholder="e.g. Send follow-up email"
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Due Date">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className={cn(inputClass, "flex items-center gap-2 text-left", !prospect.nextStepDate && "text-muted-foreground")}>
+                        <CalendarIcon className="w-4 h-4 shrink-0" />
+                        {prospect.nextStepDate ? format(new Date(prospect.nextStepDate), "PPP") : "Pick a date"}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={prospect.nextStepDate ? new Date(prospect.nextStepDate) : undefined}
+                        onSelect={(date) => handleUpdate("nextStepDate", date ? date.toISOString().split("T")[0] : "")}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </Field>
+              </div>
+              {prospect.nextStepDate && (
+                <button
+                  onClick={() => { handleUpdate("nextStep", ""); handleUpdate("nextStepDate", ""); }}
+                  className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  Clear next step
+                </button>
+              )}
+            </div>
             <div className="bg-card rounded-xl border border-border p-5 space-y-4 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
               <h2 className="text-sm font-semibold text-foreground">Notes</h2>
               <div className="flex gap-2">
@@ -528,7 +579,6 @@ export default function ProspectPage() {
             {/* Metadata */}
             <div className="bg-card rounded-xl border border-border p-5 space-y-2 animate-fade-in-up" style={{ animationDelay: "150ms" }}>
               <h2 className="text-sm font-semibold text-foreground mb-3">Details</h2>
-              <div className="text-xs text-muted-foreground">Owner: <span className="text-foreground">{prospect.transitionOwner || "—"}</span></div>
               <div className="text-xs text-muted-foreground">Modified: <span className="text-foreground">{prospect.lastModified || "—"}</span></div>
               {prospect.lastTouched && <div className="text-xs text-muted-foreground">Last Touched: <span className="text-foreground">{prospect.lastTouched}</span></div>}
               {prospect.createdAt && <div className="text-xs text-muted-foreground">Created: <span className="text-foreground">{relativeTime(prospect.createdAt)}</span></div>}
