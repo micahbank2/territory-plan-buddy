@@ -68,6 +68,7 @@ function LogoImg({
   onRemove?: () => void;
 }) {
   const [err, setErr] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const url = getLogoUrl(website, size >= 32 ? 64 : 32);
 
@@ -80,10 +81,40 @@ function LogoImg({
     e.target.value = "";
   };
 
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragging(false);
+    if (!onUpload) return;
+    const file = e.dataTransfer.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => onUpload(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onUpload) setDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragging(false);
+  };
+
+  const dragProps = onUpload ? {
+    onDrop: handleDrop,
+    onDragOver: handleDragOver,
+    onDragLeave: handleDragLeave,
+  } : {};
+
   if (customLogo) {
     return (
-      <div className="relative group shrink-0" style={{ width: size, height: size }}>
-        <img src={customLogo} alt="" className="rounded-lg bg-muted object-contain w-full h-full" />
+      <div className="relative group shrink-0" style={{ width: size, height: size }} {...dragProps}>
+        <img src={customLogo} alt="" className={cn("rounded-lg bg-muted object-contain w-full h-full", dragging && "ring-2 ring-primary")} />
         {onRemove && (
           <button
             onClick={(e) => { e.stopPropagation(); onRemove(); }}
@@ -91,6 +122,11 @@ function LogoImg({
           >
             <X className="w-2.5 h-2.5" />
           </button>
+        )}
+        {dragging && (
+          <div className="absolute inset-0 rounded-lg bg-primary/30 flex items-center justify-center">
+            <Upload className="w-4 h-4 text-primary" />
+          </div>
         )}
       </div>
     );
@@ -100,11 +136,15 @@ function LogoImg({
 
   if (showFallback) {
     return (
-      <div className="relative group shrink-0" style={{ width: size, height: size }}>
-        <div className="rounded-lg bg-muted flex items-center justify-center w-full h-full">
-          <Building2 className="text-muted-foreground" style={{ width: size * 0.5, height: size * 0.5 }} />
+      <div className="relative group shrink-0" style={{ width: size, height: size }} {...dragProps}>
+        <div className={cn("rounded-lg bg-muted flex items-center justify-center w-full h-full", dragging && "ring-2 ring-primary")}>
+          {dragging ? (
+            <Upload className="text-primary" style={{ width: size * 0.4, height: size * 0.4 }} />
+          ) : (
+            <Building2 className="text-muted-foreground" style={{ width: size * 0.5, height: size * 0.5 }} />
+          )}
         </div>
-        {onUpload && (
+        {onUpload && !dragging && (
           <>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
             <button
@@ -121,9 +161,9 @@ function LogoImg({
   }
 
   return (
-    <div className="relative group shrink-0" style={{ width: size, height: size }}>
-      <img src={url} alt="" className="rounded-lg bg-muted object-contain w-full h-full" onError={() => setErr(true)} />
-      {onUpload && (
+    <div className="relative group shrink-0" style={{ width: size, height: size }} {...dragProps}>
+      <img src={url} alt="" className={cn("rounded-lg bg-muted object-contain w-full h-full", dragging && "ring-2 ring-primary")} onError={() => setErr(true)} />
+      {onUpload && !dragging && (
         <>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
           <button
@@ -135,10 +175,14 @@ function LogoImg({
           </button>
         </>
       )}
+      {dragging && (
+        <div className="absolute inset-0 rounded-lg bg-primary/30 flex items-center justify-center">
+          <Upload className="w-4 h-4 text-primary" />
+        </div>
+      )}
     </div>
   );
 }
-
 function EditableContact({
   contact,
   onSave,

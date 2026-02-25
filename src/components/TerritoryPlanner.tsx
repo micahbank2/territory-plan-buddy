@@ -42,7 +42,10 @@ import {
   Zap,
   ChevronDown,
   ChevronUp as ChevronUpIcon,
+  SlidersHorizontal,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -79,7 +82,7 @@ interface SavedView {
     fStatus: string[];
     fCompetitor: string[];
     fTier: string[];
-    fMinLocs: string;
+    fLocRange: [number, number];
     fOutreach: string[];
   };
 }
@@ -142,6 +145,7 @@ function LogoImg({
   onRemove?: () => void;
 }) {
   const [err, setErr] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const url = getLogoUrl(website, size >= 32 ? 64 : 32);
 
@@ -154,11 +158,41 @@ function LogoImg({
     e.target.value = "";
   };
 
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragging(false);
+    if (!onUpload) return;
+    const file = e.dataTransfer.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => onUpload(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onUpload) setDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragging(false);
+  };
+
+  const dragProps = onUpload ? {
+    onDrop: handleDrop,
+    onDragOver: handleDragOver,
+    onDragLeave: handleDragLeave,
+  } : {};
+
   // Custom logo takes priority
   if (customLogo) {
     return (
-      <div className="relative group shrink-0" style={{ width: size, height: size }}>
-        <img src={customLogo} alt="" className="rounded-md bg-muted object-contain w-full h-full" />
+      <div className="relative group shrink-0" style={{ width: size, height: size }} {...dragProps}>
+        <img src={customLogo} alt="" className={cn("rounded-md bg-muted object-contain w-full h-full", dragging && "ring-2 ring-primary")} />
         {onRemove && (
           <button
             onClick={(e) => { e.stopPropagation(); onRemove(); }}
@@ -166,6 +200,11 @@ function LogoImg({
           >
             <X className="w-2.5 h-2.5" />
           </button>
+        )}
+        {dragging && (
+          <div className="absolute inset-0 rounded-md bg-primary/30 flex items-center justify-center">
+            <Upload className="w-3 h-3 text-primary" />
+          </div>
         )}
       </div>
     );
@@ -175,11 +214,15 @@ function LogoImg({
 
   if (showFallback) {
     return (
-      <div className="relative group shrink-0" style={{ width: size, height: size }}>
-        <div className="rounded-md bg-muted flex items-center justify-center w-full h-full">
-          <Building2 className="text-muted-foreground" style={{ width: size * 0.5, height: size * 0.5 }} />
+      <div className="relative group shrink-0" style={{ width: size, height: size }} {...dragProps}>
+        <div className={cn("rounded-md bg-muted flex items-center justify-center w-full h-full", dragging && "ring-2 ring-primary")}>
+          {dragging ? (
+            <Upload className="text-primary" style={{ width: size * 0.4, height: size * 0.4 }} />
+          ) : (
+            <Building2 className="text-muted-foreground" style={{ width: size * 0.5, height: size * 0.5 }} />
+          )}
         </div>
-        {onUpload && (
+        {onUpload && !dragging && (
           <>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
             <button
@@ -196,14 +239,14 @@ function LogoImg({
   }
 
   return (
-    <div className="relative group shrink-0" style={{ width: size, height: size }}>
+    <div className="relative group shrink-0" style={{ width: size, height: size }} {...dragProps}>
       <img
         src={url}
         alt=""
-        className="rounded-md bg-muted object-contain w-full h-full"
+        className={cn("rounded-md bg-muted object-contain w-full h-full", dragging && "ring-2 ring-primary")}
         onError={() => setErr(true)}
       />
-      {onUpload && (
+      {onUpload && !dragging && (
         <>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
           <button
@@ -215,10 +258,14 @@ function LogoImg({
           </button>
         </>
       )}
+      {dragging && (
+        <div className="absolute inset-0 rounded-md bg-primary/30 flex items-center justify-center">
+          <Upload className="w-3 h-3 text-primary" />
+        </div>
+      )}
     </div>
   );
 }
-
 // --- Score Badge ---
 function ScoreBadge({ score, compact = false }: { score: number; compact?: boolean }) {
   const info = getScoreLabel(score);
@@ -282,7 +329,7 @@ export default function TerritoryPlanner() {
   const [fStatus, setFStatus] = useState<string[]>([]);
   const [fCompetitor, setFCompetitor] = useState<string[]>([]);
   const [fTier, setFTier] = useState<string[]>([]);
-  const [fMinLocs, setFMinLocs] = useState("");
+  const [fLocRange, setFLocRange] = useState<[number, number]>([0, 0]);
   const [fOutreach, setFOutreach] = useState<string[]>([]);
   const [sK, setSK] = useState<string>("ps");
   const [sD, setSD] = useState<"asc" | "desc">("desc");
@@ -348,6 +395,19 @@ export default function TerritoryPlanner() {
     [data]
   );
 
+  const maxLocs = useMemo(() => {
+    return Math.max(0, ...data.map((p) => p.locationCount || 0));
+  }, [data]);
+
+  // Initialize fLocRange once maxLocs is known
+  useEffect(() => {
+    if (maxLocs > 0 && fLocRange[0] === 0 && fLocRange[1] === 0) {
+      setFLocRange([0, maxLocs]);
+    }
+  }, [maxLocs]);
+
+  const locFilterActive = fLocRange[0] > 0 || (fLocRange[1] > 0 && fLocRange[1] < maxLocs);
+
   const filtered = useMemo(() => {
     let r = [...enriched] as (EnrichedProspect & Record<string, any>)[];
     if (q) {
@@ -364,7 +424,10 @@ export default function TerritoryPlanner() {
     if (fStatus.length) r = r.filter((p) => fStatus.includes(p.status));
     if (fCompetitor.length) r = r.filter((p) => fCompetitor.includes(p.competitor));
     if (fTier.length) r = r.filter((p) => fTier.includes(p.tier));
-    if (fMinLocs) r = r.filter((p) => p.locationCount && p.locationCount >= parseInt(fMinLocs));
+    if (locFilterActive) r = r.filter((p) => {
+      const lc = p.locationCount || 0;
+      return lc >= fLocRange[0] && lc <= fLocRange[1];
+    });
     r.sort((a, b) => {
       let av = a[sK], bv = b[sK];
       if (av == null) av = sD === "desc" ? -Infinity : Infinity;
@@ -373,9 +436,9 @@ export default function TerritoryPlanner() {
       return sD === "asc" ? (av < bv ? -1 : av > bv ? 1 : 0) : (av > bv ? -1 : av < bv ? 1 : 0);
     });
     return r;
-  }, [enriched, q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fMinLocs, sK, sD]);
+  }, [enriched, q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fLocRange, locFilterActive, sK, sD]);
 
-  useMemo(() => setPage(1), [q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fMinLocs]);
+  useMemo(() => setPage(1), [q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fLocRange]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -430,10 +493,10 @@ export default function TerritoryPlanner() {
   };
 
   const clr = () => {
-    setQ(""); setFIndustry([]); setFOutreach([]); setFStatus([]); setFCompetitor([]); setFTier([]); setFMinLocs("");
+    setQ(""); setFIndustry([]); setFOutreach([]); setFStatus([]); setFCompetitor([]); setFTier([]); setFLocRange([0, maxLocs]);
   };
 
-  const hasFilters = fIndustry.length || fOutreach.length || fStatus.length || fCompetitor.length || fTier.length || fMinLocs;
+  const hasFilters = fIndustry.length || fOutreach.length || fStatus.length || fCompetitor.length || fTier.length || locFilterActive;
 
   const toggleSelect = (id: number) => {
     setSelected((prev) => {
@@ -486,7 +549,7 @@ export default function TerritoryPlanner() {
     const view: SavedView = {
       id: Date.now().toString(),
       name: viewName.trim(),
-      filters: { q, fIndustry, fStatus, fCompetitor, fTier, fMinLocs, fOutreach },
+      filters: { q, fIndustry, fStatus, fCompetitor, fTier, fLocRange, fOutreach },
     };
     const updated = [...savedViews, view];
     setSavedViews(updated);
@@ -498,7 +561,8 @@ export default function TerritoryPlanner() {
 
   const loadView = (v: SavedView) => {
     setQ(v.filters.q); setFIndustry(v.filters.fIndustry); setFStatus(v.filters.fStatus);
-    setFCompetitor(v.filters.fCompetitor); setFTier(v.filters.fTier); setFMinLocs(v.filters.fMinLocs);
+    setFCompetitor(v.filters.fCompetitor); setFTier(v.filters.fTier);
+    setFLocRange(v.filters.fLocRange || [0, maxLocs]);
     setFOutreach(v.filters.fOutreach);
     toast(`Loaded view "${v.name}"`);
   };
@@ -746,9 +810,9 @@ export default function TerritoryPlanner() {
         <div className="flex items-center gap-2 mb-6 flex-wrap">
           {([
             ["Total", stats.t, () => { clr(); }],
-            ["50+ Locs", stats.o50, () => { clr(); setFMinLocs("50"); }],
-            ["100+ Locs", stats.o100, () => { clr(); setFMinLocs("100"); }],
-            ["500+ Locs", stats.o500, () => { clr(); setFMinLocs("500"); }],
+            ["50+ Locs", stats.o50, () => { clr(); setFLocRange([50, maxLocs]); }],
+            ["100+ Locs", stats.o100, () => { clr(); setFLocRange([100, maxLocs]); }],
+            ["500+ Locs", stats.o500, () => { clr(); setFLocRange([500, maxLocs]); }],
             ["Hot", stats.hot, () => { clr(); }],
             ["Warm", stats.warm, () => { clr(); }],
             ["Prospects", stats.prospects, () => { clr(); setFStatus(["Prospect"]); }],
@@ -878,6 +942,51 @@ export default function TerritoryPlanner() {
           <MultiSelect options={["Prospect", "Churned"]} selected={fStatus} onChange={setFStatus} placeholder="Status" />
           <MultiSelect options={COMPETITORS.filter(Boolean)} selected={fCompetitor} onChange={setFCompetitor} placeholder="Competitor" />
           <MultiSelect options={TIERS.filter(Boolean)} selected={fTier} onChange={setFTier} placeholder="Tier" />
+
+          {/* Location Range Slider */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-colors",
+                locFilterActive
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+              )}>
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                {locFilterActive
+                  ? `${fLocRange[0].toLocaleString()}–${fLocRange[1].toLocaleString()} locs`
+                  : "Locations"}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-4" align="start">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-foreground">Location Count</span>
+                  {locFilterActive && (
+                    <button
+                      onClick={() => setFLocRange([0, maxLocs])}
+                      className="text-[10px] text-primary hover:underline"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+                <Slider
+                  value={fLocRange}
+                  onValueChange={(val) => setFLocRange(val as [number, number])}
+                  min={0}
+                  max={maxLocs}
+                  step={10}
+                  minStepsBetweenThumbs={1}
+                  className="w-full"
+                />
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span>{fLocRange[0].toLocaleString()}</span>
+                  <span>{fLocRange[1].toLocaleString()}</span>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
 
           {hasFilters && (
             <>
