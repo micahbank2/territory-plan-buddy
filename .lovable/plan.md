@@ -1,36 +1,68 @@
 
 
-# Location Range Slider + Drag-and-Drop Logo Upload
+# Yext-ify the Territory Planner
 
-## 1. Location Count Range Slider
+Transform the app into a polished, Yext-branded internal tool inspired by the latest pitch deck screenshots.
 
-Replace the text-based "min locations" filter with a dual-handle range slider for more intuitive filtering.
+## Brand Palette (from screenshots)
 
-### Changes in `src/components/TerritoryPlanner.tsx`:
-- Replace `fMinLocs: string` state with `fLocRange: [number, number]` initialized to `[0, maxLocs]`
-- Compute `maxLocs` from the dataset (highest `locationCount` across all prospects)
-- Add a "Locations" filter button that opens a Popover containing a dual-thumb Radix Slider
-- Slider shows live min/max labels with comma-formatted numbers (e.g., "1,500")
-- Step size of 10, with "Reset" link inside the popover
-- Update all references: `clr()`, `hasFilters`, `handleSaveView()`, `loadView()`, `SavedView` type, and the stat pill click handlers (50+, 100+, 500+ Locs set the lower bound accordingly)
-- Filter logic changes from `>= parseInt(fMinLocs)` to `>= fLocRange[0] && <= fLocRange[1]`
+The new Yext brand leans into:
+- **Dark charcoal backgrounds**: #1C1F2E (main), #232738 (cards), #14172A (deepest)
+- **Blue/periwinkle accent**: #4F5BD5 (primary actions, highlights, grid lines)
+- **Clean white text** on dark surfaces
+- **Subtle blue grid-line patterns** as decorative background elements
+- **Rounded pill badges** with blue outlines ("OMNI EDITION" style)
+- **Minimal, confident typography** -- Inter font (already in use, perfect)
 
-## 2. Drag-and-Drop Logo Upload
+## Changes by File
 
-Upgrade the `LogoImg` component from a file-picker button to a drag-and-drop zone.
+### 1. `index.html`
+- Add `class="dark"` to the `<html>` tag to default to dark mode
+- Update `<title>` to "Territory Planner | Yext"
 
-### Changes in `src/components/TerritoryPlanner.tsx` (LogoImg component):
-- Add `onDragOver` and `onDrop` event handlers to the logo container divs
-- When a file is dragged over, show a visual highlight (border glow / overlay)
-- On drop, read the file as base64 and call `onUpload`
-- Keep the click-to-browse as a secondary option (the hidden file input stays)
-- The fallback state (Building2 icon) shows "Drop logo here" text on drag-over
-- Works in both the list view and the ProspectPage detail view
+### 2. `src/index.css` -- Full dark theme overhaul
+- Update `.dark` CSS variables to match Yext palette:
+  - `--background`: deep navy #14172A
+  - `--card`: slightly lighter #1C1F2E
+  - `--primary`: periwinkle blue #4F5BD5
+  - `--border`: subtle blue-tinted borders (white at ~10% opacity feel)
+  - `--muted`: #232738
+- Add new utility classes:
+  - `.glass-card` -- translucent card with backdrop-blur and subtle border glow
+  - `.yext-gradient` -- subtle navy-to-blue gradient for headers
+  - `.yext-grid-bg` -- CSS grid-line background pattern (matching the pitch deck aesthetic)
+  - `.glow-blue` -- blue box-shadow glow on hover for buttons/cards
+- Update the pipeline segment and kanban card styles for the new palette
+- Styled scrollbar for dark theme
 
-### Changes in `src/pages/ProspectPage.tsx`:
-- Same drag-and-drop upgrade for the larger logo on the detail page header
+### 3. `src/components/TerritoryPlanner.tsx`
+- **Header**: Navy-to-blue gradient background, "Territory Planner" title in bold white, small "Yext" wordmark or badge beside it
+- **Stat pills**: Glass-card style with blue accent borders, larger bolder numbers, blue glow on hover/active
+- **Pipeline bar**: Taller (16px), with a subtle glow underneath, updated stage colors to complement the blue palette
+- **Search bar**: Glass background, blue focus ring
+- **Filter buttons**: Blue-outlined pill style (like "OMNI EDITION" badge in screenshots)
+- **Table**: Darker header row, blue-tinted row hover, subtle row separators
+- **Kanban columns**: Glass-card backgrounds, blue top-accent border
+- **Kanban cards**: Left accent strip colored by stage, glass hover effect
+- **"Add Prospect" button**: Blue gradient fill with glow
+- **Action items section**: Glass cards with blue icon tints
 
-## Files to modify
-1. `src/components/TerritoryPlanner.tsx` -- Range slider filter + drag-and-drop on LogoImg
-2. `src/pages/ProspectPage.tsx` -- Drag-and-drop on detail page logo
+### 4. `src/pages/ProspectPage.tsx`
+- Header section with the same navy gradient
+- Score badges with more vibrant coloring against dark background
+- Section cards get glass-card styling
+- Interaction timeline with blue accent dots
+
+### 5. `src/pages/InsightsPage.tsx`
+- Header matches main page gradient
+- Chart colors updated to blue/periwinkle palette
+- Stat cards and list cards get glass-card treatment
+- Pie chart colors adjusted to complement the dark theme
+
+## Visual Details
+
+- The grid-line background pattern (visible in the pitch deck screenshots) will be implemented as a pure CSS repeating-linear-gradient on the body or main container, giving that techy "data platform" feel
+- All interactive elements get smooth transitions and a subtle blue glow on hover
+- Numbers and stats use slightly larger font weights to feel confident and bold
+- The overall feel: dark, professional, techy -- like an internal Yext power tool
 
