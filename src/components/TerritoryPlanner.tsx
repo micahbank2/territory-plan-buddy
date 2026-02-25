@@ -130,19 +130,15 @@ function getAgingLabel(interactions: Prospect["interactions"]): string {
 // --- Pipeline colors (updated for Yext palette) ---
 const STAGE_COLORS: Record<string, string> = {
   "Not Started": "hsl(225, 15%, 50%)",
-  "Researching": "hsl(236, 64%, 57%)",
-  "Contacted": "hsl(38, 92%, 55%)",
-  "Meeting Set": "hsl(152, 60%, 45%)",
-  "Proposal Sent": "hsl(270, 60%, 58%)",
-  "Negotiating": "hsl(340, 70%, 55%)",
-  "Closed Won": "hsl(152, 65%, 38%)",
+  "Actively Prospecting": "hsl(236, 64%, 57%)",
+  "Meeting Booked": "hsl(38, 92%, 55%)",
   "Closed Lost": "hsl(0, 65%, 55%)",
-  "On Hold": "hsl(225, 15%, 40%)",
+  "Closed Won": "hsl(152, 65%, 38%)",
 };
 
 const STAGE_EMOJI: Record<string, string> = {
-  "Not Started": "⬜", "Researching": "🔍", "Contacted": "📧", "Meeting Set": "📅",
-  "Proposal Sent": "📄", "Negotiating": "🤝", "Closed Won": "🏆", "Closed Lost": "❌", "On Hold": "⏸️",
+  "Not Started": "⬜", "Actively Prospecting": "🔍", "Meeting Booked": "📅",
+  "Closed Lost": "❌", "Closed Won": "🏆",
 };
 
 // --- Logo component with upload support ---

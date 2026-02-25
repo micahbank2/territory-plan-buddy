@@ -1,13 +1,9 @@
 export const STAGES = [
   "Not Started",
-  "Researching",
-  "Contacted",
-  "Meeting Set",
-  "Proposal Sent",
-  "Negotiating",
-  "Closed Won",
+  "Actively Prospecting",
+  "Meeting Booked",
   "Closed Lost",
-  "On Hold",
+  "Closed Won",
 ];
 
 export const PRIORITIES = ["", "Hot", "Warm", "Cold", "Dead"];
@@ -15,32 +11,31 @@ export const PRIORITIES = ["", "Hot", "Warm", "Cold", "Dead"];
 export const TIERS = ["", "Tier 1", "Tier 2", "Tier 3", "Tier 4"];
 
 export const INDUSTRIES = [
-  "Retail",
-  "Food & Bev",
-  "Storage",
-  "Daycare/Tutoring",
-  "Gas Stations",
-  "Grocery",
-  "QSR/Fast Casual",
-  "Casual Dining",
-  "Fine Dining",
-  "Fashion Retail",
-  "Office Supply Retail",
-  "Hospitality/Hotels",
   "Auto Dealerships",
-  "Healthcare",
-  "Non-Profit Retail/Thrift",
-  "Commercial Real Estate",
-  "Multifamily REIT",
-  "Public Transportation",
-  "Moving/Storage",
-  "Commercial Landscaping",
   "Bookstore Retail",
-  "Golf Retail",
   "Car Wash Chain",
+  "Casual Dining",
+  "Commercial Landscaping",
+  "Commercial Real Estate",
+  "Daycare/Tutoring",
+  "Fashion Retail",
+  "Fine Dining",
+  "Food & Bev",
+  "Gas Stations",
+  "Golf Retail",
+  "Grocery",
+  "Healthcare",
+  "Hospitality/Hotels",
   "HVAC/R Distribution",
+  "Moving/Storage",
+  "Multifamily REIT",
+  "Non-Profit Retail/Thrift",
+  "Office Supply Retail",
+  "Public Transportation",
+  "QSR/Fast Casual",
+  "Retail",
   "Sporting Goods",
-  "Government/Utility",
+  "Storage",
   "Other",
 ];
 
@@ -125,8 +120,8 @@ export function scoreBreakdown(p: Prospect): ScoreBreakdownItem[] {
   else if (lc > 0) items.push({ label: "Has locations", value: 10 });
   if (["QSR/Fast Casual","Grocery","Casual Dining","Gas Stations","Hospitality/Hotels","Healthcare","Car Wash Chain"].includes(p.industry))
     items.push({ label: `${p.industry} industry`, value: 20 });
-  if (p.outreach === "Meeting Set" || p.outreach === "Proposal Sent") items.push({ label: `Outreach: ${p.outreach}`, value: 15 });
-  else if (p.outreach === "Contacted") items.push({ label: "Outreach: Contacted", value: 5 });
+  if (p.outreach === "Meeting Booked") items.push({ label: `Outreach: ${p.outreach}`, value: 15 });
+  else if (p.outreach === "Actively Prospecting") items.push({ label: "Outreach: Actively Prospecting", value: 5 });
   if (p.priority === "Hot") items.push({ label: "Hot priority", value: 25 });
   else if (p.priority === "Warm") items.push({ label: "Warm priority", value: 10 });
   else if (p.priority === "Dead") items.push({ label: "Dead priority", value: -30 });
@@ -167,8 +162,8 @@ export function scoreProspect(p: Prospect): number {
     ].includes(p.industry)
   )
     s += 20;
-  if (p.outreach === "Meeting Set" || p.outreach === "Proposal Sent") s += 15;
-  else if (p.outreach === "Contacted") s += 5;
+  if (p.outreach === "Meeting Booked") s += 15;
+  else if (p.outreach === "Actively Prospecting") s += 5;
   if (p.priority === "Hot") s += 25;
   else if (p.priority === "Warm") s += 10;
   else if (p.priority === "Dead") s -= 30;

@@ -302,7 +302,7 @@ export default function ProspectPage() {
         setLocalCustomCompetitor("");
       }
     }
-  }, [prospect?.id]);
+  }, [prospect?.id, prospect?.nextStep, prospect?.locationCount, prospect?.competitor]);
 
   if (!ok) return (
     <div className="bg-background min-h-screen yext-grid-bg">
