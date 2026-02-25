@@ -396,7 +396,7 @@ export default function ProspectPage() {
       <header className="yext-gradient border-b border-primary/10 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate("/")} className="p-1.5 rounded-md hover:bg-primary/10 transition-colors">
-            <ArrowLeft className="w-4 h-4 text-primary-foreground/60" />
+            <ArrowLeft className="w-4 h-4 text-foreground/60" />
           </button>
           <LogoImg
             website={prospect.website}
@@ -407,7 +407,7 @@ export default function ProspectPage() {
           />
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-lg font-extrabold text-primary-foreground">{prospect.name}</h1>
+              <h1 className="text-lg font-extrabold text-foreground">{prospect.name}</h1>
               <span className={cn(
                 "px-3 py-1 text-sm font-bold rounded-lg uppercase",
                 prospect.status === "Churned"
@@ -445,14 +445,14 @@ export default function ProspectPage() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="text-center px-4 cursor-help">
-                  <div className="text-[10px] text-primary-foreground/50 uppercase">Score</div>
+                  <div className="text-[10px] text-muted-foreground uppercase">Score</div>
                   <div className="text-2xl font-black animate-count-up" style={{ color: scoreInfo.color }}>
                     {score}
                   </div>
                   <div className="text-[10px] font-bold" style={{ color: scoreInfo.color }}>{scoreInfo.label}</div>
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-xs">
+              <TooltipContent side="bottom" align="end" collisionPadding={16} className="max-w-xs z-[100]">
                 <p className="font-bold text-xs mb-2">Score Breakdown</p>
                 {breakdown.length === 0 ? (
                   <p className="text-[10px] text-muted-foreground">No scoring factors</p>

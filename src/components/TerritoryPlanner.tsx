@@ -291,7 +291,7 @@ function ScoreBadge({ score, prospect, compact = false }: { score: number; prosp
             {!compact && <span className="text-[10px] font-semibold" style={{ color: info.color }}>{info.short}</span>}
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top" className="text-xs max-w-[220px] p-3">
+        <TooltipContent side="top" align="center" collisionPadding={16} className="text-xs max-w-[220px] p-3 z-[100]">
           <p className="font-bold mb-1.5" style={{ color: info.color }}>{info.label} — {score} pts</p>
           {breakdown.length > 0 ? (
             <div className="space-y-0.5 border-t border-border pt-1.5 mb-1.5">
