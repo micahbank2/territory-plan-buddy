@@ -1,63 +1,45 @@
 
 
-# Territory Planner Improvements + New Features
+# Territory Planner UX Improvements + New Features
 
-## 1. Logo Display Fix
+## 1. Remove Owner Field from Prospect Detail Page
+Remove the "Owner" line from the Details metadata card on the prospect page (line 531 of ProspectPage.tsx). You own all accounts -- no need for this field.
 
-Switch to Google's favicon service (`https://www.google.com/s2/favicons?domain=DOMAIN&sz=64`) as the primary source -- it works for virtually any website. Clearbit as fallback for higher-quality logos.
+## 2. Move Pagination to Bottom of Table
+Currently pagination sits above the table (lines 523-545 of TerritoryPlanner.tsx). Move it to below the table (after the `</table>` closing tag) so users can paginate after scrolling through results. Keep the "Showing X-Y of Z" text and prev/next buttons in the same style.
 
-## 2. Quick Add Prospect
+## 3. Additional Features to Make This a Prospecting Machine
 
-"Add Prospect" button next to the heading opens a dialog with fields: Company Name (required), Website, Industry (dropdown), Location Count, Status, Tier. New `add` function in `useProspects` hook.
+### A. Global Command Palette (Cmd+K)
+Upgrade the current Cmd+K shortcut from just focusing search to a full command palette (using the already-installed `cmdk` package). Quick-jump to any prospect by name, switch views, trigger actions like "Add Prospect" or "Export CSV" -- all from the keyboard. Power-user essential.
 
-## 3. Proper Delete Confirmation Dialog
+### B. Last Contacted Aging Indicator
+Show a colored dot or badge next to each prospect in the list view indicating how long since last interaction: green (< 7 days), yellow (7-30 days), red (30+ days), gray (never). Helps identify stale accounts at a glance. Computed from the `interactions` array -- no API needed.
 
-Replace browser `confirm()` with a styled AlertDialog showing company name, "This action cannot be undone" warning, red Delete button + Cancel.
+### C. Follow-Up Reminders / Next Steps
+Add a "Next Step" field on the prospect detail page -- a short text + date picker. On the All Prospects list, prospects with overdue next steps get a visual flag. Stored in localStorage alongside existing data.
 
-## 4. UX/UI Enhancements (21st.dev-inspired)
+### D. Pipeline Summary Bar
+A thin horizontal stacked bar at the top showing the distribution of prospects across outreach stages (Not Started / Contacted / Meeting Set / etc.) with color coding. Clicking a segment filters the list. Gives instant pipeline health visibility.
 
-- Subtle hover card transitions on table rows (scale/shadow lift)
-- Skeleton loading states
-- Toast notifications (sonner) for all actions
-- Keyboard shortcut hint (Cmd+K) for search
-- Animated stat pill counters
-- Destructive glow on delete button hover
-- Empty state illustration when no results
+### E. Quick Inline Edit on Table Rows
+Double-click a cell (e.g., Outreach Stage, Tier) in the table to edit it inline without navigating to the detail page. Speeds up bulk data entry significantly.
 
-## 5. Additional Features (No External APIs / No Cost)
+### F. Prospect Comparison View
+Select 2-3 prospects and open a side-by-side comparison table showing key metrics (locations, score, tier, stage, competitor). Helps prioritize which accounts to focus on.
 
-### A. Bulk Actions
-Add checkboxes to table rows with a top toolbar that appears when items are selected. Actions: bulk update outreach stage, bulk assign tier, bulk delete. Speeds up workflow dramatically.
-
-### B. Prospect Activity Timeline
-On the prospect detail page, show a unified timeline of all interactions (emails, calls, LinkedIn messages) and field changes in chronological order. Pure frontend -- just renders the existing `interactions` array as a visual timeline with icons and relative timestamps ("3 days ago").
-
-### C. CSV Export
-"Export CSV" button on the All Prospects page that generates a downloadable CSV of the current filtered view using the browser's built-in Blob/download API. No backend needed.
-
-### D. Saved Filters / Views
-Let users save their current filter combinations as named views (e.g., "Hot Tier 1 prospects", "Churned with competitor"). Stored in localStorage alongside prospect data. Renders as clickable tabs above the filter bar.
-
-### E. Drag-and-Drop Kanban Board View
-Toggle between the table view and a kanban board where columns represent outreach stages (Cold, Contacted, Meeting Booked, etc.). Prospects are draggable cards. Uses native HTML5 drag-and-drop -- no external library needed.
-
-### F. Notes with Timestamps
-On the prospect detail page, convert the single "notes" text field into a threaded notes log. Each note entry gets an automatic timestamp. Notes are displayed newest-first. Simple append-only model stored in the prospect object.
-
-### G. Duplicate Detection
-When adding a new prospect (or on page load), flag potential duplicates by comparing company names using basic string similarity (Levenshtein or normalized substring match). Show a warning banner: "Possible duplicate of X" with a link to the existing record.
-
-### H. Dashboard Sparklines
-Add tiny inline sparkline charts next to each stat pill showing the trend over time (e.g., how many prospects were added per week). Track a simple `createdAt` timestamp on each prospect and compute counts per week. Uses recharts (already installed).
+### G. Weekly Digest / Stats Summary Page
+A new `/insights` page showing: prospects added this week, interactions logged, stage movement (how many moved forward), top-scored untouched accounts. All computed from existing data timestamps.
 
 ## Technical Details
 
 ### Files to modify:
-1. **`src/hooks/useProspects.ts`** -- Add `add`, bulk update/delete functions
-2. **`src/components/TerritoryPlanner.tsx`** -- Quick Add dialog, Google favicon, bulk actions, saved views tabs, kanban toggle, CSV export button, skeleton loading, animated stats, search shortcut, duplicate detection
-3. **`src/pages/ProspectPage.tsx`** -- AlertDialog delete, Google favicon, toast notifications, activity timeline, threaded notes
-4. **`src/index.css`** -- Animation keyframes for hover effects and transitions
-5. **`src/data/prospects.ts`** -- Add `createdAt` field to Prospect type
+1. **`src/pages/ProspectPage.tsx`** -- Remove owner field from Details card, add Next Step field
+2. **`src/components/TerritoryPlanner.tsx`** -- Move pagination below table, add command palette, aging indicators, pipeline bar, inline editing
+3. **`src/data/prospects.ts`** -- Add `nextStep` and `nextStepDate` fields to Prospect type
+4. **`src/hooks/useProspects.ts`** -- No changes needed (existing `update` function handles new fields)
+5. **`src/pages/InsightsPage.tsx`** (new) -- Weekly digest / stats summary page
+6. **`src/App.tsx`** -- Add route for `/insights`
+7. **`src/index.css`** -- Add any new animation keyframes for command palette transitions
 
-### New dependencies: None -- all features use existing installed packages (recharts, shadcn components, sonner) plus native browser APIs (Blob, HTML5 drag-and-drop).
-
+### Dependencies: None new -- `cmdk` is already installed for the command palette.
