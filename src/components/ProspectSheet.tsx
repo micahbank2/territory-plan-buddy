@@ -4,6 +4,8 @@ import { format } from "date-fns";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from "@/components/ui/sheet";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   INDUSTRIES, STAGES, PRIORITIES, TIERS, COMPETITORS, INTERACTION_TYPES,
   scoreProspect, scoreBreakdown, getScoreLabel, getLogoUrl,
@@ -62,6 +64,7 @@ function SheetLogoImg({ website, size = 32, customLogo }: { website?: string; si
 
 export function ProspectSheet({ prospectId, onClose, data, update, remove }: ProspectSheetProps) {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const prospect = useMemo(() => data.find(p => p.id === prospectId), [data, prospectId]);
 
   const [newContact, setNewContact] = useState<Partial<Contact>>({});
@@ -184,11 +187,13 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
   const inputClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 placeholder:text-muted-foreground transition-all";
   const selectClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 appearance-none cursor-pointer transition-all";
 
-  return (
-    <Sheet open={prospectId !== null} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="w-full sm:w-3/4 sm:max-w-2xl overflow-y-auto p-0">
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-card border-b border-border px-6 py-4">
+  const isOpen = prospectId !== null;
+  const handleOpenChange = (open: boolean) => !open && onClose();
+
+  const sheetContent = (
+    <div className="w-full h-full overflow-y-auto">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-card border-b border-border px-6 py-4">
           <div className="flex items-center gap-3">
             <SheetLogoImg website={prospect.website} size={36} customLogo={prospect.customLogo} />
             <div className="flex-1 min-w-0">
@@ -465,6 +470,23 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
             </div>
           )}
         </div>
+      </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer direction="right" open={isOpen} onOpenChange={handleOpenChange}>
+        <DrawerContent direction="right" className="w-full h-full">
+          {sheetContent}
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+      <SheetContent side="right" className="w-full sm:w-3/4 sm:max-w-2xl overflow-y-auto p-0">
+        {sheetContent}
       </SheetContent>
     </Sheet>
   );
