@@ -1,11 +1,27 @@
 import { useState, useEffect, useCallback } from "react";
 import { STORAGE_KEY, SEED, initProspect, type Prospect } from "@/data/prospects";
 
+const ARCHIVE_KEY = "tp_archived";
+
+export interface ArchivedProspect extends Prospect {
+  archivedAt: string;
+}
+
 export function useProspects() {
   const [data, setData] = useState<Prospect[]>([]);
+  const [archived, setArchived] = useState<ArchivedProspect[]>([]);
   const [ok, setOk] = useState(false);
 
   useEffect(() => {
+    // Load archived
+    try {
+      const rawArc = localStorage.getItem(ARCHIVE_KEY);
+      if (rawArc) {
+        const a = JSON.parse(rawArc);
+        if (Array.isArray(a)) setArchived(a);
+      }
+    } catch {}
+
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -22,7 +38,6 @@ export function useProspects() {
               createdAt: item.createdAt || "",
               tasks: item.tasks || [],
             };
-            // Migrate legacy nextStep into tasks array
             if (!m.tasks.length && item.nextStep) {
               m.tasks = [{ id: Date.now().toString() + m.id, text: item.nextStep, dueDate: item.nextStepDate || "" }];
             }
@@ -38,15 +53,23 @@ export function useProspects() {
     setOk(true);
   }, []);
 
+  // Persist data
   useEffect(() => {
     if (!ok || !data.length) return;
     const t = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      } catch {}
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
     }, 500);
     return () => clearTimeout(t);
   }, [data, ok]);
+
+  // Persist archive
+  useEffect(() => {
+    if (!ok) return;
+    const t = setTimeout(() => {
+      try { localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archived)); } catch {}
+    }, 500);
+    return () => clearTimeout(t);
+  }, [archived, ok]);
 
   const update = useCallback((id: number, u: Partial<Prospect>) => {
     const ts = new Date().toISOString().split("T")[0];
@@ -64,7 +87,13 @@ export function useProspects() {
   }, []);
 
   const remove = useCallback((id: number) => {
-    setData((prev) => prev.filter((p) => p.id !== id));
+    setData((prev) => {
+      const prospect = prev.find((p) => p.id === id);
+      if (prospect) {
+        setArchived((arc) => [...arc, { ...prospect, archivedAt: new Date().toISOString() }]);
+      }
+      return prev.filter((p) => p.id !== id);
+    });
   }, []);
 
   const bulkUpdate = useCallback((ids: number[], u: Partial<Prospect>) => {
@@ -75,7 +104,14 @@ export function useProspects() {
   }, []);
 
   const bulkRemove = useCallback((ids: number[]) => {
-    setData((prev) => prev.filter((p) => !ids.includes(p.id)));
+    setData((prev) => {
+      const toArchive = prev.filter((p) => ids.includes(p.id));
+      if (toArchive.length) {
+        const now = new Date().toISOString();
+        setArchived((arc) => [...arc, ...toArchive.map((p) => ({ ...p, archivedAt: now }))]);
+      }
+      return prev.filter((p) => !ids.includes(p.id));
+    });
   }, []);
 
   const bulkAdd = useCallback((partials: (Partial<Prospect> & { name: string })[]) => {
@@ -104,5 +140,20 @@ export function useProspects() {
     setData(SEED.map((p) => ({ ...p })));
   }, []);
 
-  return { data, ok, update, add, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, reset };
+  const restore = useCallback((id: number) => {
+    setArchived((prev) => {
+      const item = prev.find((p) => p.id === id);
+      if (item) {
+        const { archivedAt, ...prospect } = item;
+        setData((d) => [prospect, ...d]);
+      }
+      return prev.filter((p) => p.id !== id);
+    });
+  }, []);
+
+  const permanentDelete = useCallback((id: number) => {
+    setArchived((prev) => prev.filter((p) => p.id !== id));
+  }, []);
+
+  return { data, ok, update, add, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, reset, archived, restore, permanentDelete };
 }

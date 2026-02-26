@@ -38,6 +38,7 @@ import {
   List,
   Trash2,
   AlertTriangle,
+  Archive,
   Save,
   X,
   Command,
@@ -348,7 +349,7 @@ function relativeTime(dateStr: string): string {
 const PAGE_SIZE = 25;
 
 export default function TerritoryPlanner() {
-  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge } = useProspects();
+  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete } = useProspects();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -410,6 +411,13 @@ export default function TerritoryPlanner() {
 
   // CSV Upload
   const [showUpload, setShowUpload] = useState(false);
+
+  // Reset confirmation
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetInput, setResetInput] = useState("");
+
+  // Archive viewer
+  const [showArchive, setShowArchive] = useState(false);
 
   // Keyboard shortcut for Cmd+K → command palette
   useEffect(() => {
@@ -854,11 +862,21 @@ export default function TerritoryPlanner() {
                 {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
               <button
-                onClick={() => { if (confirm("Reset ALL data?")) { reset(); toast("🔄 Data reset to defaults"); } }}
+                onClick={() => { setResetInput(""); setResetDialogOpen(true); }}
                 className="p-2 rounded-lg text-foreground/40 hover:text-foreground/80 hover:bg-primary/10 transition-all hidden md:block"
                 title="Reset data"
               >
                 <RotateCcw className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setShowArchive(true)}
+                className="p-2 rounded-lg text-foreground/40 hover:text-foreground/80 hover:bg-primary/10 transition-all hidden md:block relative"
+                title="Archive"
+              >
+                <Archive className="w-4 h-4" />
+                {archived.length > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">{archived.length}</span>
+                )}
               </button>
               {/* Mobile menu */}
               <div className="md:hidden">
@@ -888,7 +906,10 @@ export default function TerritoryPlanner() {
                       {theme === "dark" ? "Light Mode" : "Dark Mode"}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => { if (confirm("Reset ALL data?")) { reset(); toast("🔄 Data reset to defaults"); } }} className="text-destructive">
+                    <DropdownMenuItem onClick={() => setShowArchive(true)}>
+                      <Archive className="w-4 h-4 mr-2" /> Archive {archived.length > 0 && `(${archived.length})`}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setResetInput(""); setResetDialogOpen(true); }} className="text-destructive">
                       <RotateCcw className="w-4 h-4 mr-2" /> Reset Data
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -1597,7 +1618,7 @@ export default function TerritoryPlanner() {
         onClose={() => setSheetProspectId(null)}
         data={data}
         update={update}
-        remove={(id) => { remove(id); setSheetProspectId(null); toast("🗑️ Prospect removed"); }}
+        remove={(id) => { remove(id); setSheetProspectId(null); toast("📦 Prospect archived"); }}
       />
 
       {/* CSV Upload Dialog */}
@@ -1610,6 +1631,90 @@ export default function TerritoryPlanner() {
           if (updates.length > 0) bulkMerge(updates);
         }}
       />
+
+      {/* Reset Confirmation Dialog */}
+      <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" /> Warning
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              This will <span className="font-bold text-foreground">permanently erase ALL</span> prospect data and reset to demo defaults. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">
+              Type <span className="font-mono font-bold text-foreground">RESET</span> to confirm:
+            </label>
+            <input
+              value={resetInput}
+              onChange={(e) => setResetInput(e.target.value)}
+              placeholder="Type RESET"
+              className="w-full px-3 py-2 text-sm rounded-md border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-destructive/30 placeholder:text-muted-foreground"
+              autoFocus
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setResetInput("")}>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={resetInput !== "RESET"}
+              onClick={() => {
+                reset();
+                setResetDialogOpen(false);
+                setResetInput("");
+                toast("🔄 Data reset to defaults");
+              }}
+            >
+              Reset All Data
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Archive Dialog */}
+      <Dialog open={showArchive} onOpenChange={setShowArchive}>
+        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Archive className="w-4 h-4" /> Archive
+              {archived.length > 0 && <span className="text-xs text-muted-foreground font-normal">({archived.length} items)</span>}
+            </DialogTitle>
+            <DialogDescription>Deleted prospects are stored here. Restore or permanently remove them.</DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
+            {archived.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground text-sm">
+                <Archive className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                No archived prospects
+              </div>
+            ) : (
+              archived.map((p) => (
+                <div key={p.id + "-" + p.archivedAt} className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-border hover:bg-accent/50 transition-colors">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-foreground truncate">{p.name}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      Archived {relativeTime(p.archivedAt)}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { restore(p.id); toast.success(`✅ "${p.name}" restored`); }}>
+                      Restore
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => { permanentDelete(p.id); toast(`🗑️ "${p.name}" permanently deleted`); }}>
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowArchive(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

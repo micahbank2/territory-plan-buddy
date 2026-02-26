@@ -427,7 +427,7 @@ export default function ProspectPage() {
 
   const handleDelete = () => {
     remove(prospect.id);
-    toast("🗑️ Prospect removed", { description: `"${prospect.name}" has been deleted` });
+    toast("📦 Prospect archived", { description: `"${prospect.name}" moved to archive` });
     navigate("/");
   };
 
