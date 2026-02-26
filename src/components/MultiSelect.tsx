@@ -51,7 +51,7 @@ export function MultiSelect({ options, selected, onChange, placeholder }: MultiS
         <ChevronDown className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1.5 z-50 w-60 bg-card border border-border rounded-xl shadow-xl py-1.5 max-h-72 overflow-auto">
+        <div className="absolute top-full left-0 right-auto sm:right-auto mt-1.5 z-50 w-60 max-w-[calc(100vw-2rem)] bg-card border border-border rounded-xl shadow-xl py-1.5 max-h-72 overflow-auto">
           {options.map((opt) => (
             <button
               key={opt}

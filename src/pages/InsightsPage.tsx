@@ -131,7 +131,7 @@ export default function InsightsPage() {
 
   if (!ok || !insights)
     return (
-      <div className="bg-background min-h-screen px-8 pt-8 yext-grid-bg">
+      <div className="bg-background min-h-screen px-4 sm:px-8 pt-8 yext-grid-bg">
         <div className="h-8 w-48 skeleton-shimmer rounded-lg mb-6" />
         <div className="grid grid-cols-4 gap-4 mb-8">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -157,7 +157,7 @@ export default function InsightsPage() {
   return (
     <div className="bg-background min-h-screen text-foreground yext-grid-bg">
       {/* Yext Header */}
-      <header className="yext-gradient border-b border-primary/10 px-8 py-5">
+      <header className="yext-gradient border-b border-primary/10 px-4 sm:px-8 py-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button onClick={() => navigate("/")} className="p-1.5 rounded-md hover:bg-primary/10 transition-colors">
@@ -172,7 +172,7 @@ export default function InsightsPage() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-8 py-8 space-y-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8 space-y-8">
         {/* Summary Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard icon={Users} label="Total Prospects" value={insights.totalProspects} sub={`${insights.totalWithLocations} with location data`} />
