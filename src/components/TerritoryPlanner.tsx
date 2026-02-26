@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "next-themes";
 import {
   STAGES,
@@ -52,7 +53,10 @@ import {
   SlidersHorizontal,
   Sun,
   Moon,
+  Menu,
+  ChevronRight as ChevronRightIcon,
 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
@@ -397,6 +401,10 @@ export default function TerritoryPlanner() {
   // Home page cards collapsed state
   const [cardsOpen, setCardsOpen] = useState(true);
 
+  // Mobile filter toggle
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const isMobile = useIsMobile();
+
   // Slide-over panel
   const [sheetProspectId, setSheetProspectId] = useState<number | null>(null);
 
@@ -740,7 +748,7 @@ export default function TerritoryPlanner() {
 
   if (!ok)
     return (
-      <div className="bg-background min-h-screen px-8 pt-8 yext-grid-bg">
+      <div className="bg-background min-h-screen px-4 sm:px-8 pt-8 yext-grid-bg">
         <div className="h-8 w-48 skeleton-shimmer rounded-lg mb-6" />
         <div className="flex gap-2 mb-6">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -800,34 +808,37 @@ export default function TerritoryPlanner() {
 
       {/* ===== YEXT HEADER ===== */}
       <div className="yext-gradient border-b border-primary/10">
-        <div className="px-8 py-6">
+        <div className="px-4 sm:px-8 py-4 sm:py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-10 w-auto object-contain" />
-              <div>
-                <h1 className="text-4xl font-black tracking-tight text-foreground">Territory Planner</h1>
-                <p className="text-sm text-muted-foreground mt-0.5">Manage, prioritize, and close your territory</p>
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-8 sm:h-10 w-auto object-contain shrink-0" />
+              <div className="min-w-0">
+                <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-foreground truncate">Territory Planner</h1>
+                <p className="text-sm text-muted-foreground mt-0.5 hidden sm:block">Manage, prioritize, and close your territory</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
-                <BarChart3 className="w-3.5 h-3.5" /> Insights
-              </Button>
-              <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
-                <Download className="w-3.5 h-3.5" /> CSV
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowUpload(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
-                <Upload className="w-3.5 h-3.5" /> Upload
-              </Button>
+              {/* Desktop buttons */}
+              <div className="hidden md:flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
+                  <BarChart3 className="w-3.5 h-3.5" /> Insights
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
+                  <Download className="w-3.5 h-3.5" /> CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowUpload(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
+                  <Upload className="w-3.5 h-3.5" /> Upload
+                </Button>
+              </div>
               <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5 bg-primary hover:bg-primary/90 glow-blue font-semibold">
-                <Plus className="w-3.5 h-3.5" /> Add Prospect
+                <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Add Prospect</span><span className="sm:hidden">Add</span>
               </Button>
               {selected.size >= 2 && selected.size <= 3 && (
-                <Button variant="outline" size="sm" onClick={() => setShowCompare(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
+                <Button variant="outline" size="sm" onClick={() => setShowCompare(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent hidden sm:inline-flex">
                   <GitCompare className="w-3.5 h-3.5" /> Compare ({selected.size})
                 </Button>
               )}
-              <div className="flex items-center border border-primary/20 rounded-lg overflow-hidden ml-1">
+              <div className="hidden md:flex items-center border border-primary/20 rounded-lg overflow-hidden ml-1">
                 <button onClick={() => setViewMode("table")} className={cn("p-2 transition-all", viewMode === "table" ? "bg-primary text-primary-foreground" : "hover:bg-primary/10 text-foreground/60")}>
                   <List className="w-4 h-4" />
                 </button>
@@ -837,24 +848,58 @@ export default function TerritoryPlanner() {
               </div>
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="p-2 rounded-lg text-foreground/60 hover:text-foreground/80 hover:bg-primary/10 transition-all"
+                className="p-2 rounded-lg text-foreground/60 hover:text-foreground/80 hover:bg-primary/10 transition-all hidden md:block"
                 title="Toggle theme"
               >
                 {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
               <button
                 onClick={() => { if (confirm("Reset ALL data?")) { reset(); toast("🔄 Data reset to defaults"); } }}
-                className="p-2 rounded-lg text-foreground/40 hover:text-foreground/80 hover:bg-primary/10 transition-all"
+                className="p-2 rounded-lg text-foreground/40 hover:text-foreground/80 hover:bg-primary/10 transition-all hidden md:block"
                 title="Reset data"
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
+              {/* Mobile menu */}
+              <div className="md:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="p-2 border-primary/20 bg-transparent">
+                      <Menu className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 bg-popover border-border z-50">
+                    <DropdownMenuItem onClick={() => navigate("/insights")}>
+                      <BarChart3 className="w-4 h-4 mr-2" /> Insights
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={exportCSV}>
+                      <Download className="w-4 h-4 mr-2" /> Export CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowUpload(true)}>
+                      <Upload className="w-4 h-4 mr-2" /> Upload CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setViewMode(viewMode === "table" ? "kanban" : "table")}>
+                      {viewMode === "table" ? <LayoutGrid className="w-4 h-4 mr-2" /> : <List className="w-4 h-4 mr-2" />}
+                      {viewMode === "table" ? "Kanban View" : "Table View"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+                      {theme === "dark" ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
+                      {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => { if (confirm("Reset ALL data?")) { reset(); toast("🔄 Data reset to defaults"); } }} className="text-destructive">
+                      <RotateCcw className="w-4 h-4 mr-2" /> Reset Data
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="px-8 pt-6 pb-2">
+      <div className="px-4 sm:px-8 pt-6 pb-2">
         {/* Pipeline Summary Bar */}
         {pipelineTotal > 0 && (
           <div className="mb-6 animate-fade-in-up">
@@ -888,7 +933,7 @@ export default function TerritoryPlanner() {
         )}
 
         {/* Stat pills */}
-        <div className="flex items-center gap-2.5 mb-6 flex-wrap">
+        <div className="flex items-center gap-2.5 mb-6 overflow-x-auto scrollbar-hide flex-nowrap pb-1">
           {([
             ["📊 Total Accounts", stats.t, () => { clr(); }, false],
             ["📍 50+ Locs", stats.o50, () => { setFLocRange((prev) => prev[0] === 50 ? [0, maxLocs] : [50, maxLocs]); }, fLocRange[0] === 50],
@@ -904,13 +949,13 @@ export default function TerritoryPlanner() {
               key={i}
               onClick={() => fn()}
               className={cn(
-                "flex items-center gap-3 px-5 py-3.5 rounded-xl glass-card cursor-pointer group animate-fade-in-up",
+                "flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-3.5 rounded-xl glass-card cursor-pointer group animate-fade-in-up shrink-0",
                 active ? "ring-2 ring-primary/50 glow-blue" : "glow-blue"
               )}
               style={{ animationDelay: `${i * 50}ms` }}
             >
-              <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors font-medium">{label}</span>
-              <span className="text-xl font-black text-foreground animate-count-up" style={{ animationDelay: `${i * 50 + 200}ms` }}>{value}</span>
+              <span className="text-xs sm:text-sm text-muted-foreground group-hover:text-foreground transition-colors font-medium whitespace-nowrap">{label}</span>
+              <span className="text-lg sm:text-xl font-black text-foreground animate-count-up" style={{ animationDelay: `${i * 50 + 200}ms` }}>{value}</span>
             </button>
           ))}
         </div>
@@ -1058,95 +1103,117 @@ export default function TerritoryPlanner() {
         )}
 
         {/* Search + Filters */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              ref={searchRef}
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search companies, industries..."
-              className="w-full pl-10 pr-20 py-2.5 text-sm rounded-xl border border-border bg-card/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all backdrop-blur-sm"
-              onFocus={() => {}}
-            />
-            {q && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                ref={searchRef}
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search companies, industries..."
+                className="w-full pl-10 pr-20 py-2.5 text-sm rounded-xl border border-border bg-card/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all backdrop-blur-sm"
+                onFocus={() => {}}
+              />
+              {q && (
+                <button
+                  onClick={() => setQ("")}
+                  className="absolute right-14 top-1/2 -translate-y-1/2 p-0.5 rounded-md hover:bg-muted transition-colors"
+                >
+                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              )}
               <button
-                onClick={() => setQ("")}
-                className="absolute right-14 top-1/2 -translate-y-1/2 p-0.5 rounded-md hover:bg-muted transition-colors"
+                onClick={() => setCmdOpen(true)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground bg-muted rounded border border-border hover:bg-accent hover:border-primary/30 transition-all cursor-pointer"
               >
-                <X className="w-3.5 h-3.5 text-muted-foreground" />
+                <Command className="w-2.5 h-2.5" />K
               </button>
-            )}
+            </div>
+            {/* Mobile filter toggle */}
             <button
-              onClick={() => setCmdOpen(true)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground bg-muted rounded border border-border hover:bg-accent hover:border-primary/30 transition-all cursor-pointer"
+              onClick={() => setFiltersOpen(!filtersOpen)}
+              className={cn(
+                "md:hidden inline-flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium rounded-xl border transition-all shrink-0",
+                filtersOpen || hasFilters
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              )}
             >
-              <Command className="w-2.5 h-2.5" />K
+              <SlidersHorizontal className="w-4 h-4" />
+              Filters
+              {hasFilters && <span className="w-2 h-2 rounded-full bg-primary" />}
             </button>
           </div>
 
-          <MultiSelect options={INDUSTRIES} selected={fIndustry} onChange={setFIndustry} placeholder="Industry" />
-          <MultiSelect options={STAGES} selected={fOutreach} onChange={setFOutreach} placeholder="Outreach" />
-          <MultiSelect options={["Prospect", "Churned"]} selected={fStatus} onChange={setFStatus} placeholder="Status" />
-          <MultiSelect options={COMPETITORS.filter(Boolean)} selected={fCompetitor} onChange={setFCompetitor} placeholder="Competitor" />
-          <MultiSelect options={TIERS.filter(Boolean)} selected={fTier} onChange={setFTier} placeholder="Tier" />
-          <MultiSelect options={["Hot", "Warm", "Cold", "Dead"]} selected={fPriority} onChange={setFPriority} placeholder="Priority" />
+          {/* Filter dropdowns - always visible on desktop, toggleable on mobile */}
+          <div className={cn(
+            "items-center gap-3 flex-wrap",
+            isMobile ? (filtersOpen ? "grid grid-cols-2 gap-3" : "hidden") : "flex"
+          )}>
+            <MultiSelect options={INDUSTRIES} selected={fIndustry} onChange={setFIndustry} placeholder="Industry" />
+            <MultiSelect options={STAGES} selected={fOutreach} onChange={setFOutreach} placeholder="Outreach" />
+            <MultiSelect options={["Prospect", "Churned"]} selected={fStatus} onChange={setFStatus} placeholder="Status" />
+            <MultiSelect options={COMPETITORS.filter(Boolean)} selected={fCompetitor} onChange={setFCompetitor} placeholder="Competitor" />
+            <MultiSelect options={TIERS.filter(Boolean)} selected={fTier} onChange={setFTier} placeholder="Tier" />
+            <MultiSelect options={["Hot", "Warm", "Cold", "Dead"]} selected={fPriority} onChange={setFPriority} placeholder="Priority" />
 
-          {/* Location Range Slider */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-all",
-                locFilterActive
-                  ? "border-primary/40 bg-primary/10 text-primary glow-blue"
-                  : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
-              )}>
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                {locFilterActive
-                  ? `${fLocRange[0].toLocaleString()}–${fLocRange[1].toLocaleString()} locs`
-                  : "Locations"}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-72 p-4" align="start">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-foreground">Location Count</span>
-                  {locFilterActive && (
-                    <button
-                      onClick={() => setFLocRange([0, maxLocs])}
-                      className="text-[10px] text-primary hover:underline"
-                    >
-                      Reset
-                    </button>
-                  )}
+            {/* Location Range Slider */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-all",
+                  locFilterActive
+                    ? "border-primary/40 bg-primary/10 text-primary glow-blue"
+                    : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+                )}>
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  {locFilterActive
+                    ? `${fLocRange[0].toLocaleString()}–${fLocRange[1].toLocaleString()} locs`
+                    : "Locations"}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-4" align="start">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground">Location Count</span>
+                    {locFilterActive && (
+                      <button
+                        onClick={() => setFLocRange([0, maxLocs])}
+                        className="text-[10px] text-primary hover:underline"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                  <Slider
+                    value={fLocRange}
+                    onValueChange={(val) => setFLocRange(val as [number, number])}
+                    min={0}
+                    max={maxLocs}
+                    step={10}
+                    minStepsBetweenThumbs={1}
+                    className="w-full"
+                  />
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span>{fLocRange[0].toLocaleString()}</span>
+                    <span>{fLocRange[1].toLocaleString()}</span>
+                  </div>
                 </div>
-                <Slider
-                  value={fLocRange}
-                  onValueChange={(val) => setFLocRange(val as [number, number])}
-                  min={0}
-                  max={maxLocs}
-                  step={10}
-                  minStepsBetweenThumbs={1}
-                  className="w-full"
-                />
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>{fLocRange[0].toLocaleString()}</span>
-                  <span>{fLocRange[1].toLocaleString()}</span>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverContent>
+            </Popover>
 
-          {hasFilters && (
-            <>
-              <button onClick={clr} className="px-3 py-2 text-xs font-medium rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/5 transition-all">
-                Clear
-              </button>
-              <button onClick={() => setShowSaveView(true)} className="px-3 py-2 text-xs font-medium rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition-all gap-1 inline-flex items-center glow-blue">
-                <Save className="w-3 h-3" /> Save View
-              </button>
-            </>
-          )}
+            {hasFilters && (
+              <>
+                <button onClick={clr} className="px-3 py-2 text-xs font-medium rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/5 transition-all">
+                  Clear
+                </button>
+                <button onClick={() => setShowSaveView(true)} className="px-3 py-2 text-xs font-medium rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition-all gap-1 inline-flex items-center glow-blue">
+                  <Save className="w-3 h-3" /> Save View
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Bulk action bar */}
@@ -1173,146 +1240,181 @@ export default function TerritoryPlanner() {
 
       {/* TABLE VIEW */}
       {viewMode === "table" && (
-        <div className="px-8 pb-8">
-          <div className="border border-border rounded-xl overflow-hidden glass-card">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/30">
-                  <th className="px-3 py-3 w-10">
-                    <Checkbox checked={paged.length > 0 && selected.size === paged.length} onCheckedChange={toggleSelectAll} />
-                  </th>
-                  {([
-                    ["name", "Company", ""],
-                    ["locationCount", "Locations", "w-28"],
-                    ["industry", "Industry", "w-28"],
-                    ["outreach", "Outreach", "w-32"],
-                    ["ps", "Score", "w-28"],
-                    ["tier", "Tier", "w-24"],
-                    ["lastTouched", "Last Touched", "w-32"],
-                  ] as [string, string, string][]).map(([k, l, w]) => (
-                    <th
-                      key={k}
-                      onClick={() => doSort(k)}
-                      className={cn(
-                        "px-5 py-3 text-left text-xs font-semibold text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors uppercase tracking-wider",
-                        w
-                      )}
-                    >
-                      <div className="flex items-center gap-1.5">{l}<SortIcon f={k} /></div>
+        <div className="px-4 sm:px-8 pb-8">
+          {/* Mobile card list */}
+          {isMobile ? (
+            <div className="space-y-2">
+              {paged.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setSheetProspectId(p.id)}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-primary/30 transition-all text-left"
+                >
+                  <span className={cn("aging-dot shrink-0", getAgingClass(p.interactions))} title={getAgingLabel(p.interactions)} />
+                  <LogoImg website={p.website} size={28} customLogo={p.customLogo} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-foreground truncate">{p.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground">{p.outreach}</span>
+                      {p.tier && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold">{p.tier}</span>}
+                    </div>
+                  </div>
+                  <ScoreBadge score={p.ps} prospect={p} compact />
+                  <ChevronRightIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+                </button>
+              ))}
+              {paged.length === 0 && (
+                <div className="flex flex-col items-center gap-3 text-muted-foreground py-16">
+                  <FileSearch className="w-12 h-12 opacity-30" />
+                  <p className="text-sm font-medium">🔍 No prospects match your filters</p>
+                  <button onClick={clr} className="text-xs text-primary hover:underline">Clear all filters</button>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Desktop table */
+            <div className="border border-border rounded-xl overflow-hidden glass-card">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="px-3 py-3 w-10">
+                      <Checkbox checked={paged.length > 0 && selected.size === paged.length} onCheckedChange={toggleSelectAll} />
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {paged.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="border-b border-border last:border-0 hover:bg-primary/[0.03] cursor-pointer transition-all group row-hover-lift"
-                  >
-                    <td className="px-3 py-4" onClick={(e) => e.stopPropagation()}>
-                      <Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
-                    </td>
-                    <td className="px-5 py-4" onClick={() => setSheetProspectId(p.id)}>
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span className={cn("aging-dot", getAgingClass(p.interactions))} title={getAgingLabel(p.interactions)} />
-                        <LogoImg
-                          website={p.website}
-                          size={28}
-                          customLogo={p.customLogo}
-                          onUpload={(b64) => handleLogoUpload(p.id, b64)}
-                          onRemove={p.customLogo ? () => handleLogoRemove(p.id) : undefined}
-                        />
-                        <span className="font-semibold text-foreground group-hover:text-primary transition-colors">{p.name}</span>
-                        {p.website && (
-                          <a href={`https://${p.website}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-primary transition-colors">
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </a>
+                    {([
+                      ["name", "Company", ""],
+                      ["locationCount", "Locations", "w-28"],
+                      ["industry", "Industry", "w-28"],
+                      ["outreach", "Outreach", "w-32"],
+                      ["ps", "Score", "w-28"],
+                      ["tier", "Tier", "w-24"],
+                      ["lastTouched", "Last Touched", "w-32"],
+                    ] as [string, string, string][]).map(([k, l, w]) => (
+                      <th
+                        key={k}
+                        onClick={() => doSort(k)}
+                        className={cn(
+                          "px-5 py-3 text-left text-xs font-semibold text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors uppercase tracking-wider",
+                          w
                         )}
-                        {p.nextStepDate && new Date(p.nextStepDate) < new Date() && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive overdue-flag" title={`Overdue: ${p.nextStep}`}>
-                            ⚠ Overdue
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-1.5">
-                        <span className={cn(
-                          "inline-flex px-2.5 py-1 text-xs font-bold rounded-lg",
-                          p.status === "Churned" ? "bg-destructive/15 text-destructive" : "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]"
-                        )}>{p.status}</span>
-                        {p.competitor && (
-                          <span className="inline-flex px-2.5 py-1 text-xs font-bold rounded-lg bg-[hsl(var(--warning))]/15 text-[hsl(var(--warning))]">
-                            w/ {p.competitor}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-foreground font-medium" onClick={() => setSheetProspectId(p.id)}>{p.locationCount || "—"}</td>
-                    <td className="px-5 py-4 text-foreground font-medium" onClick={() => setSheetProspectId(p.id)}>{p.industry || "—"}</td>
-                    <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
-                      {editingCell?.id === p.id && editingCell?.field === "outreach" ? (
-                        <select
-                          autoFocus
-                          value={p.outreach}
-                          onChange={(e) => handleInlineChange(p.id, "outreach", e.target.value)}
-                          onBlur={() => setEditingCell(null)}
-                          className="px-2 py-1 text-xs rounded-md border border-primary bg-background text-foreground focus:outline-none"
-                        >
-                          {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                      ) : (
-                        <span
-                          className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-muted text-muted-foreground inline-edit-cell"
-                          onDoubleClick={() => setEditingCell({ id: p.id, field: "outreach" })}
-                          title="Double-click to edit"
-                        >
-                          {p.outreach}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4" onClick={() => setSheetProspectId(p.id)}>
-                      <ScoreBadge score={p.ps} prospect={p} />
-                    </td>
-                    <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
-                      {editingCell?.id === p.id && editingCell?.field === "tier" ? (
-                        <select
-                          autoFocus
-                          value={p.tier}
-                          onChange={(e) => handleInlineChange(p.id, "tier", e.target.value)}
-                          onBlur={() => setEditingCell(null)}
-                          className="px-2 py-1 text-xs rounded-md border border-primary bg-background text-foreground focus:outline-none"
-                        >
-                          {TIERS.map((t) => <option key={t} value={t}>{t || "None"}</option>)}
-                        </select>
-                      ) : (
-                        <span
-                          className={cn(
-                            "inline-edit-cell px-2.5 py-1 text-xs font-bold rounded-lg",
-                            p.tier === "Tier 1" ? "bg-primary/10 text-primary" : p.tier === "Tier 2" ? "bg-secondary text-secondary-foreground" : "text-muted-foreground"
+                      >
+                        <div className="flex items-center gap-1.5">{l}<SortIcon f={k} /></div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {paged.map((p) => (
+                    <tr
+                      key={p.id}
+                      className="border-b border-border last:border-0 hover:bg-primary/[0.03] cursor-pointer transition-all group row-hover-lift"
+                    >
+                      <td className="px-3 py-4" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
+                      </td>
+                      <td className="px-5 py-4" onClick={() => setSheetProspectId(p.id)}>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className={cn("aging-dot", getAgingClass(p.interactions))} title={getAgingLabel(p.interactions)} />
+                          <LogoImg
+                            website={p.website}
+                            size={28}
+                            customLogo={p.customLogo}
+                            onUpload={(b64) => handleLogoUpload(p.id, b64)}
+                            onRemove={p.customLogo ? () => handleLogoRemove(p.id) : undefined}
+                          />
+                          <span className="font-semibold text-foreground group-hover:text-primary transition-colors">{p.name}</span>
+                          {p.website && (
+                            <a href={`https://${p.website}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-primary transition-colors">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
                           )}
-                          onDoubleClick={() => setEditingCell({ id: p.id, field: "tier" })}
-                          title="Double-click to edit"
-                        >
-                          {p.tier || "—"}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4 text-muted-foreground" onClick={() => setSheetProspectId(p.id)}>{p.lastTouched || "—"}</td>
-                  </tr>
-                ))}
-                {paged.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="px-5 py-16 text-center">
-                      <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                        <FileSearch className="w-12 h-12 opacity-30" />
-                        <p className="text-sm font-medium">🔍 No prospects match your filters</p>
-                        <button onClick={clr} className="text-xs text-primary hover:underline">Clear all filters</button>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                          {p.nextStepDate && new Date(p.nextStepDate) < new Date() && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive overdue-flag" title={`Overdue: ${p.nextStep}`}>
+                              ⚠ Overdue
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <span className={cn(
+                            "inline-flex px-2.5 py-1 text-xs font-bold rounded-lg",
+                            p.status === "Churned" ? "bg-destructive/15 text-destructive" : "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]"
+                          )}>{p.status}</span>
+                          {p.competitor && (
+                            <span className="inline-flex px-2.5 py-1 text-xs font-bold rounded-lg bg-[hsl(var(--warning))]/15 text-[hsl(var(--warning))]">
+                              w/ {p.competitor}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-foreground font-medium" onClick={() => setSheetProspectId(p.id)}>{p.locationCount || "—"}</td>
+                      <td className="px-5 py-4 text-foreground font-medium" onClick={() => setSheetProspectId(p.id)}>{p.industry || "—"}</td>
+                      <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
+                        {editingCell?.id === p.id && editingCell?.field === "outreach" ? (
+                          <select
+                            autoFocus
+                            value={p.outreach}
+                            onChange={(e) => handleInlineChange(p.id, "outreach", e.target.value)}
+                            onBlur={() => setEditingCell(null)}
+                            className="px-2 py-1 text-xs rounded-md border border-primary bg-background text-foreground focus:outline-none"
+                          >
+                            {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                        ) : (
+                          <span
+                            className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-muted text-muted-foreground inline-edit-cell"
+                            onDoubleClick={() => setEditingCell({ id: p.id, field: "outreach" })}
+                            title="Double-click to edit"
+                          >
+                            {p.outreach}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4" onClick={() => setSheetProspectId(p.id)}>
+                        <ScoreBadge score={p.ps} prospect={p} />
+                      </td>
+                      <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
+                        {editingCell?.id === p.id && editingCell?.field === "tier" ? (
+                          <select
+                            autoFocus
+                            value={p.tier}
+                            onChange={(e) => handleInlineChange(p.id, "tier", e.target.value)}
+                            onBlur={() => setEditingCell(null)}
+                            className="px-2 py-1 text-xs rounded-md border border-primary bg-background text-foreground focus:outline-none"
+                          >
+                            {TIERS.map((t) => <option key={t} value={t}>{t || "None"}</option>)}
+                          </select>
+                        ) : (
+                          <span
+                            className={cn(
+                              "inline-edit-cell px-2.5 py-1 text-xs font-bold rounded-lg",
+                              p.tier === "Tier 1" ? "bg-primary/10 text-primary" : p.tier === "Tier 2" ? "bg-secondary text-secondary-foreground" : "text-muted-foreground"
+                            )}
+                            onDoubleClick={() => setEditingCell({ id: p.id, field: "tier" })}
+                            title="Double-click to edit"
+                          >
+                            {p.tier || "—"}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 text-muted-foreground" onClick={() => setSheetProspectId(p.id)}>{p.lastTouched || "—"}</td>
+                    </tr>
+                  ))}
+                  {paged.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="px-5 py-16 text-center">
+                        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                          <FileSearch className="w-12 h-12 opacity-30" />
+                          <p className="text-sm font-medium">🔍 No prospects match your filters</p>
+                          <button onClick={clr} className="text-xs text-primary hover:underline">Clear all filters</button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
           <div className="mt-4">
             <Pagination />
           </div>
@@ -1321,7 +1423,7 @@ export default function TerritoryPlanner() {
 
       {/* KANBAN VIEW */}
       {viewMode === "kanban" && (
-        <div className="px-8 pb-8 overflow-x-auto">
+        <div className="px-4 sm:px-8 pb-8 overflow-x-auto scrollbar-hide">
           <div className="flex gap-4 min-w-max">
             {kanbanStages.map((stage) => {
               const cards = filtered.filter((p) => p.outreach === stage);
@@ -1329,7 +1431,7 @@ export default function TerritoryPlanner() {
               return (
                 <div
                   key={stage}
-                  className="w-72 shrink-0 glass-card rounded-xl p-3"
+                  className="w-64 sm:w-72 shrink-0 glass-card rounded-xl p-3"
                   style={{ borderTop: `3px solid ${stageColor}` }}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, stage)}

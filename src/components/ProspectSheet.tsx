@@ -186,7 +186,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
 
   return (
     <Sheet open={prospectId !== null} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="sm:max-w-2xl w-full overflow-y-auto p-0">
+      <SheetContent side="right" className="w-full sm:w-3/4 sm:max-w-2xl overflow-y-auto p-0">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-card border-b border-border px-6 py-4">
           <div className="flex items-center gap-3">
