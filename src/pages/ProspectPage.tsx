@@ -18,7 +18,7 @@ import {
   type NoteEntry,
   type Task,
 } from "@/data/prospects";
-import { cn } from "@/lib/utils";
+import { cn, normalizeUrl } from "@/lib/utils";
 import {
   ArrowLeft,
   ExternalLink,
@@ -496,7 +496,7 @@ export default function ProspectPage() {
               )}
             </div>
             {prospect.website && (
-              <a href={`https://${prospect.website}`} target="_blank" rel="noreferrer"
+              <a href={normalizeUrl(prospect.website)} target="_blank" rel="noreferrer"
                 className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-0.5">
                 {prospect.website} <ExternalLink className="w-3 h-3" />
               </a>

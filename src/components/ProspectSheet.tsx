@@ -11,7 +11,7 @@ import {
   scoreProspect, scoreBreakdown, getScoreLabel, getLogoUrl,
   type Prospect, type Contact, type InteractionLog, type NoteEntry, type Task,
 } from "@/data/prospects";
-import { cn } from "@/lib/utils";
+import { cn, normalizeUrl } from "@/lib/utils";
 import {
   ExternalLink, Plus, X, Mail, Phone, Building2, MessageSquare, PhoneCall,
   Linkedin, Clock, CalendarIcon, Target, ArrowRight, Check, CheckCircle,
@@ -207,7 +207,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
                 )}>{prospect.tier === "Tier 1" ? "⭐" : prospect.tier === "Tier 2" ? "🥈" : "🥉"} {prospect.tier}</span>}
               </div>
               <SheetDescription className="text-xs mt-0.5">
-                {prospect.website && <a href={`https://${prospect.website}`} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">{prospect.website} <ExternalLink className="w-3 h-3" /></a>}
+                {prospect.website && <a href={normalizeUrl(prospect.website)} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">{prospect.website} <ExternalLink className="w-3 h-3" /></a>}
               </SheetDescription>
             </div>
             <TooltipProvider>
