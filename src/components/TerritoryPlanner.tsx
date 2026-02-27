@@ -822,7 +822,10 @@ export default function TerritoryPlanner() {
             <div className="flex items-center gap-3 sm:gap-4 min-w-0">
               <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-8 sm:h-10 w-auto object-contain shrink-0" />
               <div className="min-w-0">
-                <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-foreground truncate">Territory Planner</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-foreground truncate">Territory Planner</h1>
+                  <span className="hidden sm:inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">{data.length}</span>
+                </div>
                 <p className="text-sm text-muted-foreground mt-0.5 hidden sm:block">Manage, prioritize, and close your territory</p>
               </div>
             </div>

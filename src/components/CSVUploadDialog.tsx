@@ -15,25 +15,52 @@ import { Upload, FileUp, AlertTriangle } from "lucide-react";
 import { stringSimilarity, getDomain, type Prospect } from "@/data/prospects";
 import { toast } from "sonner";
 
+// --- Normalize header for matching ---
+function normalizeHeader(h: string): string {
+  return h
+    .toLowerCase()
+    .replace(/[_]/g, " ")
+    .replace(/[^a-z0-9 ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 // --- Column mapping ---
 const COLUMN_MAP: Record<string, keyof Prospect> = {};
 const addAliases = (aliases: string[], field: keyof Prospect) =>
-  aliases.forEach((a) => (COLUMN_MAP[a.toLowerCase()] = field));
+  aliases.forEach((a) => (COLUMN_MAP[normalizeHeader(a)] = field));
 
-addAliases(["company", "name", "company name", "account", "account name"], "name");
+addAliases(["company", "name", "company name", "account", "account name", "business name", "business"], "name");
 addAliases(["website", "url", "domain", "site"], "website");
 addAliases(["industry", "vertical", "category", "sector"], "industry");
-addAliases(["locations", "location count", "locs", "# locations", "loc count", "num locations", "location_count", "locationcount"], "locationCount");
+addAliases(["locations", "location count", "locs", "locations count", "loc count", "num locations", "number of locations", "store count", "stores", "units"], "locationCount");
 addAliases(["status"], "status");
-addAliases(["owner", "transition owner", "rep", "sales rep", "transitionowner", "transition_owner"], "transitionOwner");
+addAliases(["owner", "transition owner", "rep", "sales rep"], "transitionOwner");
 addAliases(["priority", "heat"], "priority");
 addAliases(["tier"], "tier");
 addAliases(["outreach", "stage", "pipeline"], "outreach");
 addAliases(["competitor"], "competitor");
-addAliases(["notes", "location notes", "location_notes", "locationnotes"], "locationNotes");
-addAliases(["contact name", "contact", "contactname", "contact_name"], "contactName");
-addAliases(["contact email", "email", "contactemail", "contact_email"], "contactEmail");
-addAliases(["estimated revenue", "revenue", "estimatedrevenue", "estimated_revenue", "arr"], "estimatedRevenue");
+addAliases(["notes", "location notes"], "locationNotes");
+addAliases(["contact name", "contact"], "contactName");
+addAliases(["contact email", "email"], "contactEmail");
+addAliases(["estimated revenue", "revenue", "arr"], "estimatedRevenue");
+
+// Fuzzy column matching: exact -> starts-with -> contains
+function matchColumn(header: string): keyof Prospect | undefined {
+  const norm = normalizeHeader(header);
+  if (!norm) return undefined;
+  // 1. Exact
+  if (COLUMN_MAP[norm]) return COLUMN_MAP[norm];
+  // 2. Starts-with
+  for (const [alias, field] of Object.entries(COLUMN_MAP)) {
+    if (norm.startsWith(alias) || alias.startsWith(norm)) return field;
+  }
+  // 3. Contains
+  for (const [alias, field] of Object.entries(COLUMN_MAP)) {
+    if (norm.includes(alias) || alias.includes(norm)) return field;
+  }
+  return undefined;
+}
 
 // App-only fields that CSV should never overwrite
 const PROTECTED_FIELDS = new Set(["contacts", "interactions", "noteLog", "nextStep", "nextStepDate", "ps", "id", "createdAt", "customLogo"]);
@@ -97,11 +124,12 @@ function parseCSV(text: string): Record<string, string>[] {
   });
 }
 
-function mapRow(raw: Record<string, string>): Partial<Prospect> {
+function mapRow(raw: Record<string, string>, unmappedCols: Set<string>): Partial<Prospect> {
   const mapped: any = {};
   for (const [header, value] of Object.entries(raw)) {
-    const field = COLUMN_MAP[header.toLowerCase()];
-    if (!field || PROTECTED_FIELDS.has(field)) continue;
+    const field = matchColumn(header);
+    if (!field) { unmappedCols.add(header); continue; }
+    if (PROTECTED_FIELDS.has(field)) continue;
     if (!value.trim()) continue;
     if (field === "locationCount" || field === "estimatedRevenue") {
       const num = parseInt(value.replace(/[^0-9-]/g, ""));
@@ -144,6 +172,7 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
   const [fileName, setFileName] = useState("");
   const [step, setStep] = useState<"upload" | "preview">("upload");
   const [dragging, setDragging] = useState(false);
+  const [unmappedColumns, setUnmappedColumns] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const resetState = useCallback(() => {
@@ -151,6 +180,7 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
     setFileName("");
     setStep("upload");
     setDragging(false);
+    setUnmappedColumns([]);
   }, []);
 
   const processFile = useCallback(
@@ -165,9 +195,10 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
           return;
         }
 
+        const unmapped = new Set<string>();
         const parsed: ParsedRow[] = rawRows
           .map((raw) => {
-            const mapped = mapRow(raw);
+            const mapped = mapRow(raw, unmapped);
             if (!mapped.name) return null;
 
             // Match logic
@@ -215,6 +246,7 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
           })
           .filter(Boolean) as ParsedRow[];
 
+        setUnmappedColumns(Array.from(unmapped));
         setRows(parsed);
         setStep("preview");
       };
@@ -263,8 +295,9 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
       .filter((u) => Object.keys(u.changes).length > 0);
 
     onImport(toAdd, toUpdate);
+    const unmappedNote = unmappedColumns.length > 0 ? ` | ${unmappedColumns.length} unmapped columns: ${unmappedColumns.join(", ")}` : "";
     toast.success(`CSV imported!`, {
-      description: `${toAdd.length} added, ${toUpdate.length} updated, ${counts.skip} skipped`,
+      description: `${toAdd.length} added, ${toUpdate.length} updated, ${counts.skip} skipped${unmappedNote}`,
     });
     resetState();
     onOpenChange(false);
@@ -323,6 +356,14 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
 
         {step === "preview" && (
           <>
+            {/* Unmapped columns warning */}
+            {unmappedColumns.length > 0 && (
+              <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                <span>{unmappedColumns.length} column{unmappedColumns.length > 1 ? "s" : ""} not mapped: <strong>{unmappedColumns.join(", ")}</strong></span>
+              </div>
+            )}
+
             {/* Summary bar */}
             <div className="flex items-center gap-3 flex-wrap">
               {counts.new > 0 && (
