@@ -7,5 +7,6 @@ export function cn(...inputs: ClassValue[]) {
 
 export function normalizeUrl(url: string): string {
   if (/^https?:\/\//i.test(url)) return url;
+  if (/^https?\/\//i.test(url)) return url.replace(/^https?\/\//i, "https://");
   return `https://${url}`;
 }
