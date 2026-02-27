@@ -23,11 +23,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ProspectSheetProps {
-  prospectId: number | null;
+  prospectId: any;
   onClose: () => void;
   data: Prospect[];
-  update: (id: number, u: Partial<Prospect>) => void;
-  remove: (id: number) => void;
+  update: (id: any, u: Partial<Prospect>) => void;
+  remove: (id: any) => void;
 }
 
 const STAGE_EMOJI: Record<string, string> = {

@@ -83,7 +83,7 @@ export default function InsightsPage() {
 
     // Overdue follow-ups
     // Overdue tasks
-    const overdue: { prospectId: number; prospectName: string; taskText: string; dueDate: string }[] = [];
+    const overdue: { prospectId: any; prospectName: string; taskText: string; dueDate: string }[] = [];
     data.forEach((p) => {
       (p.tasks || []).forEach((task) => {
         if (task.dueDate && new Date(task.dueDate) < now) {

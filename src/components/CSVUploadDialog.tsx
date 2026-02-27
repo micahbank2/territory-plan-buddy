@@ -164,7 +164,7 @@ interface CSVUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   existingData: Prospect[];
-  onImport: (newRows: (Partial<Prospect> & { name: string })[], updates: { id: number; changes: Partial<Prospect> }[]) => void;
+  onImport: (newRows: (Partial<Prospect> & { name: string })[], updates: { id: any; changes: Partial<Prospect> }[]) => void;
 }
 
 export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: CSVUploadDialogProps) {

@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "next-themes";
+import { useAuth } from "@/hooks/useAuth";
 import {
   STAGES,
   INDUSTRIES,
@@ -26,6 +27,7 @@ import { cn } from "@/lib/utils";
 import {
   Search,
   RotateCcw,
+  LogOut,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
@@ -350,7 +352,8 @@ function relativeTime(dateStr: string): string {
 const PAGE_SIZE = 25;
 
 export default function TerritoryPlanner() {
-  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete } = useProspects();
+  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete, seedData, seeding } = useProspects();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -368,7 +371,7 @@ export default function TerritoryPlanner() {
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
 
   // Bulk selection
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [selected, setSelected] = useState<Set<any>>(new Set());
   const [bulkStage, setBulkStage] = useState("");
   const [bulkTier, setBulkTier] = useState("");
 
@@ -395,7 +398,7 @@ export default function TerritoryPlanner() {
   const [cmdOpen, setCmdOpen] = useState(false);
 
   // Inline editing
-  const [editingCell, setEditingCell] = useState<{ id: number; field: string } | null>(null);
+  const [editingCell, setEditingCell] = useState<{ id: any; field: string } | null>(null);
 
   // Comparison view
   const [showCompare, setShowCompare] = useState(false);
@@ -408,7 +411,7 @@ export default function TerritoryPlanner() {
   const isMobile = useIsMobile();
 
   // Slide-over panel
-  const [sheetProspectId, setSheetProspectId] = useState<number | null>(null);
+  const [sheetProspectId, setSheetProspectId] = useState<any>(null);
 
   // CSV Upload
   const [showUpload, setShowUpload] = useState(false);
@@ -563,7 +566,7 @@ export default function TerritoryPlanner() {
 
   const hasFilters = fIndustry.length || fOutreach.length || fStatus.length || fCompetitor.length || fTier.length || fPriority.length || locFilterActive;
 
-  const toggleSelect = (id: number) => {
+  const toggleSelect = (id: any) => {
     setSelected((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -673,28 +676,28 @@ export default function TerritoryPlanner() {
   };
 
   // --- Inline edit ---
-  const handleInlineChange = (id: number, field: string, value: string) => {
+  const handleInlineChange = (id: any, field: string, value: string) => {
     update(id, { [field]: value });
     setEditingCell(null);
     toast.success("✅ Updated!");
   };
 
   // --- Logo upload ---
-  const handleLogoUpload = (id: number, base64: string) => {
+  const handleLogoUpload = (id: any, base64: string) => {
     update(id, { customLogo: base64 });
     toast.success("🖼️ Logo updated!");
   };
 
-  const handleLogoRemove = (id: number) => {
+  const handleLogoRemove = (id: any) => {
     update(id, { customLogo: undefined });
     toast("🖼️ Logo removed");
   };
 
   // --- Kanban ---
-  const [dragId, setDragId] = useState<number | null>(null);
+  const [dragId, setDragId] = useState<any>(null);
   const kanbanStages = STAGES;
 
-  const handleDragStart = (e: React.DragEvent, id: number) => {
+  const handleDragStart = (e: React.DragEvent, id: any) => {
     setDragId(id);
     e.dataTransfer.effectAllowed = "move";
   };
@@ -771,6 +774,29 @@ export default function TerritoryPlanner() {
         </div>
       </div>
     );
+
+  if (ok && data.length === 0) {
+    return (
+      <div className="bg-background min-h-screen flex items-center justify-center yext-grid-bg">
+        <div className="text-center space-y-6 max-w-md px-4">
+          <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-10 mx-auto" />
+          <h1 className="text-3xl font-black text-foreground">Welcome to Territory Planner</h1>
+          <p className="text-muted-foreground">You don't have any prospects yet. Would you like to start with the FY27 seed data (309 accounts)?</p>
+          <div className="flex gap-3 justify-center">
+            <Button onClick={seedData} disabled={seeding} className="gap-2">
+              <Zap className="w-4 h-4" /> {seeding ? "Importing..." : "Import Seed Data"}
+            </Button>
+            <Button variant="outline" onClick={() => setShowAdd(true)} className="gap-2">
+              <Plus className="w-4 h-4" /> Start Fresh
+            </Button>
+            <Button variant="ghost" onClick={signOut} className="gap-2">
+              <LogOut className="w-4 h-4" /> Sign Out
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-background min-h-screen text-foreground yext-grid-bg">
@@ -882,6 +908,13 @@ export default function TerritoryPlanner() {
                   <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">{archived.length}</span>
                 )}
               </button>
+              <button
+                onClick={signOut}
+                className="p-2 rounded-lg text-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-all hidden md:block"
+                title="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
               {/* Mobile menu */}
               <div className="md:hidden">
                 <DropdownMenu>
@@ -915,6 +948,9 @@ export default function TerritoryPlanner() {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => { setResetInput(""); setResetDialogOpen(true); }} className="text-destructive">
                       <RotateCcw className="w-4 h-4 mr-2" /> Reset Data
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={signOut} className="text-destructive">
+                      <LogOut className="w-4 h-4 mr-2" /> Sign Out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
