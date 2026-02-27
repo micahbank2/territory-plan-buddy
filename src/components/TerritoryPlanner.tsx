@@ -23,7 +23,7 @@ import { MultiSelect } from "@/components/MultiSelect";
 import { ProspectSheet } from "@/components/ProspectSheet";
 import { CSVUploadDialog } from "@/components/CSVUploadDialog";
 
-import { cn } from "@/lib/utils";
+import { cn, normalizeUrl } from "@/lib/utils";
 import {
   Search,
   RotateCcw,
@@ -1391,7 +1391,7 @@ export default function TerritoryPlanner() {
                           />
                           <span className="font-semibold text-foreground group-hover:text-primary transition-colors">{p.name}</span>
                           {p.website && (
-                            <a href={`https://${p.website}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-primary transition-colors">
+                            <a href={normalizeUrl(p.website)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-primary transition-colors">
                               <ExternalLink className="w-3.5 h-3.5" />
                             </a>
                           )}
