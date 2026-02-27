@@ -351,9 +351,12 @@ function relativeTime(dateStr: string): string {
 
 const PAGE_SIZE = 25;
 
+const OWNER_EMAILS = ["micahbank2@gmail.com", "mbank@yext.com"];
+
 export default function TerritoryPlanner() {
   const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete, seedData, seeding } = useProspects();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+  const isOwner = user?.email && OWNER_EMAILS.includes(user.email);
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -781,11 +784,13 @@ export default function TerritoryPlanner() {
         <div className="text-center space-y-6 max-w-md px-4">
           <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-10 mx-auto" />
           <h1 className="text-3xl font-black text-foreground">Welcome to Territory Planner</h1>
-          <p className="text-muted-foreground">You don't have any prospects yet. Would you like to start with the FY27 seed data (309 accounts)?</p>
+          <p className="text-muted-foreground">{isOwner ? "You don't have any prospects yet. Would you like to start with the FY27 seed data (309 accounts)?" : "You don't have any prospects yet. Add your first prospect to get started!"}</p>
           <div className="flex gap-3 justify-center">
-            <Button onClick={seedData} disabled={seeding} className="gap-2">
-              <Zap className="w-4 h-4" /> {seeding ? "Importing..." : "Import Seed Data"}
-            </Button>
+            {isOwner && (
+              <Button onClick={seedData} disabled={seeding} className="gap-2">
+                <Zap className="w-4 h-4" /> {seeding ? "Importing..." : "Import Seed Data"}
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setShowAdd(true)} className="gap-2">
               <Plus className="w-4 h-4" /> Start Fresh
             </Button>
