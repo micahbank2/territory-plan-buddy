@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Upload, FileUp, AlertTriangle } from "lucide-react";
 import { stringSimilarity, getDomain, type Prospect } from "@/data/prospects";
+import { normalizeUrl } from "@/lib/utils";
 import { toast } from "sonner";
 
 // --- Normalize header for matching ---
@@ -134,6 +135,9 @@ function mapRow(raw: Record<string, string>, unmappedCols: Set<string>): Partial
     if (field === "locationCount" || field === "estimatedRevenue") {
       const num = parseInt(value.replace(/[^0-9-]/g, ""));
       if (!isNaN(num)) mapped[field] = num;
+    } else if (field === "website") {
+      // Strip protocol so we store clean domains
+      mapped[field] = value.trim().replace(/^https?:?\/?\/?\/?/i, "");
     } else {
       mapped[field] = value.trim();
     }
