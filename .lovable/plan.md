@@ -1,51 +1,66 @@
 
 
-# Fix: CSV Import Data Loss and Header Resilience
+# Migrate to Lovable Cloud with Team Access
 
-## Root Cause
+## What This Does
+Moves all prospect data from browser storage to a persistent cloud database, and adds login/signup so each person on your team gets their own account with their own prospect list. Data will never disappear again -- it lives in the cloud, works across devices, and each team member manages their own pipeline independently.
 
-Your data lives in **browser localStorage**, which is tied to the specific URL (origin) of the preview. When code changes are deployed, the preview URL can change, and all localStorage data is lost. The CSV import itself worked correctly -- you saw the preview, confirmed it, and got the success toast -- but the data disappeared when the app was redeployed to a new URL.
+## User-Facing Changes
 
-## What Gets Fixed
+1. **Login/Signup page** -- simple email + password auth (team members sign up themselves)
+2. **Everything else stays the same** -- same Territory Planner UI, same CSV import, same features
+3. **Data persists permanently** -- no more data loss from URL changes or browser cache clears
+4. **Each team member has their own prospects** -- everyone logs in and sees only their data
 
-### 1. Smarter Header Matching (prevent future silent failures)
-Even though "locations" was already a recognized alias, the current system silently drops any column it doesn't recognize. We'll add:
-- **Header normalization**: strip accents, collapse whitespace, lowercase, remove underscores
-- **Fuzzy matching**: if exact match fails, try "starts with" and "contains" fallbacks
-- **Unrecognized column warnings**: show which CSV columns couldn't be mapped so you know if something was missed
-- **More aliases**: add common variations like "# locations", "store count", "number of locations", "locs count"
+## How It Works (Step by Step)
 
-### 2. Post-Import Verification Toast
-After confirming an import, the success toast will include a breakdown: "12 added, 5 updated, 3 skipped, 2 columns not mapped: [Store Type, Region]" -- so you immediately know if something didn't map.
+### Step 1: Create the database tables
+- **prospects** table: stores all prospect fields (name, website, industry, location count, priority, status, etc.) with a `user_id` column linking each prospect to its owner
+- **contacts**, **interactions**, **note_log**, **tasks** tables: related data linked to each prospect
+- Row-level security ensures each user can only see/edit their own data
 
-### 3. LocalStorage Persistence Guard
-- Add a **data export reminder** after imports: a subtle prompt suggesting you export/download your data as backup
-- Add the prospect count to the page header so data loss is immediately obvious (e.g., "309 prospects" visible at all times)
+### Step 2: Add authentication
+- Create a login/signup page with email + password
+- Protect all routes so you must be logged in to access the app
+- Add a logout button to the header
+
+### Step 3: Rewire data layer
+- Replace the `useProspects` hook (currently reads/writes localStorage) with one that reads/writes to the cloud database
+- CSV import will save directly to the database instead of localStorage
+- All existing features (edit, archive, bulk update, etc.) will work the same way
+
+### Step 4: Seed migration
+- On first login, if you have no prospects in the database, offer to import the built-in seed data (your 309 FY27 accounts) so you're not starting from scratch
 
 ## Technical Details
 
-### Files to modify:
+### Database Schema
 
-| File | Changes |
-|------|---------|
-| `src/components/CSVUploadDialog.tsx` | Add `normalizeHeader()` function, fuzzy column matching with 3-tier priority (exact -> starts-with -> contains), show unmapped columns warning in preview, enhanced success toast with column mapping summary |
-| `src/components/TerritoryPlanner.tsx` | Show prospect count in header area for quick visual verification |
+| Table | Key Columns |
+|-------|------------|
+| `prospects` | id (uuid), user_id, name, website, industry, location_count, status, priority, tier, competitor, outreach, notes, estimated_revenue, contact_name, contact_email, location_notes, last_touched, created_at |
+| `prospect_contacts` | id, prospect_id (FK), name, email, phone, title, notes |
+| `prospect_interactions` | id, prospect_id (FK), type, date, notes |
+| `prospect_notes` | id, prospect_id (FK), text, timestamp |
+| `prospect_tasks` | id, prospect_id (FK), text, due_date |
+| `prospect_archive` | same as prospects + archived_at |
 
-### Header normalization function:
-```text
-normalizeHeader("# Locations") -> "locations"
-normalizeHeader("Location_Count") -> "location count"  
-normalizeHeader("Num. Locations") -> "num locations"
-```
+All tables have RLS policies: users can only CRUD their own rows (WHERE user_id = auth.uid()).
 
-### Matching priority:
-1. Exact match (after normalization)
-2. Starts-with match
-3. Contains match
+### Files to Create/Modify
 
-### Unmapped columns UI:
-A small amber warning banner in the preview step:
-"2 columns not mapped: Store Type, Region"
-This way you immediately know if your CSV had columns the system didn't recognize.
+| File | What |
+|------|------|
+| `src/pages/AuthPage.tsx` | New login/signup page |
+| `src/hooks/useAuth.tsx` | Auth context provider |
+| `src/hooks/useProspects.ts` | Rewrite to use database instead of localStorage |
+| `src/components/TerritoryPlanner.tsx` | Add logout button, remove localStorage references |
+| `src/components/CSVUploadDialog.tsx` | Save imports to database |
+| `src/App.tsx` | Add auth provider, protect routes |
 
-Note: The fundamental data persistence issue (localStorage being origin-scoped) is a known limitation. A full fix would require migrating prospect data to Lovable Cloud's database, which is a separate larger effort.
+### What Stays the Same
+- All UI components (ProspectSheet, ChatBubble, MultiSelect, etc.)
+- Prospect type definitions and scoring logic
+- Insights page
+- CSV column mapping logic (including the fuzzy matching we just added)
+
