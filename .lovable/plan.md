@@ -1,33 +1,34 @@
 
 
-## Fix Broken Website URLs
+## Fix Malformed Website URLs
 
 ### Problem
-Your CSV has website values like `Http://www.sheetz.com`. The code always adds `https://` in front, creating invalid URLs like `https://Http://www.sheetz.com`. The browser then breaks this into the garbled `http//www.sheetz.com` you're seeing.
+The URLs stored in the database have malformed protocols like `http//www.sheetz.com` (missing the colon after `http`). The current `normalizeUrl` function only checks for properly-formed `http://` or `https://`, so these broken URLs slip through and get `https://` prepended, creating completely invalid links.
 
 ### Solution
-Add a small helper function that checks if a URL already has a protocol before adding one, then use it everywhere website links appear.
+Two changes to fully fix this:
 
-### Technical Details
+**1. Make `normalizeUrl` handle malformed protocols** (`src/lib/utils.ts`)
 
-**1. `src/lib/utils.ts`** -- Add helper:
+Update the function to detect and fix common malformations like `http//`, `https//`, `Http//`, etc. by normalizing them to proper `https://` before returning.
+
 ```typescript
 export function normalizeUrl(url: string): string {
+  // Already valid
   if (/^https?:\/\//i.test(url)) return url;
+  // Fix malformed: http//, https//, Http//, etc. (missing colon)
+  if (/^https?\/\//i.test(url)) return url.replace(/^https?\/\//i, "https://");
+  // No protocol at all
   return `https://${url}`;
 }
 ```
 
-**2. `src/components/TerritoryPlanner.tsx`** (line 1394)
-- Import `normalizeUrl` from `@/lib/utils`
-- Change `href={\`https://${p.website}\`}` to `href={normalizeUrl(p.website)}`
+**2. Clean URLs on CSV import** (`src/components/CSVUploadDialog.tsx`)
 
-**3. `src/components/ProspectSheet.tsx`** (line 210)
-- Import `normalizeUrl` from `@/lib/utils`
-- Change `href={\`https://${prospect.website}\`}` to `href={normalizeUrl(prospect.website)}`
+In the `mapRow` function, when the field is `website`, run `normalizeUrl` to fix the value before storing it. This prevents future bad data from entering the database. Alternatively, strip the protocol entirely and store just the domain (consistent with seed data).
 
-**4. `src/pages/ProspectPage.tsx`** (line 499)
-- Import `normalizeUrl` from `@/lib/utils`
-- Change `href={\`https://${prospect.website}\`}` to `href={normalizeUrl(prospect.website)}`
+### Technical Details
 
-This handles URLs with or without a protocol, and is case-insensitive so `Http://`, `HTTP://`, and `http://` all work correctly.
+- `src/lib/utils.ts` -- Update `normalizeUrl` to handle `http//`, `https//` patterns (missing colon)
+- `src/components/CSVUploadDialog.tsx` -- Normalize website values during import using a `cleanWebsite` step so the database stores clean URLs going forward
+- Existing broken data in the database will be handled at display time by the improved `normalizeUrl`
