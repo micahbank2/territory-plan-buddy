@@ -84,7 +84,7 @@ export interface Task {
 }
 
 export interface Prospect {
-  id: number;
+  id: any;
   name: string;
   website: string;
   lastModified: string;
@@ -182,7 +182,7 @@ export function scoreProspect(p: Prospect): number {
   return s;
 }
 
-export function initProspect(p: Partial<Prospect> & { id: number; name: string }): Prospect {
+export function initProspect(p: Partial<Prospect> & { id: any; name: string }): Prospect {
   const base: Prospect = {
     website: "",
     lastModified: "",

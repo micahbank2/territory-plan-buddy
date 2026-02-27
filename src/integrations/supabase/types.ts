@@ -14,7 +14,218 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      prospect_contacts: {
+        Row: {
+          email: string
+          id: string
+          name: string
+          notes: string
+          phone: string
+          prospect_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          email?: string
+          id?: string
+          name?: string
+          notes?: string
+          phone?: string
+          prospect_id: string
+          title?: string
+          user_id: string
+        }
+        Update: {
+          email?: string
+          id?: string
+          name?: string
+          notes?: string
+          phone?: string
+          prospect_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_contacts_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_interactions: {
+        Row: {
+          date: string
+          id: string
+          notes: string
+          prospect_id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          date?: string
+          id?: string
+          notes?: string
+          prospect_id: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          date?: string
+          id?: string
+          notes?: string
+          prospect_id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_interactions_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_notes: {
+        Row: {
+          id: string
+          prospect_id: string
+          text: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          prospect_id: string
+          text?: string
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          prospect_id?: string
+          text?: string
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_notes_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_tasks: {
+        Row: {
+          due_date: string
+          id: string
+          prospect_id: string
+          text: string
+          user_id: string
+        }
+        Insert: {
+          due_date?: string
+          id?: string
+          prospect_id: string
+          text?: string
+          user_id: string
+        }
+        Update: {
+          due_date?: string
+          id?: string
+          prospect_id?: string
+          text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_tasks_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospects: {
+        Row: {
+          competitor: string
+          contact_email: string
+          contact_name: string
+          created_at: string
+          custom_logo: string | null
+          estimated_revenue: number | null
+          id: string
+          industry: string
+          last_modified: string
+          last_touched: string | null
+          location_count: number | null
+          location_notes: string
+          name: string
+          notes: string
+          outreach: string
+          priority: string
+          status: string
+          tier: string
+          transition_owner: string
+          user_id: string
+          website: string
+        }
+        Insert: {
+          competitor?: string
+          contact_email?: string
+          contact_name?: string
+          created_at?: string
+          custom_logo?: string | null
+          estimated_revenue?: number | null
+          id?: string
+          industry?: string
+          last_modified?: string
+          last_touched?: string | null
+          location_count?: number | null
+          location_notes?: string
+          name: string
+          notes?: string
+          outreach?: string
+          priority?: string
+          status?: string
+          tier?: string
+          transition_owner?: string
+          user_id: string
+          website?: string
+        }
+        Update: {
+          competitor?: string
+          contact_email?: string
+          contact_name?: string
+          created_at?: string
+          custom_logo?: string | null
+          estimated_revenue?: number | null
+          id?: string
+          industry?: string
+          last_modified?: string
+          last_touched?: string | null
+          location_count?: number | null
+          location_notes?: string
+          name?: string
+          notes?: string
+          outreach?: string
+          priority?: string
+          status?: string
+          tier?: string
+          transition_owner?: string
+          user_id?: string
+          website?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -279,7 +279,7 @@ export default function ProspectPage() {
   const { data, ok, update, remove } = useProspects();
 
   const prospect = useMemo(
-    () => data.find((p) => p.id === Number(id)),
+    () => data.find((p) => String(p.id) === id),
     [data, id]
   );
 
