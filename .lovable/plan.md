@@ -1,23 +1,33 @@
 
 
-## Remove Chatbot Feature
+## Fix Broken Website URLs
 
-### What will change
-The AI chat bubble and its backend function will be removed. The database, authentication, and all other cloud functionality remain completely untouched.
+### Problem
+Your CSV has website values like `Http://www.sheetz.com`. The code always adds `https://` in front, creating invalid URLs like `https://Http://www.sheetz.com`. The browser then breaks this into the garbled `http//www.sheetz.com` you're seeing.
 
-### Files to delete
-- `src/components/ChatBubble.tsx` -- the chat UI component
-- `supabase/functions/chat/index.ts` -- the backend function powering the chatbot
+### Solution
+Add a small helper function that checks if a URL already has a protocol before adding one, then use it everywhere website links appear.
 
-### Files to modify
+### Technical Details
 
-**`src/components/TerritoryPlanner.tsx`**
-- Remove the `import { ChatBubble }` line
-- Remove the `<ChatBubble prospects={data} />` usage near the bottom of the component
+**1. `src/lib/utils.ts`** -- Add helper:
+```typescript
+export function normalizeUrl(url: string): string {
+  if (/^https?:\/\//i.test(url)) return url;
+  return `https://${url}`;
+}
+```
 
-### What stays the same
-- Database tables, RLS policies, and all stored prospect data
-- Authentication system
-- All other backend functions (if any)
-- CSV upload, prospect management, insights -- everything else
+**2. `src/components/TerritoryPlanner.tsx`** (line 1394)
+- Import `normalizeUrl` from `@/lib/utils`
+- Change `href={\`https://${p.website}\`}` to `href={normalizeUrl(p.website)}`
 
+**3. `src/components/ProspectSheet.tsx`** (line 210)
+- Import `normalizeUrl` from `@/lib/utils`
+- Change `href={\`https://${prospect.website}\`}` to `href={normalizeUrl(prospect.website)}`
+
+**4. `src/pages/ProspectPage.tsx`** (line 499)
+- Import `normalizeUrl` from `@/lib/utils`
+- Change `href={\`https://${prospect.website}\`}` to `href={normalizeUrl(prospect.website)}`
+
+This handles URLs with or without a protocol, and is case-insensitive so `Http://`, `HTTP://`, and `http://` all work correctly.
