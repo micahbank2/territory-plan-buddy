@@ -1,90 +1,51 @@
 
 
-# AI Chat Bubble -- Prospect-Aware Assistant
+# Fix: CSV Import Data Loss and Header Resilience
 
-A floating chat bubble in the bottom-right corner that lets you ask questions about your pipeline. The AI sees your prospect data and can answer things like "which prospects haven't been touched in 30 days?" or "summarize my Tier 1 pipeline."
+## Root Cause
 
-## Prerequisites
+Your data lives in **browser localStorage**, which is tied to the specific URL (origin) of the preview. When code changes are deployed, the preview URL can change, and all localStorage data is lost. The CSV import itself worked correctly -- you saw the preview, confirmed it, and got the success toast -- but the data disappeared when the app was redeployed to a new URL.
 
-**Lovable Cloud must be enabled first.** The AI chat needs a backend edge function to securely call the Lovable AI gateway (the API key can't be exposed in the browser). I'll set this up as part of the implementation.
+## What Gets Fixed
 
-## What Gets Built
+### 1. Smarter Header Matching (prevent future silent failures)
+Even though "locations" was already a recognized alias, the current system silently drops any column it doesn't recognize. We'll add:
+- **Header normalization**: strip accents, collapse whitespace, lowercase, remove underscores
+- **Fuzzy matching**: if exact match fails, try "starts with" and "contains" fallbacks
+- **Unrecognized column warnings**: show which CSV columns couldn't be mapped so you know if something was missed
+- **More aliases**: add common variations like "# locations", "store count", "number of locations", "locs count"
 
-### 1. Edge Function: `supabase/functions/chat/index.ts`
-- Receives chat messages + a summary of prospect data from the frontend
-- Prepends a system prompt that explains the prospect data schema and the user's role
-- Calls the Lovable AI Gateway (`google/gemini-3-flash-preview` -- fast, cheap, solid answers)
-- Streams the response back via SSE for real-time token rendering
-- Handles 429/402 errors gracefully
+### 2. Post-Import Verification Toast
+After confirming an import, the success toast will include a breakdown: "12 added, 5 updated, 3 skipped, 2 columns not mapped: [Store Type, Region]" -- so you immediately know if something didn't map.
 
-### 2. Chat Component: `src/components/ChatBubble.tsx`
-- Floating button (bottom-right corner, above any scroll) with a chat/sparkle icon
-- Clicking opens a compact chat panel (~350px wide, ~450px tall on desktop; near-full-screen on mobile)
-- Features:
-  - Message list with markdown rendering (install `react-markdown`)
-  - Text input + send button
-  - Streaming token display (assistant messages build up in real-time)
-  - "Thinking..." indicator while waiting for first token
-  - Close button to collapse back to bubble
-- Sends prospect summary as context with each request (compact JSON: name, stage, score, tier, last touched, location count -- enough for the AI to reason about without being huge)
-
-### 3. Integration: `src/components/TerritoryPlanner.tsx`
-- Import and render `ChatBubble`, passing the current prospect data array
-- The bubble sits outside the main layout flow (fixed position)
-
-### 4. Supabase Client: `src/integrations/supabase/client.ts`
-- Minimal Supabase client setup for calling edge functions
-
-## Prospect Context Strategy
-
-To keep token costs low while giving the AI useful context, I'll send a compressed summary:
-
-```text
-You have access to the user's prospect pipeline. Here is their current data:
-[{name, stage, score, tier, priority, industry, locations, lastTouched, daysSinceTouch}, ...]
-```
-
-This keeps the payload small (roughly 100-200 tokens per prospect) while giving the AI everything it needs to answer pipeline questions.
-
-## UI Design
-
-```text
-Desktop:                          Mobile:
-                    [X]           [X] AI Assistant
-  AI Assistant     ----           ----------------
-  ----------------                |              |
-  | User: Which   |              | (messages)   |
-  | prospects...   |              |              |
-  |                |              |              |
-  | AI: Here are  |              |              |
-  | the top 3...  |              |              |
-  |                |              |              |
-  ----------------               ----------------
-  [Type a message...] [>]        [Type a message...] [>]
-
-         [chat icon]  <-- bubble
-```
+### 3. LocalStorage Persistence Guard
+- Add a **data export reminder** after imports: a subtle prompt suggesting you export/download your data as backup
+- Add the prospect count to the page header so data loss is immediately obvious (e.g., "309 prospects" visible at all times)
 
 ## Technical Details
 
-### Files to create:
-| File | Purpose |
-|------|---------|
-| `supabase/functions/chat/index.ts` | Edge function calling Lovable AI Gateway with streaming |
-| `src/components/ChatBubble.tsx` | Floating chat UI with SSE streaming |
-| `src/integrations/supabase/client.ts` | Supabase client for edge function calls |
-
 ### Files to modify:
+
 | File | Changes |
 |------|---------|
-| `src/components/TerritoryPlanner.tsx` | Add `<ChatBubble>` with prospect data prop |
+| `src/components/CSVUploadDialog.tsx` | Add `normalizeHeader()` function, fuzzy column matching with 3-tier priority (exact -> starts-with -> contains), show unmapped columns warning in preview, enhanced success toast with column mapping summary |
+| `src/components/TerritoryPlanner.tsx` | Show prospect count in header area for quick visual verification |
 
-### New dependency:
-- `react-markdown` -- for rendering AI responses with proper formatting
+### Header normalization function:
+```text
+normalizeHeader("# Locations") -> "locations"
+normalizeHeader("Location_Count") -> "location count"  
+normalizeHeader("Num. Locations") -> "num locations"
+```
 
-### Model choice:
-- `google/gemini-3-flash-preview` -- fast, cheap, good reasoning. Perfect for "light but spicy."
+### Matching priority:
+1. Exact match (after normalization)
+2. Starts-with match
+3. Contains match
 
-### System prompt (backend only):
-Instructs the AI that it's a sales assistant for a territory planner, explains the data schema, and tells it to be concise and actionable. The user never sees or controls this.
+### Unmapped columns UI:
+A small amber warning banner in the preview step:
+"2 columns not mapped: Store Type, Region"
+This way you immediately know if your CSV had columns the system didn't recognize.
 
+Note: The fundamental data persistence issue (localStorage being origin-scoped) is a known limitation. A full fix would require migrating prospect data to Lovable Cloud's database, which is a separate larger effort.
