@@ -21,6 +21,7 @@ import { useProspects } from "@/hooks/useProspects";
 import { MultiSelect } from "@/components/MultiSelect";
 import { ProspectSheet } from "@/components/ProspectSheet";
 import { CSVUploadDialog } from "@/components/CSVUploadDialog";
+import { ChatBubble } from "@/components/ChatBubble";
 import { cn } from "@/lib/utils";
 import {
   Search,
@@ -1715,6 +1716,8 @@ export default function TerritoryPlanner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ChatBubble prospects={data} />
     </div>
   );
 }
