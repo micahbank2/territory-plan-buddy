@@ -1,22 +1,23 @@
 
 
-## Restrict Seed Data to Owner Emails
+## Remove Chatbot Feature
 
 ### What will change
-The "Import Seed Data" button (and the `seedData` function) will only be available to your two email addresses:
-- `micahbank2@gmail.com`
-- `mbank@yext.com`
+The AI chat bubble and its backend function will be removed. The database, authentication, and all other cloud functionality remain completely untouched.
 
-All other users who sign up will see the welcome screen without the seed data import option -- they'll only get the "Add Prospect" button.
+### Files to delete
+- `src/components/ChatBubble.tsx` -- the chat UI component
+- `supabase/functions/chat/index.ts` -- the backend function powering the chatbot
 
-### Technical Details
+### Files to modify
 
-**File: `src/components/TerritoryPlanner.tsx`**
-- Add an `OWNER_EMAILS` constant: `["micahbank2@gmail.com", "mbank@yext.com"]`
-- Import `useAuth` to get `user.email`
-- Conditionally render the "Import Seed Data" button only when `user.email` is in `OWNER_EMAILS`
-- The welcome message will adjust for non-owners (remove mention of 309 accounts)
+**`src/components/TerritoryPlanner.tsx`**
+- Remove the `import { ChatBubble }` line
+- Remove the `<ChatBubble prospects={data} />` usage near the bottom of the component
 
-**File: `src/hooks/useProspects.ts`**
-- Add the same `OWNER_EMAILS` guard in the `seedData` function as a server-side safety check, so even if someone bypasses the UI, the function won't execute for non-owners
+### What stays the same
+- Database tables, RLS policies, and all stored prospect data
+- Authentication system
+- All other backend functions (if any)
+- CSV upload, prospect management, insights -- everything else
 
