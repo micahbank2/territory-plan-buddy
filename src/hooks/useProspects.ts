@@ -344,8 +344,11 @@ export function useProspects() {
     await seedData();
   }, [user]);
 
+  const OWNER_EMAILS = ["micahbank2@gmail.com", "mbank@yext.com"];
+
   const seedData = useCallback(async () => {
     if (!user || seeding) return;
+    if (!user.email || !OWNER_EMAILS.includes(user.email)) return;
     setSeeding(true);
 
     const rows = SEED.map((p) => ({
