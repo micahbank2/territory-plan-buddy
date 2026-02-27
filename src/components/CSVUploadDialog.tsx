@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Upload, FileUp, AlertTriangle } from "lucide-react";
-import { stringSimilarity, getDomain, type Prospect } from "@/data/prospects";
+import { Upload, FileUp, AlertTriangle, Users } from "lucide-react";
+import { stringSimilarity, getDomain, type Prospect, type Contact } from "@/data/prospects";
 import { normalizeUrl } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -26,7 +26,7 @@ function normalizeHeader(h: string): string {
     .trim();
 }
 
-// --- Column mapping ---
+// --- Prospect column mapping ---
 const COLUMN_MAP: Record<string, keyof Prospect> = {};
 const addAliases = (aliases: string[], field: keyof Prospect) =>
   aliases.forEach((a) => (COLUMN_MAP[normalizeHeader(a)] = field));
@@ -46,17 +46,49 @@ addAliases(["contact name", "contact"], "contactName");
 addAliases(["contact email", "email"], "contactEmail");
 addAliases(["estimated revenue", "revenue", "arr"], "estimatedRevenue");
 
+// --- Contact-specific column aliases ---
+const CONTACT_COLUMNS: Record<string, string> = {};
+const addContactAliases = (aliases: string[], field: string) =>
+  aliases.forEach((a) => (CONTACT_COLUMNS[normalizeHeader(a)] = field));
+
+addContactAliases(["first name", "fname", "given name", "first"], "firstName");
+addContactAliases(["last name", "lname", "surname", "family name", "last"], "lastName");
+addContactAliases(["title", "job title", "position", "role"], "title");
+addContactAliases(["email", "email address", "e mail", "e-mail"], "email");
+addContactAliases(["phone", "phone number", "mobile", "cell"], "phone");
+addContactAliases(["company", "company name", "account", "account name", "business", "business name"], "company");
+addContactAliases(["notes", "contact notes"], "notes");
+
+// Detect if CSV headers indicate a contact import
+function detectContactMode(headers: string[]): boolean {
+  const normalized = headers.map(normalizeHeader);
+  const hasFirstName = normalized.some((h) => CONTACT_COLUMNS[h] === "firstName" || h.includes("first name"));
+  const hasLastName = normalized.some((h) => CONTACT_COLUMNS[h] === "lastName" || h.includes("last name"));
+  return hasFirstName || hasLastName;
+}
+
+// Match a contact column header
+function matchContactColumn(header: string): string | undefined {
+  const norm = normalizeHeader(header);
+  if (!norm) return undefined;
+  if (CONTACT_COLUMNS[norm]) return CONTACT_COLUMNS[norm];
+  for (const [alias, field] of Object.entries(CONTACT_COLUMNS)) {
+    if (norm.startsWith(alias) || alias.startsWith(norm)) return field;
+  }
+  for (const [alias, field] of Object.entries(CONTACT_COLUMNS)) {
+    if (norm.includes(alias) || alias.includes(norm)) return field;
+  }
+  return undefined;
+}
+
 // Fuzzy column matching: exact -> starts-with -> contains
 function matchColumn(header: string): keyof Prospect | undefined {
   const norm = normalizeHeader(header);
   if (!norm) return undefined;
-  // 1. Exact
   if (COLUMN_MAP[norm]) return COLUMN_MAP[norm];
-  // 2. Starts-with
   for (const [alias, field] of Object.entries(COLUMN_MAP)) {
     if (norm.startsWith(alias) || alias.startsWith(norm)) return field;
   }
-  // 3. Contains
   for (const [alias, field] of Object.entries(COLUMN_MAP)) {
     if (norm.includes(alias) || alias.includes(norm)) return field;
   }
@@ -67,10 +99,23 @@ function matchColumn(header: string): keyof Prospect | undefined {
 const PROTECTED_FIELDS = new Set(["contacts", "interactions", "noteLog", "nextStep", "nextStepDate", "ps", "id", "createdAt", "customLogo"]);
 
 type RowAction = "new" | "update" | "review" | "skip";
+type ImportMode = "prospects" | "contacts";
+
+interface ContactData {
+  firstName: string;
+  lastName: string;
+  name: string;
+  title: string;
+  email: string;
+  phone: string;
+  notes: string;
+  company: string;
+}
 
 interface ParsedRow {
   raw: Record<string, string>;
   mapped: Partial<Prospect>;
+  contactData?: ContactData;
   action: RowAction;
   matchedProspect?: Prospect;
   similarity?: number;
@@ -111,11 +156,11 @@ function parseCSVLine(line: string): string[] {
   return result;
 }
 
-function parseCSV(text: string): Record<string, string>[] {
+function parseCSV(text: string): { headers: string[]; rows: Record<string, string>[] } {
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
-  if (lines.length < 2) return [];
+  if (lines.length < 2) return { headers: [], rows: [] };
   const headers = parseCSVLine(lines[0]);
-  return lines.slice(1).map((line) => {
+  const rows = lines.slice(1).map((line) => {
     const vals = parseCSVLine(line);
     const obj: Record<string, string> = {};
     headers.forEach((h, i) => {
@@ -123,6 +168,7 @@ function parseCSV(text: string): Record<string, string>[] {
     });
     return obj;
   });
+  return { headers, rows };
 }
 
 function mapRow(raw: Record<string, string>, unmappedCols: Set<string>): Partial<Prospect> {
@@ -145,15 +191,27 @@ function mapRow(raw: Record<string, string>, unmappedCols: Set<string>): Partial
   return mapped;
 }
 
+function mapContactRow(raw: Record<string, string>, unmappedCols: Set<string>): ContactData {
+  const contact: any = { firstName: "", lastName: "", name: "", title: "", email: "", phone: "", notes: "", company: "" };
+  for (const [header, value] of Object.entries(raw)) {
+    const field = matchContactColumn(header);
+    if (!field) { unmappedCols.add(header); continue; }
+    if (!value.trim()) continue;
+    contact[field] = value.trim();
+  }
+  // Combine first + last name
+  const parts = [contact.firstName, contact.lastName].filter(Boolean);
+  contact.name = parts.join(" ");
+  return contact;
+}
+
 function computeChanges(existing: Prospect, incoming: Partial<Prospect>): { changes: Partial<Prospect>; changedFields: string[] } {
   const changes: any = {};
   const changedFields: string[] = [];
   for (const [key, val] of Object.entries(incoming)) {
     if (PROTECTED_FIELDS.has(key)) continue;
     const existingVal = (existing as any)[key];
-    // Never clear existing data
     if (val == null || val === "") continue;
-    // If existing is empty or different, take CSV value
     if (existingVal == null || existingVal === "" || existingVal !== val) {
       if (existingVal !== val) {
         changes[key] = val;
@@ -177,6 +235,7 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
   const [step, setStep] = useState<"upload" | "preview">("upload");
   const [dragging, setDragging] = useState(false);
   const [unmappedColumns, setUnmappedColumns] = useState<string[]>([]);
+  const [importMode, setImportMode] = useState<ImportMode>("prospects");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const resetState = useCallback(() => {
@@ -185,6 +244,7 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
     setStep("upload");
     setDragging(false);
     setUnmappedColumns([]);
+    setImportMode("prospects");
   }, []);
 
   const processFile = useCallback(
@@ -193,66 +253,136 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
       const reader = new FileReader();
       reader.onload = () => {
         const text = reader.result as string;
-        const rawRows = parseCSV(text);
+        const { headers, rows: rawRows } = parseCSV(text);
         if (rawRows.length === 0) {
           toast.error("No data rows found in CSV");
           return;
         }
 
+        const isContactMode = detectContactMode(headers);
+        setImportMode(isContactMode ? "contacts" : "prospects");
+
         const unmapped = new Set<string>();
-        const parsed: ParsedRow[] = rawRows
-          .map((raw) => {
-            const mapped = mapRow(raw, unmapped);
-            if (!mapped.name) return null;
 
-            // Match logic
-            const csvDomain = getDomain(mapped.website);
+        if (isContactMode) {
+          // --- Contact import mode ---
+          const parsed: ParsedRow[] = rawRows
+            .map((raw) => {
+              const contactData = mapContactRow(raw, unmapped);
+              if (!contactData.name && !contactData.email) return null;
+              if (!contactData.company) return null;
 
-            // 1. Exact website match
-            if (csvDomain) {
-              const websiteMatch = existingData.find(
-                (p) => getDomain(p.website).toLowerCase() === csvDomain.toLowerCase() && csvDomain !== ""
+              // Match company against existing prospects
+              let bestMatch: Prospect | undefined;
+              let bestSim = 0;
+
+              // Exact name match first
+              const exactMatch = existingData.find(
+                (p) => p.name.toLowerCase() === contactData.company.toLowerCase()
               );
-              if (websiteMatch) {
-                const { changes, changedFields } = computeChanges(websiteMatch, mapped);
-                if (changedFields.length === 0) {
-                  return { raw, mapped, action: "skip" as RowAction, matchedProspect: websiteMatch, included: false, changedFields: [] };
+              if (exactMatch) {
+                bestMatch = exactMatch;
+                bestSim = 1;
+              } else {
+                // Fuzzy match
+                for (const p of existingData) {
+                  const sim = stringSimilarity(p.name, contactData.company);
+                  if (sim > bestSim) {
+                    bestSim = sim;
+                    bestMatch = p;
+                  }
                 }
-                return { raw, mapped, action: "update" as RowAction, matchedProspect: websiteMatch, included: true, changedFields };
               }
-            }
 
-            // 2. Name similarity
-            let bestMatch: Prospect | undefined;
-            let bestSim = 0;
-            for (const p of existingData) {
-              const sim = stringSimilarity(p.name, mapped.name as string);
-              if (sim > bestSim) {
-                bestSim = sim;
-                bestMatch = p;
+              if (bestSim > 0.7 && bestMatch) {
+                // Check for duplicate contact by email
+                if (contactData.email && bestMatch.contacts.some(
+                  (c) => c.email.toLowerCase() === contactData.email.toLowerCase()
+                )) {
+                  return {
+                    raw, mapped: {}, contactData, action: "skip" as RowAction,
+                    matchedProspect: bestMatch, similarity: bestSim,
+                    included: false, changedFields: [],
+                  };
+                }
+                return {
+                  raw, mapped: {}, contactData, action: "update" as RowAction,
+                  matchedProspect: bestMatch, similarity: bestSim,
+                  included: true, changedFields: ["contacts"],
+                };
               }
-            }
 
-            if (bestSim > 0.7 && bestMatch) {
-              const { changes, changedFields } = computeChanges(bestMatch, mapped);
-              if (changedFields.length === 0) {
-                return { raw, mapped, action: "skip" as RowAction, matchedProspect: bestMatch, similarity: bestSim, included: false, changedFields: [] };
+              if (bestSim >= 0.5 && bestMatch) {
+                return {
+                  raw, mapped: {}, contactData, action: "review" as RowAction,
+                  matchedProspect: bestMatch, similarity: bestSim,
+                  included: false, changedFields: [],
+                };
               }
-              return { raw, mapped, action: "update" as RowAction, matchedProspect: bestMatch, similarity: bestSim, included: true, changedFields };
-            }
 
-            if (bestSim >= 0.5 && bestMatch) {
-              return { raw, mapped, action: "review" as RowAction, matchedProspect: bestMatch, similarity: bestSim, included: false, changedFields: [] };
-            }
+              // No match — flag for review, never auto-create
+              return {
+                raw, mapped: {}, contactData, action: "review" as RowAction,
+                included: false, changedFields: [],
+              };
+            })
+            .filter(Boolean) as ParsedRow[];
 
-            // 4. New
-            return { raw, mapped, action: "new" as RowAction, included: true, changedFields: [] };
-          })
-          .filter(Boolean) as ParsedRow[];
+          setUnmappedColumns(Array.from(unmapped));
+          setRows(parsed);
+          setStep("preview");
+        } else {
+          // --- Prospect import mode (existing logic) ---
+          const parsed: ParsedRow[] = rawRows
+            .map((raw) => {
+              const mapped = mapRow(raw, unmapped);
+              if (!mapped.name) return null;
 
-        setUnmappedColumns(Array.from(unmapped));
-        setRows(parsed);
-        setStep("preview");
+              const csvDomain = getDomain(mapped.website);
+
+              if (csvDomain) {
+                const websiteMatch = existingData.find(
+                  (p) => getDomain(p.website).toLowerCase() === csvDomain.toLowerCase() && csvDomain !== ""
+                );
+                if (websiteMatch) {
+                  const { changes, changedFields } = computeChanges(websiteMatch, mapped);
+                  if (changedFields.length === 0) {
+                    return { raw, mapped, action: "skip" as RowAction, matchedProspect: websiteMatch, included: false, changedFields: [] };
+                  }
+                  return { raw, mapped, action: "update" as RowAction, matchedProspect: websiteMatch, included: true, changedFields };
+                }
+              }
+
+              let bestMatch: Prospect | undefined;
+              let bestSim = 0;
+              for (const p of existingData) {
+                const sim = stringSimilarity(p.name, mapped.name as string);
+                if (sim > bestSim) {
+                  bestSim = sim;
+                  bestMatch = p;
+                }
+              }
+
+              if (bestSim > 0.7 && bestMatch) {
+                const { changes, changedFields } = computeChanges(bestMatch, mapped);
+                if (changedFields.length === 0) {
+                  return { raw, mapped, action: "skip" as RowAction, matchedProspect: bestMatch, similarity: bestSim, included: false, changedFields: [] };
+                }
+                return { raw, mapped, action: "update" as RowAction, matchedProspect: bestMatch, similarity: bestSim, included: true, changedFields };
+              }
+
+              if (bestSim >= 0.5 && bestMatch) {
+                return { raw, mapped, action: "review" as RowAction, matchedProspect: bestMatch, similarity: bestSim, included: false, changedFields: [] };
+              }
+
+              return { raw, mapped, action: "new" as RowAction, included: true, changedFields: [] };
+            })
+            .filter(Boolean) as ParsedRow[];
+
+          setUnmappedColumns(Array.from(unmapped));
+          setRows(parsed);
+          setStep("preview");
+        }
       };
       reader.readAsText(file);
     },
@@ -286,28 +416,89 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
   const includedCount = rows.filter((r) => r.included).length;
 
   const handleConfirm = () => {
-    const toAdd = rows
-      .filter((r) => r.included && r.action === "new")
-      .map((r) => r.mapped as Partial<Prospect> & { name: string });
+    if (importMode === "contacts") {
+      // Contact import: group by matched prospect, append contacts
+      const contactUpdates: { id: any; changes: Partial<Prospect> }[] = [];
+      const includedRows = rows.filter((r) => r.included && r.matchedProspect && r.contactData);
 
-    const toUpdate = rows
-      .filter((r) => r.included && (r.action === "update" || r.action === "review") && r.matchedProspect)
-      .map((r) => {
-        const { changes } = computeChanges(r.matchedProspect!, r.mapped);
-        return { id: r.matchedProspect!.id, changes };
-      })
-      .filter((u) => Object.keys(u.changes).length > 0);
+      // Group by prospect id
+      const grouped = new Map<string, { prospect: Prospect; newContacts: ContactData[] }>();
+      for (const row of includedRows) {
+        const pid = row.matchedProspect!.id;
+        if (!grouped.has(pid)) {
+          grouped.set(pid, { prospect: row.matchedProspect!, newContacts: [] });
+        }
+        grouped.get(pid)!.newContacts.push(row.contactData!);
+      }
 
-    onImport(toAdd, toUpdate);
-    const unmappedNote = unmappedColumns.length > 0 ? ` | ${unmappedColumns.length} unmapped columns: ${unmappedColumns.join(", ")}` : "";
-    toast.success(`CSV imported!`, {
-      description: `${toAdd.length} added, ${toUpdate.length} updated, ${counts.skip} skipped${unmappedNote}`,
-    });
+      for (const [id, { prospect, newContacts }] of grouped) {
+        const existingContacts = [...prospect.contacts];
+        const toAdd: Contact[] = newContacts
+          .filter((c) => {
+            // Skip if email already exists
+            if (c.email && existingContacts.some((ec) => ec.email.toLowerCase() === c.email.toLowerCase())) return false;
+            return true;
+          })
+          .map((c) => ({
+            id: crypto.randomUUID(),
+            name: c.name,
+            email: c.email,
+            phone: c.phone,
+            title: c.title,
+            notes: c.notes,
+          }));
+
+        if (toAdd.length > 0) {
+          contactUpdates.push({
+            id,
+            changes: { contacts: [...existingContacts, ...toAdd] },
+          });
+        }
+      }
+
+      onImport([], contactUpdates);
+      toast.success(`Contacts imported!`, {
+        description: `${contactUpdates.reduce((sum, u) => sum + ((u.changes.contacts?.length || 0) - (grouped.get(u.id)?.prospect.contacts.length || 0)), 0)} contacts added to ${contactUpdates.length} account${contactUpdates.length !== 1 ? "s" : ""}`,
+      });
+    } else {
+      // Prospect import (existing logic)
+      const toAdd = rows
+        .filter((r) => r.included && r.action === "new")
+        .map((r) => r.mapped as Partial<Prospect> & { name: string });
+
+      const toUpdate = rows
+        .filter((r) => r.included && (r.action === "update" || r.action === "review") && r.matchedProspect)
+        .map((r) => {
+          const { changes } = computeChanges(r.matchedProspect!, r.mapped);
+          return { id: r.matchedProspect!.id, changes };
+        })
+        .filter((u) => Object.keys(u.changes).length > 0);
+
+      onImport(toAdd, toUpdate);
+      const unmappedNote = unmappedColumns.length > 0 ? ` | ${unmappedColumns.length} unmapped columns: ${unmappedColumns.join(", ")}` : "";
+      toast.success(`CSV imported!`, {
+        description: `${toAdd.length} added, ${toUpdate.length} updated, ${counts.skip} skipped${unmappedNote}`,
+      });
+    }
+
     resetState();
     onOpenChange(false);
   };
 
   const actionBadge = (action: RowAction) => {
+    switch (action) {
+      case "new":
+        return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/15">NEW</Badge>;
+      case "update":
+        return <Badge className="bg-blue-500/15 text-blue-600 border-blue-500/30 hover:bg-blue-500/15">ADD</Badge>;
+      case "review":
+        return <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 hover:bg-amber-500/15">REVIEW</Badge>;
+      case "skip":
+        return <Badge className="bg-muted text-muted-foreground border-border hover:bg-muted">SKIP</Badge>;
+    }
+  };
+
+  const prospectActionBadge = (action: RowAction) => {
     switch (action) {
       case "new":
         return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/15">NEW</Badge>;
@@ -330,10 +521,16 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
     >
       <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>CSV Import{step === "preview" ? " Preview" : ""}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {importMode === "contacts" && <Users className="w-5 h-5 text-blue-500" />}
+            {importMode === "contacts" ? "Contact Import" : "CSV Import"}
+            {step === "preview" ? " Preview" : ""}
+          </DialogTitle>
           <DialogDescription>
             {step === "upload"
-              ? "Upload a CSV file to import prospects. Existing records will be matched and updated smartly."
+              ? "Upload a CSV file to import prospects or contacts. The system auto-detects the file type."
+              : importMode === "contacts"
+              ? `File: ${fileName} — ${rows.length} contacts detected. Contacts will be added to matching accounts.`
               : `File: ${fileName} (${rows.length} rows)`}
           </DialogDescription>
         </DialogHeader>
@@ -354,7 +551,7 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
             <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFileSelect} />
             <FileUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
             <p className="text-sm font-medium text-foreground mb-1">Drop a CSV file here or click to browse</p>
-            <p className="text-xs text-muted-foreground">Supports standard CSV format with headers</p>
+            <p className="text-xs text-muted-foreground">Supports prospect CSVs and contact CSVs (with First Name, Last Name, Company)</p>
           </div>
         )}
 
@@ -368,16 +565,24 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
               </div>
             )}
 
+            {/* Contact mode info banner */}
+            {importMode === "contacts" && (
+              <div className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs text-blue-700 dark:text-blue-400">
+                <Users className="w-3.5 h-3.5 shrink-0" />
+                <span>Contact import mode — contacts will be added to matched accounts. No account data will be modified.</span>
+              </div>
+            )}
+
             {/* Summary bar */}
             <div className="flex items-center gap-3 flex-wrap">
+              {counts.update > 0 && (
+                <span className="text-xs font-medium text-blue-600">
+                  {counts.update} {importMode === "contacts" ? "Add" : "Updates"}
+                </span>
+              )}
               {counts.new > 0 && (
                 <span className="text-xs font-medium text-emerald-600">
                   {counts.new} New
-                </span>
-              )}
-              {counts.update > 0 && (
-                <span className="text-xs font-medium text-blue-600">
-                  {counts.update} Updates
                 </span>
               )}
               {counts.review > 0 && (
@@ -387,7 +592,7 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
               )}
               {counts.skip > 0 && (
                 <span className="text-xs font-medium text-muted-foreground">
-                  {counts.skip} Skip
+                  {counts.skip} {importMode === "contacts" ? "Duplicate" : "Skip"}
                 </span>
               )}
             </div>
@@ -399,10 +604,21 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
                   <tr className="border-b border-border">
                     <th className="p-2 w-8" />
                     <th className="p-2 text-left text-xs font-medium text-muted-foreground">Status</th>
-                    <th className="p-2 text-left text-xs font-medium text-muted-foreground">Name</th>
-                    <th className="p-2 text-left text-xs font-medium text-muted-foreground">Website</th>
-                    <th className="p-2 text-left text-xs font-medium text-muted-foreground">Industry</th>
-                    <th className="p-2 text-left text-xs font-medium text-muted-foreground">Details</th>
+                    {importMode === "contacts" ? (
+                      <>
+                        <th className="p-2 text-left text-xs font-medium text-muted-foreground">Contact Name</th>
+                        <th className="p-2 text-left text-xs font-medium text-muted-foreground">Title</th>
+                        <th className="p-2 text-left text-xs font-medium text-muted-foreground">Email</th>
+                        <th className="p-2 text-left text-xs font-medium text-muted-foreground">Company Match</th>
+                      </>
+                    ) : (
+                      <>
+                        <th className="p-2 text-left text-xs font-medium text-muted-foreground">Name</th>
+                        <th className="p-2 text-left text-xs font-medium text-muted-foreground">Website</th>
+                        <th className="p-2 text-left text-xs font-medium text-muted-foreground">Industry</th>
+                        <th className="p-2 text-left text-xs font-medium text-muted-foreground">Details</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -419,37 +635,68 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
                           onCheckedChange={() => toggleRow(i)}
                         />
                       </td>
-                      <td className="p-2">{actionBadge(row.action)}</td>
-                      <td className="p-2 font-medium text-foreground">
-                        {row.mapped.name as string}
-                        {row.matchedProspect && row.action === "review" && (
-                          <div className="text-[10px] text-amber-600 mt-0.5">
-                            ≈ {row.matchedProspect.name} ({Math.round((row.similarity || 0) * 100)}% match)
-                          </div>
-                        )}
-                        {row.matchedProspect && row.action === "update" && (
-                          <div className="text-[10px] text-blue-600 mt-0.5">
-                            → {row.matchedProspect.name}
-                          </div>
-                        )}
-                      </td>
-                      <td className="p-2 text-muted-foreground text-xs truncate max-w-[140px]">
-                        {(row.mapped.website as string) || "—"}
-                      </td>
-                      <td className="p-2 text-muted-foreground text-xs">
-                        {(row.mapped.industry as string) || "—"}
-                      </td>
-                      <td className="p-2 text-xs text-muted-foreground">
-                        {row.action === "update" && row.changedFields && row.changedFields.length > 0 && (
-                          <span className="text-blue-600">
-                            Δ {row.changedFields.join(", ")}
-                          </span>
-                        )}
-                        {row.action === "new" && row.mapped.locationCount && (
-                          <span>{row.mapped.locationCount} locs</span>
-                        )}
-                        {row.action === "skip" && <span>No changes</span>}
-                      </td>
+                      <td className="p-2">{importMode === "contacts" ? actionBadge(row.action) : prospectActionBadge(row.action)}</td>
+                      {importMode === "contacts" ? (
+                        <>
+                          <td className="p-2 font-medium text-foreground">
+                            {row.contactData?.name || "—"}
+                          </td>
+                          <td className="p-2 text-muted-foreground text-xs truncate max-w-[180px]">
+                            {row.contactData?.title || "—"}
+                          </td>
+                          <td className="p-2 text-muted-foreground text-xs truncate max-w-[180px]">
+                            {row.contactData?.email || "—"}
+                          </td>
+                          <td className="p-2 text-xs">
+                            {row.matchedProspect ? (
+                              <span className={row.action === "skip" ? "text-muted-foreground" : "text-blue-600"}>
+                                → {row.matchedProspect.name}
+                                {row.similarity && row.similarity < 1 && (
+                                  <span className="text-[10px] ml-1">({Math.round(row.similarity * 100)}%)</span>
+                                )}
+                                {row.action === "skip" && <span className="ml-1 text-[10px]">(duplicate)</span>}
+                              </span>
+                            ) : (
+                              <span className="text-amber-600">
+                                {row.contactData?.company || "—"} <span className="text-[10px]">(no match)</span>
+                              </span>
+                            )}
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="p-2 font-medium text-foreground">
+                            {row.mapped.name as string}
+                            {row.matchedProspect && row.action === "review" && (
+                              <div className="text-[10px] text-amber-600 mt-0.5">
+                                ≈ {row.matchedProspect.name} ({Math.round((row.similarity || 0) * 100)}% match)
+                              </div>
+                            )}
+                            {row.matchedProspect && row.action === "update" && (
+                              <div className="text-[10px] text-blue-600 mt-0.5">
+                                → {row.matchedProspect.name}
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-2 text-muted-foreground text-xs truncate max-w-[140px]">
+                            {(row.mapped.website as string) || "—"}
+                          </td>
+                          <td className="p-2 text-muted-foreground text-xs">
+                            {(row.mapped.industry as string) || "—"}
+                          </td>
+                          <td className="p-2 text-xs text-muted-foreground">
+                            {row.action === "update" && row.changedFields && row.changedFields.length > 0 && (
+                              <span className="text-blue-600">
+                                Δ {row.changedFields.join(", ")}
+                              </span>
+                            )}
+                            {row.action === "new" && row.mapped.locationCount && (
+                              <span>{row.mapped.locationCount} locs</span>
+                            )}
+                            {row.action === "skip" && <span>No changes</span>}
+                          </td>
+                        </>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -465,7 +712,9 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
           {step === "preview" && (
             <Button onClick={handleConfirm} disabled={includedCount === 0}>
               <Upload className="w-4 h-4 mr-1.5" />
-              Confirm Import ({includedCount})
+              {importMode === "contacts"
+                ? `Import ${includedCount} Contact${includedCount !== 1 ? "s" : ""}`
+                : `Confirm Import (${includedCount})`}
             </Button>
           )}
         </DialogFooter>
