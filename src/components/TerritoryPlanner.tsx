@@ -798,6 +798,25 @@ export default function TerritoryPlanner() {
               <LogOut className="w-4 h-4" /> Sign Out
             </Button>
           </div>
+          {/* Quick Add Dialog must render here too for empty state */}
+          <Dialog open={showAdd} onOpenChange={setShowAdd}>
+            <DialogContent>
+              <DialogHeader>
+              <DialogTitle>Add Your First Prospect</DialogTitle>
+              <DialogDescription>Add a new company to your territory.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3">
+              <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Company Name *" className={inputClass} />
+              <input value={newWebsite} onChange={(e) => setNewWebsite(e.target.value)} placeholder="Website (e.g. example.com)" className={inputClass} />
+              <input value={newIndustry} onChange={(e) => setNewIndustry(e.target.value)} placeholder="Industry" className={inputClass} />
+              <input type="number" value={newLocs} onChange={(e) => setNewLocs(e.target.value)} placeholder="Locations" className={inputClass} />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
+                <Button onClick={handleAdd} disabled={!newName.trim()} className="glow-blue">Add Prospect</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     );
