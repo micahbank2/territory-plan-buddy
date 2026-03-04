@@ -76,6 +76,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
   // Local state for debounced text inputs
   const [localLocCount, setLocalLocCount] = useState("");
   const [localCustomCompetitor, setLocalCustomCompetitor] = useState("");
+  const [localName, setLocalName] = useState("");
   // Task manager state
   const [newTaskText, setNewTaskText] = useState("");
   const [newTaskDate, setNewTaskDate] = useState("");
@@ -84,13 +85,14 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
   useEffect(() => {
     if (prospect) {
       setLocalLocCount(prospect.locationCount != null ? String(prospect.locationCount) : "");
+      setLocalName(prospect.name || "");
       if (prospect.competitor && !COMPETITORS.includes(prospect.competitor) && prospect.competitor.startsWith("Other: ")) {
         setLocalCustomCompetitor(prospect.competitor.replace("Other: ", ""));
       } else {
         setLocalCustomCompetitor("");
       }
     }
-  }, [prospect?.id, prospect?.locationCount, prospect?.competitor]);
+  }, [prospect?.id, prospect?.locationCount, prospect?.competitor, prospect?.name]);
 
   if (!prospect) return null;
 
@@ -198,7 +200,21 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
             <SheetLogoImg website={prospect.website} size={36} customLogo={prospect.customLogo} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <SheetTitle className="text-base font-extrabold truncate">{prospect.name}</SheetTitle>
+                <input
+                  value={localName}
+                  onChange={e => setLocalName(e.target.value)}
+                  onBlur={() => {
+                    const trimmed = localName.trim();
+                    if (trimmed && trimmed !== prospect.name) {
+                      update(prospect.id, { name: trimmed });
+                      toast.success("✅ Updated!");
+                    } else if (!trimmed) {
+                      setLocalName(prospect.name);
+                    }
+                  }}
+                  onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                  className="text-base font-extrabold truncate bg-transparent border-b border-transparent hover:border-border focus:border-primary focus:outline-none transition-colors max-w-[200px]"
+                />
                 <span className={cn("px-2 py-0.5 text-[10px] font-bold rounded-md uppercase",
                   prospect.status === "Churned" ? "bg-destructive/15 text-destructive" : "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]"
                 )}>{prospect.status === "Churned" ? "💀 Churned" : "🎯 Prospect"}</span>
