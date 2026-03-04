@@ -10,6 +10,7 @@ import ProspectPage from "./pages/ProspectPage";
 import InsightsPage from "./pages/InsightsPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 const AppRoutes = () => (
   <Routes>
     <Route path="/auth" element={<AuthPage />} />
+    <Route path="/reset-password" element={<ResetPasswordPage />} />
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/prospect/:id" element={<ProtectedRoute><ProspectPage /></ProtectedRoute>} />
     <Route path="/insights" element={<ProtectedRoute><InsightsPage /></ProtectedRoute>} />

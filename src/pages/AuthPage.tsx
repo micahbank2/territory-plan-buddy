@@ -10,6 +10,7 @@ import yextLogoBlack from "@/assets/yext-logo-black.jpg";
 export default function AuthPage() {
   const { user, loading: authLoading } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,6 +21,19 @@ export default function AuthPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    if (forgotMode) {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Check your email for a password reset link!");
+      }
+      setLoading(false);
+      return;
+    }
 
     if (isSignUp) {
       const { error } = await supabase.auth.signUp({ email, password });
@@ -45,7 +59,7 @@ export default function AuthPage() {
           <img src={yextLogoBlack} alt="Yext" className="h-10 mx-auto dark:hidden" />
           <h1 className="text-3xl font-black text-foreground">Territory Planner</h1>
           <p className="text-sm text-muted-foreground">
-            {isSignUp ? "Create your account" : "Sign in to your account"}
+            {forgotMode ? "Enter your email to reset your password" : isSignUp ? "Create your account" : "Sign in to your account"}
           </p>
         </div>
 
@@ -59,29 +73,48 @@ export default function AuthPage() {
               required
             />
           </div>
-          <div className="space-y-2">
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-            />
-          </div>
+          {!forgotMode && (
+            <div className="space-y-2">
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+            </div>
+          )}
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
+            {loading ? "Loading..." : forgotMode ? "Send Reset Link" : isSignUp ? "Sign Up" : "Sign In"}
           </Button>
+          {!isSignUp && !forgotMode && (
+            <button
+              type="button"
+              onClick={() => setForgotMode(true)}
+              className="text-xs text-muted-foreground hover:text-primary hover:underline w-full text-center"
+            >
+              Forgot password?
+            </button>
+          )}
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
-          {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-          <button
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="text-primary hover:underline font-medium"
-          >
-            {isSignUp ? "Sign In" : "Sign Up"}
-          </button>
+          {forgotMode ? (
+            <button onClick={() => setForgotMode(false)} className="text-primary hover:underline font-medium">
+              Back to Sign In
+            </button>
+          ) : (
+            <>
+              {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+              <button
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="text-primary hover:underline font-medium"
+              >
+                {isSignUp ? "Sign In" : "Sign Up"}
+              </button>
+            </>
+          )}
         </p>
       </div>
     </div>
