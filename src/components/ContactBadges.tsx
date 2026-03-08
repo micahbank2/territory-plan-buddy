@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Star, Crown, Shield } from "lucide-react";
-import type { ContactRole, RelationshipStrength } from "@/data/prospects";
+import { CONTACT_ROLES, RELATIONSHIP_STRENGTHS, type ContactRole, type RelationshipStrength } from "@/data/prospects";
 
 export const ROLE_CONFIG: Record<string, { color: string; bg: string; icon?: React.ComponentType<any> }> = {
   Champion: { color: "text-[hsl(var(--success))]", bg: "bg-[hsl(var(--success))]/15", icon: Star },
@@ -52,19 +52,17 @@ export function StrengthDot({ strength }: { strength?: RelationshipStrength }) {
 }
 
 export function RoleSelect({ value, onChange, className }: { value?: string; onChange: (v: string) => void; className?: string }) {
-  const { CONTACT_ROLES } = require("@/data/prospects");
   return (
     <select value={value || "Unknown"} onChange={e => onChange(e.target.value)} className={className}>
-      {CONTACT_ROLES.map((r: string) => <option key={r} value={r}>{r}</option>)}
+      {CONTACT_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
     </select>
   );
 }
 
 export function StrengthSelect({ value, onChange, className }: { value?: string; onChange: (v: string) => void; className?: string }) {
-  const { RELATIONSHIP_STRENGTHS } = require("@/data/prospects");
   return (
     <select value={value || "Unknown"} onChange={e => onChange(e.target.value)} className={className}>
-      {RELATIONSHIP_STRENGTHS.map((s: string) => <option key={s} value={s}>{s}</option>)}
+      {RELATIONSHIP_STRENGTHS.map((s) => <option key={s} value={s}>{s}</option>)}
     </select>
   );
 }
