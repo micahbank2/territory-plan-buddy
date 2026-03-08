@@ -855,6 +855,12 @@ export default function ProspectPage() {
               </div>
             </div>
 
+            {/* Stakeholder Map */}
+            <div className="glass-card rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
+              <h2 className="text-sm font-semibold text-foreground mb-4">Stakeholder Map</h2>
+              <StakeholderMap contacts={prospect.contacts || []} />
+            </div>
+
             <div className="glass-card rounded-xl p-5 space-y-2 animate-fade-in-up" style={{ animationDelay: "150ms" }}>
               <h2 className="text-sm font-semibold text-foreground mb-3">Details</h2>
               <div className="text-xs text-muted-foreground">Modified: <span className="text-foreground">{prospect.lastModified || "—"}</span></div>
