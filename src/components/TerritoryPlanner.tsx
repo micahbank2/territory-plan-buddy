@@ -1791,7 +1791,12 @@ export default function TerritoryPlanner() {
         </DialogContent>
       </Dialog>
 
-      
+  // Share territory dialog
+  const [showShare, setShowShare] = useState(false);
+  // New territory dialog
+  const [showNewTerritory, setShowNewTerritory] = useState(false);
+  const [newTerritoryName, setNewTerritoryName] = useState("");
+
     </div>
   );
 }
