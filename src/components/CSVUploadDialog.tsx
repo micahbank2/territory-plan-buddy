@@ -17,7 +17,7 @@ import { normalizeUrl } from "@/lib/utils";
 import { toast } from "sonner";
 
 // --- Normalize header for matching ---
-function normalizeHeader(h: string): string {
+export function normalizeHeader(h: string): string {
   return h
     .toLowerCase()
     .replace(/[_]/g, " ")
@@ -27,8 +27,8 @@ function normalizeHeader(h: string): string {
 }
 
 // --- Prospect column mapping ---
-const COLUMN_MAP: Record<string, keyof Prospect> = {};
-const addAliases = (aliases: string[], field: keyof Prospect) =>
+export const COLUMN_MAP: Record<string, keyof Prospect> = {};
+export const addAliases = (aliases: string[], field: keyof Prospect) =>
   aliases.forEach((a) => (COLUMN_MAP[normalizeHeader(a)] = field));
 
 addAliases(["company", "name", "company name", "account", "account name", "business name", "business"], "name");
@@ -82,7 +82,7 @@ function matchContactColumn(header: string): string | undefined {
 }
 
 // Fuzzy column matching: exact -> starts-with -> contains
-function matchColumn(header: string): keyof Prospect | undefined {
+export function matchColumn(header: string): keyof Prospect | undefined {
   const norm = normalizeHeader(header);
   if (!norm) return undefined;
   if (COLUMN_MAP[norm]) return COLUMN_MAP[norm];
@@ -96,9 +96,9 @@ function matchColumn(header: string): keyof Prospect | undefined {
 }
 
 // App-only fields that CSV should never overwrite
-const PROTECTED_FIELDS = new Set(["contacts", "interactions", "noteLog", "nextStep", "nextStepDate", "ps", "id", "createdAt", "customLogo"]);
+export const PROTECTED_FIELDS = new Set(["contacts", "interactions", "noteLog", "nextStep", "nextStepDate", "ps", "id", "createdAt", "customLogo"]);
 
-type RowAction = "new" | "update" | "review" | "skip";
+export type RowAction = "new" | "update" | "review" | "skip";
 type ImportMode = "prospects" | "contacts";
 
 interface ContactData {
@@ -112,7 +112,7 @@ interface ContactData {
   company: string;
 }
 
-interface ParsedRow {
+export interface ParsedRow {
   raw: Record<string, string>;
   mapped: Partial<Prospect>;
   contactData?: ContactData;
@@ -171,7 +171,7 @@ function parseCSV(text: string): { headers: string[]; rows: Record<string, strin
   return { headers, rows };
 }
 
-function mapRow(raw: Record<string, string>, unmappedCols: Set<string>): Partial<Prospect> {
+export function mapRow(raw: Record<string, string>, unmappedCols: Set<string>): Partial<Prospect> {
   const mapped: any = {};
   for (const [header, value] of Object.entries(raw)) {
     const field = matchColumn(header);
@@ -205,7 +205,7 @@ function mapContactRow(raw: Record<string, string>, unmappedCols: Set<string>): 
   return contact;
 }
 
-function computeChanges(existing: Prospect, incoming: Partial<Prospect>): { changes: Partial<Prospect>; changedFields: string[] } {
+export function computeChanges(existing: Prospect, incoming: Partial<Prospect>): { changes: Partial<Prospect>; changedFields: string[] } {
   const changes: any = {};
   const changedFields: string[] = [];
   for (const [key, val] of Object.entries(incoming)) {
