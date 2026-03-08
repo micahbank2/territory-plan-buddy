@@ -19,9 +19,11 @@ import {
 import yextLogoBlack from "@/assets/yext-logo-black.jpg";
 import yextLogoWhite from "@/assets/yext-logo-white.jpg";
 import { useProspects } from "@/hooks/useProspects";
+import { useTerritories } from "@/hooks/useTerritories";
 import { MultiSelect } from "@/components/MultiSelect";
 import { ProspectSheet } from "@/components/ProspectSheet";
 import { CSVUploadDialog } from "@/components/CSVUploadDialog";
+import { ShareTerritoryDialog } from "@/components/ShareTerritoryDialog";
 
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
