@@ -53,7 +53,8 @@ import {
   FileSearch,
   BarChart3,
   GitCompare,
-  Upload,
+   Upload,
+   ClipboardPaste,
   Zap,
   Target,
   ChevronDown,
@@ -436,6 +437,7 @@ export default function TerritoryPlanner() {
 
   // CSV Upload
   const [showUpload, setShowUpload] = useState(false);
+  const [showPasteImport, setShowPasteImport] = useState(false);
 
   // Reset confirmation
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
