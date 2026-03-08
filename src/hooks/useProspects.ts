@@ -100,7 +100,7 @@ export function useProspects(territoryId?: string | null) {
 
     setData(mapped);
     setOk(true);
-  }, [user]);
+  }, [user, territoryId]);
 
   useEffect(() => {
     if (user) loadData();
