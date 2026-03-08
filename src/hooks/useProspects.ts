@@ -279,7 +279,7 @@ export function useProspects(territoryId?: string | null) {
 
     const rows = partials.map((partial) => {
       const p = initProspect({ ...partial, id: 0 });
-      return {
+      const row: any = {
         user_id: user.id,
         name: p.name,
         website: p.website,
@@ -297,6 +297,8 @@ export function useProspects(territoryId?: string | null) {
         tier: p.tier,
         transition_owner: p.transitionOwner,
       };
+      if (territoryId) row.territory_id = territoryId;
+      return row;
     });
 
     const { data: inserted, error } = await supabase.from("prospects").insert(rows).select();
@@ -430,24 +432,28 @@ export function useProspects(territoryId?: string | null) {
     if (!user.email || !OWNER_EMAILS.includes(user.email)) return;
     setSeeding(true);
 
-    const rows = SEED.map((p) => ({
-      user_id: user.id,
-      name: p.name,
-      website: p.website || "",
-      status: p.status || "Prospect",
-      industry: p.industry || "",
-      location_count: p.locationCount || null,
-      location_notes: p.locationNotes || "",
-      outreach: p.outreach || "Not Started",
-      priority: p.priority || "",
-      notes: p.notes || "",
-      contact_name: p.contactName || "",
-      contact_email: p.contactEmail || "",
-      estimated_revenue: p.estimatedRevenue || null,
-      competitor: p.competitor || "",
-      tier: p.tier || "",
-      transition_owner: p.transitionOwner || "",
-    }));
+    const rows = SEED.map((p) => {
+      const row: any = {
+        user_id: user.id,
+        name: p.name,
+        website: p.website || "",
+        status: p.status || "Prospect",
+        industry: p.industry || "",
+        location_count: p.locationCount || null,
+        location_notes: p.locationNotes || "",
+        outreach: p.outreach || "Not Started",
+        priority: p.priority || "",
+        notes: p.notes || "",
+        contact_name: p.contactName || "",
+        contact_email: p.contactEmail || "",
+        estimated_revenue: p.estimatedRevenue || null,
+        competitor: p.competitor || "",
+        tier: p.tier || "",
+        transition_owner: p.transitionOwner || "",
+      };
+      if (territoryId) row.territory_id = territoryId;
+      return row;
+    });
 
     // Insert in batches of 100
     for (let i = 0; i < rows.length; i += 100) {
