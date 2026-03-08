@@ -2,3 +2,6 @@ project_id = "opktnhjukjiclagcyqpk"
 
 [functions.chat]
 verify_jwt = false
+
+[functions.enrich-prospect]
+verify_jwt = false
