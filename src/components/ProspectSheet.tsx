@@ -161,6 +161,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
     const contact: Contact = {
       id: Date.now().toString(), name: newContact.name || "", email: newContact.email || "",
       phone: newContact.phone || "", title: newContact.title || "", notes: newContact.notes || "",
+      role: (newContact as any).role || "Unknown", relationshipStrength: (newContact as any).relationshipStrength || "Unknown",
     };
     update(prospect.id, { contacts: [...(prospect.contacts || []), contact] });
     setNewContact({}); setShowAddContact(false);
