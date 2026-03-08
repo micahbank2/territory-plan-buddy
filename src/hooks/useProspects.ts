@@ -153,6 +153,8 @@ export function useProspects(territoryId?: string | null) {
             phone: c.phone,
             title: c.title,
             notes: c.notes,
+            role: c.role || null,
+            relationship_strength: c.relationshipStrength || null,
           }))
         );
       }
@@ -359,6 +361,8 @@ export function useProspects(territoryId?: string | null) {
               phone: contact.phone || "",
               title: contact.title || "",
               notes: contact.notes || "",
+              role: contact.role || null,
+              relationship_strength: contact.relationshipStrength || null,
             }))
           );
         }
