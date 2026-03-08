@@ -38,21 +38,26 @@ function dbToProspect(row: any, contacts: any[], interactions: any[], notes: any
   } as any; // id is now uuid string
 }
 
-export function useProspects() {
+export function useProspects(territoryId?: string | null) {
   const { user } = useAuth();
   const [data, setData] = useState<Prospect[]>([]);
   const [archived] = useState<ArchivedProspect[]>([]);
   const [ok, setOk] = useState(false);
   const [seeding, setSeeding] = useState(false);
 
-  // Load all prospects for current user
+  // Load all prospects for current user (or territory)
   const loadData = useCallback(async () => {
     if (!user) return;
     
-    const { data: prospects, error } = await supabase
+    let query = supabase
       .from("prospects")
       .select("*")
       .order("created_at", { ascending: false });
+
+    // If territory is specified, filter by it; otherwise load user's own
+    if (territoryId) {
+      query = query.eq("territory_id", territoryId);
+    }
 
     if (error) {
       console.error("Error loading prospects:", error);
