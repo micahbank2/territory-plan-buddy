@@ -59,6 +59,8 @@ export function useProspects(territoryId?: string | null) {
       query = query.eq("territory_id", territoryId);
     }
 
+    const { data: prospects, error } = await query;
+
     if (error) {
       console.error("Error loading prospects:", error);
       return;
