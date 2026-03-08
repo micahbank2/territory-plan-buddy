@@ -1575,7 +1575,31 @@ export default function TerritoryPlanner() {
                         </div>
                       </td>
                       <td className="px-5 py-4 text-foreground font-medium" onClick={() => setSheetProspectId(p.id)}>{p.locationCount || "—"}</td>
-                      <td className="px-5 py-4 text-foreground font-medium" onClick={() => setSheetProspectId(p.id)}>{p.industry || "—"}</td>
+                      <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
+                        {editingCell?.id === p.id && editingCell?.field === "industry" ? (
+                          <select
+                            autoFocus
+                            value={p.industry}
+                            onChange={(e) => handleInlineChange(p.id, "industry", e.target.value)}
+                            onBlur={() => setEditingCell(null)}
+                            className="px-2 py-1 text-xs rounded-md border border-primary bg-background text-foreground focus:outline-none"
+                          >
+                            <option value="">None</option>
+                            {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
+                          </select>
+                        ) : (
+                          <span
+                            className={cn(
+                              "inline-edit-cell px-2.5 py-1 text-xs font-medium rounded-lg cursor-pointer",
+                              p.industry ? "text-foreground" : "text-muted-foreground/50 hover:text-muted-foreground"
+                            )}
+                            onClick={() => setEditingCell({ id: p.id, field: "industry" })}
+                            title="Click to edit"
+                          >
+                            {p.industry || "—"}
+                          </span>
+                        )}
+                      </td>
                       <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
                         {editingCell?.id === p.id && editingCell?.field === "outreach" ? (
                           <select
@@ -1765,6 +1789,28 @@ export default function TerritoryPlanner() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete All</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* --- Bulk Edit Dialog --- */}
+      <BulkEditDialog
+        open={showBulkEdit}
+        onOpenChange={setShowBulkEdit}
+        selectedCount={selected.size}
+        onApply={handleBulkEditApply}
+      />
+
+      {/* --- Bulk Confirm --- */}
+      <AlertDialog open={!!bulkConfirm} onOpenChange={(v) => { if (!v) setBulkConfirm(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Bulk Update</AlertDialogTitle>
+            <AlertDialogDescription>{bulkConfirm?.label}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setBulkConfirm(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { bulkConfirm?.action(); setBulkConfirm(null); }}>Confirm</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
