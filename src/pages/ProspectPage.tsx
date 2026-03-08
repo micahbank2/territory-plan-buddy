@@ -256,8 +256,12 @@ function EditableContact({
           <X className="w-3 h-3 text-destructive" />
         </button>
       </div>
-      <div className="font-medium text-xs text-foreground">{contact.name}</div>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="font-medium text-xs text-foreground">{contact.name}</span>
+        <RoleBadge role={contact.role} />
+      </div>
       {contact.title && <div className="text-[10px] text-muted-foreground">{contact.title}</div>}
+      <div className="mt-1"><StrengthDot strength={contact.relationshipStrength} /></div>
       {contact.email && (
         <a href={`mailto:${contact.email}`} className="text-[10px] text-primary hover:underline flex items-center gap-1 mt-1">
           <Mail className="w-2.5 h-2.5" /> {contact.email}
