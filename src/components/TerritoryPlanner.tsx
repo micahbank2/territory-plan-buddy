@@ -26,6 +26,7 @@ import { CSVUploadDialog } from "@/components/CSVUploadDialog";
 import { ShareTerritoryDialog } from "@/components/ShareTerritoryDialog";
 import { BulkEditDialog } from "@/components/BulkEditDialog";
 import { PasteImportDialog } from "@/components/PasteImportDialog";
+import { EnrichmentQueue } from "@/components/EnrichmentQueue";
 
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
@@ -56,6 +57,7 @@ import {
    Upload,
    ClipboardPaste,
   Zap,
+  Sparkles,
   Target,
   ChevronDown,
   ChevronUp as ChevronUpIcon,
@@ -438,6 +440,7 @@ export default function TerritoryPlanner() {
   // CSV Upload
   const [showUpload, setShowUpload] = useState(false);
   const [showPasteImport, setShowPasteImport] = useState(false);
+  const [showEnrich, setShowEnrich] = useState(false);
 
   // Reset confirmation
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
