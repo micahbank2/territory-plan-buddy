@@ -9,6 +9,8 @@ import {
   TIERS,
   COMPETITORS,
   INTERACTION_TYPES,
+  CONTACT_ROLES,
+  RELATIONSHIP_STRENGTHS,
   scoreProspect,
   scoreBreakdown,
   getScoreLabel,
@@ -54,6 +56,9 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { RoleBadge, StrengthDot } from "@/components/ContactBadges";
+import { StakeholderMap } from "@/components/StakeholderMap";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // --- Logo with upload ---
 function LogoImg({
