@@ -939,6 +939,9 @@ export default function TerritoryPlanner() {
                 <Button variant="outline" size="sm" onClick={() => setShowUpload(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <Upload className="w-3.5 h-3.5" /> Upload
                 </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowShare(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
+                  <Share2 className="w-3.5 h-3.5" /> Share
+                </Button>
               </div>
               <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5 bg-primary hover:bg-primary/90 glow-blue font-semibold">
                 <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Add Prospect</span><span className="sm:hidden">Add</span>
