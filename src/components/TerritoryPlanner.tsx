@@ -19,9 +19,11 @@ import {
 import yextLogoBlack from "@/assets/yext-logo-black.jpg";
 import yextLogoWhite from "@/assets/yext-logo-white.jpg";
 import { useProspects } from "@/hooks/useProspects";
+import { useTerritories } from "@/hooks/useTerritories";
 import { MultiSelect } from "@/components/MultiSelect";
 import { ProspectSheet } from "@/components/ProspectSheet";
 import { CSVUploadDialog } from "@/components/CSVUploadDialog";
+import { ShareTerritoryDialog } from "@/components/ShareTerritoryDialog";
 
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
@@ -59,6 +61,8 @@ import {
   Moon,
   Menu,
   ChevronRight as ChevronRightIcon,
+  Users,
+  Share2,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -354,9 +358,16 @@ const PAGE_SIZE = 25;
 const OWNER_EMAILS = ["micahbank2@gmail.com", "mbank@yext.com"];
 
 export default function TerritoryPlanner() {
-  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete, seedData, seeding } = useProspects();
+  const {
+    territories, activeTerritory, members, myRole, loading: terrLoading,
+    switchTerritory, renameTerritory, inviteMember, removeMember, updateMemberRole, createTerritory,
+  } = useTerritories();
+  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete, seedData, seeding } = useProspects(activeTerritory);
   const { signOut, user } = useAuth();
   const isOwner = user?.email && OWNER_EMAILS.includes(user.email);
+  const activeTerrObj = territories.find((t) => t.id === activeTerritory) || null;
+  const isReadOnly = myRole === "viewer";
+  const canManageTerritory = myRole === "owner";
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -425,6 +436,11 @@ export default function TerritoryPlanner() {
 
   // Archive viewer
   const [showArchive, setShowArchive] = useState(false);
+  // Share territory dialog
+  const [showShare, setShowShare] = useState(false);
+  // New territory dialog
+  const [showNewTerritory, setShowNewTerritory] = useState(false);
+  const [newTerritoryName, setNewTerritoryName] = useState("");
 
   // Keyboard shortcut for Cmd+K → command palette
   useEffect(() => {
@@ -761,7 +777,7 @@ export default function TerritoryPlanner() {
     </div>
   );
 
-  if (!ok)
+  if (!ok || terrLoading)
     return (
       <div className="bg-background min-h-screen px-4 sm:px-8 pt-8 yext-grid-bg">
         <div className="h-8 w-48 skeleton-shimmer rounded-lg mb-6" />
@@ -876,7 +892,39 @@ export default function TerritoryPlanner() {
                   <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-foreground truncate">Territory Planner</h1>
                   <span className="hidden sm:inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">{data.length}</span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-0.5 hidden sm:block">Manage, prioritize, and close your territory</p>
+                <p className="text-sm text-muted-foreground mt-0.5 hidden sm:block flex items-center gap-2">
+                  {territories.length > 1 ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="flex items-center gap-1 hover:text-foreground transition-colors">
+                          <Users className="w-3 h-3" />
+                          <span className="truncate max-w-[200px]">{activeTerrObj?.name || "My Territory"}</span>
+                          <ChevronDown className="w-3 h-3" />
+                          {isReadOnly && <span className="text-[9px] bg-muted rounded px-1 ml-1">VIEW ONLY</span>}
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-56 bg-popover border-border z-50">
+                        {territories.map((t) => (
+                          <DropdownMenuItem
+                            key={t.id}
+                            onClick={() => switchTerritory(t.id)}
+                            className={t.id === activeTerritory ? "bg-primary/10" : ""}
+                          >
+                            <Users className="w-3.5 h-3.5 mr-2" />
+                            <span className="truncate">{t.name}</span>
+                            {t.owner_id === user?.id && <span className="ml-auto text-[9px] text-muted-foreground">owner</span>}
+                          </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setShowNewTerritory(true)}>
+                          <Plus className="w-3.5 h-3.5 mr-2" /> New Territory
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <span>{activeTerrObj?.name || "Manage, prioritize, and close your territory"}</span>
+                  )}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -890,6 +938,9 @@ export default function TerritoryPlanner() {
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => setShowUpload(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <Upload className="w-3.5 h-3.5" /> Upload
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowShare(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
+                  <Share2 className="w-3.5 h-3.5" /> Share
                 </Button>
               </div>
               <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5 bg-primary hover:bg-primary/90 glow-blue font-semibold">
@@ -956,6 +1007,9 @@ export default function TerritoryPlanner() {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setShowUpload(true)}>
                       <Upload className="w-4 h-4 mr-2" /> Upload CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowShare(true)}>
+                      <Share2 className="w-4 h-4 mr-2" /> Share Territory
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setViewMode(viewMode === "table" ? "kanban" : "table")}>
@@ -1780,7 +1834,59 @@ export default function TerritoryPlanner() {
         </DialogContent>
       </Dialog>
 
-      
+      {/* Share Territory Dialog */}
+      <ShareTerritoryDialog
+        open={showShare}
+        onOpenChange={setShowShare}
+        territory={activeTerrObj}
+        members={members}
+        myRole={myRole}
+        currentUserId={user?.id || ""}
+        onInvite={inviteMember}
+        onRemove={removeMember}
+        onUpdateRole={updateMemberRole}
+        onRename={renameTerritory}
+      />
+
+      {/* New Territory Dialog */}
+      <Dialog open={showNewTerritory} onOpenChange={setShowNewTerritory}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Create Territory</DialogTitle>
+            <DialogDescription>Create a new territory to organize a different set of accounts.</DialogDescription>
+          </DialogHeader>
+          <input
+            value={newTerritoryName}
+            onChange={(e) => setNewTerritoryName(e.target.value)}
+            placeholder="Territory name"
+            className={inputClass}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newTerritoryName.trim()) {
+                createTerritory(newTerritoryName.trim());
+                setNewTerritoryName("");
+                setShowNewTerritory(false);
+              }
+            }}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewTerritory(false)}>Cancel</Button>
+            <Button
+              onClick={() => {
+                if (newTerritoryName.trim()) {
+                  createTerritory(newTerritoryName.trim());
+                  setNewTerritoryName("");
+                  setShowNewTerritory(false);
+                }
+              }}
+              disabled={!newTerritoryName.trim()}
+            >
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

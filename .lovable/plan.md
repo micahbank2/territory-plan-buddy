@@ -1,85 +1,56 @@
 
+## Add Contact Import Support to CSV Upload
 
-## Fix CSV Contact Upload + Improve Preview + Add Team Collaboration
+### Problem
+The CSV upload system only understands prospect/account-level fields. When you upload a contacts CSV (with First Name, Last Name, Title, Email, Company), the system:
+- Can't map "First Name", "Last Name", or "Title" columns -- warns they'll be omitted
+- Maps "Email" to the account-level contactEmail field instead of a contact record
+- Maps "Company" as a prospect name, potentially creating duplicates or overwriting data
+- Has no way to add contacts to existing prospects
 
-### Three issues to fix
+### Solution
+Detect when a CSV contains contact-specific columns, switch to a "contact import" mode, and merge contacts into matching existing prospects without touching any other account data.
 
----
+### How It Will Work
+1. **Auto-detect contact CSVs** -- If the file has columns like "First Name" or "Last Name", treat it as a contact import
+2. **Match by Company name** -- Use the Company column to find the existing prospect (using the same fuzzy matching already in place)
+3. **Add contacts, don't overwrite** -- Append new contacts to the prospect's contacts list; skip duplicates (matched by email)
+4. **Never create new prospects** -- Contact-only rows that don't match an existing company are flagged for review, not auto-created
+5. **Never touch account fields** -- No prospect fields (industry, tier, outreach, etc.) are modified during a contact import
 
-### 1. Contact CSV uploads don't actually save (critical bug)
+### Technical Details
 
-**Root cause:** `bulkMerge` in `useProspects.ts` (lines 305-337) only maps flat prospect fields (name, website, industry, etc.) to database columns. When contact import passes `{ contacts: [...] }` in the changes, `bulkMerge` has no `if ("contacts" in c)` branch — it silently ignores the contacts array. The toast fires, but nothing is written to `prospect_contacts`.
+**File: `src/components/CSVUploadDialog.tsx`**
 
-**Fix:** Add contact-sync logic to `bulkMerge`, reusing the same pattern from the `update` function (delete existing contacts for that prospect, re-insert the full array). Specifically:
-- After updating prospect fields, check if `"contacts" in c`
-- If so, delete from `prospect_contacts` where `prospect_id = id`, then insert all contacts with the user's `user_id`
+1. Add contact-specific column aliases to detect contact CSVs:
+   - "first name", "fname", "given name" -> contactFirstName
+   - "last name", "lname", "surname", "family name" -> contactLastName  
+   - "title", "job title", "position", "role" -> contactTitle
+   - "email", "email address", "e-mail" -> contactEmail (already partially exists)
+   - "phone", "phone number", "mobile" -> contactPhone
 
----
+2. Add a detection step after parsing headers: if contact-specific columns (first name, last name) are present, flag the import as `mode: "contacts"` instead of `mode: "prospects"`
 
-### 2. Preview table cuts off after a few rows
+3. In contact mode, change `mapRow` behavior:
+   - Map "Company" to a lookup key (not to `name` for creating prospects)
+   - Combine First Name + Last Name into a contact name
+   - Map Title, Email, Phone to contact fields
+   - Return a structured contact object instead of a flat prospect partial
 
-**Root cause:** The `ScrollArea` on line 601 has `className="flex-1 min-h-0"` but no explicit max-height. Inside the flex dialog (`max-h-[85vh]`), it doesn't get enough space to become scrollable.
+4. In contact mode, change the matching/preview logic:
+   - Match each row's Company value against existing prospects (exact, then fuzzy)
+   - If matched: action = "update" (will add contact to that prospect)
+   - If no match: action = "review" (user decides; cannot auto-create)
+   - If contact email already exists on that prospect: action = "skip" (duplicate)
 
-**Fix:** Add `max-h-[50vh]` to the ScrollArea so it scrolls. Also add a row count indicator (e.g., "Showing 142 rows").
+5. In contact mode, change `handleConfirm`:
+   - For each "update" row, append the new contact to the matched prospect's existing contacts array
+   - Call `onImport` with updates that only modify the `contacts` field
+   - Never pass new prospect rows
 
----
+6. Update the preview table columns to show contact-relevant info (Name, Title, Email, Company) instead of prospect fields when in contact mode
 
-### 3. Team collaboration with role-based access
+7. Update the dialog description to indicate "Contact Import" when in contact mode
 
-**User's requirements clarified:**
-- **AE (Account Exec):** Owns their own territory. Can invite a BDR to collaborate on their accounts. Should NOT see manager views or other AEs' territories.
-- **BDR:** Works with an AE on the AE's territory. May also have their own territory.  
-- **BDR Manager:** Oversees their BDRs. Can view/access the territories their BDRs are on, but this is a supervisory view — not the same as an AE's working view.
-
-**Data model (database migration):**
-
-```text
-territories
-├── id (uuid PK)
-├── name (text)
-├── owner_id (uuid → auth.users)
-├── created_at (timestamptz)
-
-territory_members
-├── id (uuid PK)
-├── territory_id (uuid → territories)
-├── user_id (uuid → auth.users)
-├── role (text: 'owner' | 'editor' | 'viewer')
-├── created_at (timestamptz)
-├── UNIQUE(territory_id, user_id)
-
-prospects
-├── territory_id (uuid, nullable → territories)  ← NEW COLUMN
-```
-
-- Every user gets a default territory auto-created (via a DB trigger on auth.users insert)
-- `prospects.territory_id` is backfilled from the user's default territory
-- RLS on `prospects` changes from `user_id = auth.uid()` to checking territory membership via a `security definer` function
-
-**Role behavior:**
-- **owner**: Full CRUD on territory and its prospects. Can invite members.
-- **editor**: Can CRUD prospects in the territory. Cannot invite or delete the territory. (BDRs get this role)
-- **viewer**: Read-only access. (BDR managers get this on their BDRs' territories)
-
-**UI changes:**
-- Territory selector dropdown in header (only shows if user belongs to multiple territories)
-- "Share" button on territory → invite by email, pick role (editor/viewer)
-- Members list showing who has access and their role
-- No "manager dashboard" — managers simply switch between territories they have viewer access to
-- AEs see only their own territory by default; no manager UI clutter
-
-**RLS approach:**
-- Create `user_can_access_territory(territory_id uuid)` security definer function
-- Update `prospects` RLS: `USING (user_can_access_territory(territory_id))`
-- Separate policies for INSERT (must be owner/editor) vs SELECT (owner/editor/viewer)
-- Same pattern for `prospect_contacts`, `prospect_interactions`, `prospect_notes`, `prospect_tasks`
-
-**Files changed:**
-- `src/hooks/useProspects.ts` — fix `bulkMerge` contacts handling; add `territory_id` to queries; territory-aware loading
-- `src/components/CSVUploadDialog.tsx` — fix ScrollArea height
-- `src/components/TerritoryPlanner.tsx` — add territory selector, share button, members UI
-- `src/hooks/useAuth.tsx` — expose current territory context
-- New: `src/hooks/useTerritories.ts` — territory CRUD, member management
-- New: `src/components/ShareTerritoryDialog.tsx` — invite flow
-- Database migration: new tables, updated RLS, backfill
-
+**File: `src/hooks/useProspects.ts`**
+- No changes needed -- the existing `update` function already handles syncing contacts when `contacts` is included in the update payload
