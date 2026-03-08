@@ -173,6 +173,7 @@ export type Database = {
           outreach: string
           priority: string
           status: string
+          territory_id: string | null
           tier: string
           transition_owner: string
           user_id: string
@@ -196,6 +197,7 @@ export type Database = {
           outreach?: string
           priority?: string
           status?: string
+          territory_id?: string | null
           tier?: string
           transition_owner?: string
           user_id: string
@@ -219,19 +221,94 @@ export type Database = {
           outreach?: string
           priority?: string
           status?: string
+          territory_id?: string | null
           tier?: string
           transition_owner?: string
           user_id?: string
           website?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "prospects_territory_id_fkey"
+            columns: ["territory_id"]
+            isOneToOne: false
+            referencedRelation: "territories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      territories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+        }
         Relationships: []
+      }
+      territory_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          territory_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string
+          territory_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          territory_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "territory_members_territory_id_fkey"
+            columns: ["territory_id"]
+            isOneToOne: false
+            referencedRelation: "territories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      ensure_user_territory: { Args: { _user_id: string }; Returns: string }
+      find_user_id_by_email: { Args: { _email: string }; Returns: string }
+      user_can_access_territory: {
+        Args: { _territory_id: string }
+        Returns: boolean
+      }
+      user_can_edit_territory: {
+        Args: { _territory_id: string }
+        Returns: boolean
+      }
+      user_is_territory_owner: {
+        Args: { _territory_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
