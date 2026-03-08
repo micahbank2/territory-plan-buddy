@@ -308,7 +308,7 @@ export function useProspects() {
     // Update each one
     for (const u of updates) {
       const dbFields: any = { last_touched: new Date().toISOString().split("T")[0] };
-      const c = u.changes;
+      const c = u.changes as any;
       if ("name" in c) dbFields.name = c.name;
       if ("website" in c) dbFields.website = c.website;
       if ("status" in c) dbFields.status = c.status;
@@ -324,7 +324,76 @@ export function useProspects() {
       if ("competitor" in c) dbFields.competitor = c.competitor;
       if ("tier" in c) dbFields.tier = c.tier;
       if ("transitionOwner" in c) dbFields.transition_owner = c.transitionOwner;
-      await supabase.from("prospects").update(dbFields).eq("id", u.id);
+
+      // Only update prospect fields if there are any
+      const hasProspectFields = Object.keys(dbFields).length > 1; // more than just last_touched
+      if (hasProspectFields) {
+        await supabase.from("prospects").update(dbFields).eq("id", u.id);
+      }
+
+      // Sync contacts if included in changes
+      if ("contacts" in c && Array.isArray(c.contacts)) {
+        await supabase.from("prospect_contacts").delete().eq("prospect_id", u.id);
+        if (c.contacts.length > 0) {
+          await supabase.from("prospect_contacts").insert(
+            c.contacts.map((contact: Contact) => ({
+              prospect_id: u.id,
+              user_id: user.id,
+              name: contact.name || "",
+              email: contact.email || "",
+              phone: contact.phone || "",
+              title: contact.title || "",
+              notes: contact.notes || "",
+            }))
+          );
+        }
+      }
+
+      // Sync interactions if included
+      if ("interactions" in c && Array.isArray(c.interactions)) {
+        await supabase.from("prospect_interactions").delete().eq("prospect_id", u.id);
+        if (c.interactions.length > 0) {
+          await supabase.from("prospect_interactions").insert(
+            c.interactions.map((i: InteractionLog) => ({
+              prospect_id: u.id,
+              user_id: user.id,
+              type: i.type,
+              date: i.date,
+              notes: i.notes,
+            }))
+          );
+        }
+      }
+
+      // Sync noteLog if included
+      if ("noteLog" in c && Array.isArray(c.noteLog)) {
+        await supabase.from("prospect_notes").delete().eq("prospect_id", u.id);
+        if (c.noteLog.length > 0) {
+          await supabase.from("prospect_notes").insert(
+            c.noteLog.map((n: NoteEntry) => ({
+              prospect_id: u.id,
+              user_id: user.id,
+              text: n.text,
+              timestamp: n.timestamp,
+            }))
+          );
+        }
+      }
+
+      // Sync tasks if included
+      if ("tasks" in c && Array.isArray(c.tasks)) {
+        await supabase.from("prospect_tasks").delete().eq("prospect_id", u.id);
+        if (c.tasks.length > 0) {
+          await supabase.from("prospect_tasks").insert(
+            c.tasks.map((t: Task) => ({
+              prospect_id: u.id,
+              user_id: user.id,
+              text: t.text,
+              due_date: t.dueDate,
+            }))
+          );
+        }
+      }
     }
 
     const ts = new Date().toISOString().split("T")[0];
