@@ -1008,6 +1008,9 @@ export default function TerritoryPlanner() {
                     <DropdownMenuItem onClick={() => setShowUpload(true)}>
                       <Upload className="w-4 h-4 mr-2" /> Upload CSV
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowShare(true)}>
+                      <Share2 className="w-4 h-4 mr-2" /> Share Territory
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setViewMode(viewMode === "table" ? "kanban" : "table")}>
                       {viewMode === "table" ? <LayoutGrid className="w-4 h-4 mr-2" /> : <List className="w-4 h-4 mr-2" />}
