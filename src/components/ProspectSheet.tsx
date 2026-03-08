@@ -442,6 +442,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
                 <input value={newContact.title || ""} onChange={e => setNewContact({...newContact, title: e.target.value})} placeholder="Title" className={cn(inputClass, "text-xs py-1.5")} />
                 <input value={newContact.email || ""} onChange={e => setNewContact({...newContact, email: e.target.value})} placeholder="Email" className={cn(inputClass, "text-xs py-1.5")} />
                 <input value={newContact.phone || ""} onChange={e => setNewContact({...newContact, phone: e.target.value})} placeholder="Phone" className={cn(inputClass, "text-xs py-1.5")} />
+                <textarea value={newContact.notes || ""} onChange={e => setNewContact({...newContact, notes: e.target.value})} placeholder="Notes (e.g. CMO previously at a Yext customer)" className={cn(inputClass, "text-xs py-1.5 resize-none")} rows={2} />
                 <div className="flex gap-2">
                   <button onClick={addContact} className="px-3 py-1.5 bg-primary text-primary-foreground text-xs rounded-md hover:bg-primary/90">Add</button>
                   <button onClick={() => { setShowAddContact(false); setNewContact({}); }} className="px-3 py-1.5 bg-muted text-muted-foreground text-xs rounded-md">Cancel</button>
@@ -453,10 +454,27 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
                 <button onClick={() => removeContact(c.id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10">
                   <X className="w-3 h-3 text-destructive" />
                 </button>
-                <div className="font-medium text-xs text-foreground">{c.name}</div>
-                {c.title && <div className="text-[10px] text-muted-foreground">{c.title}</div>}
-                {c.email && <a href={`mailto:${c.email}`} className="text-[10px] text-primary hover:underline flex items-center gap-1 mt-1"><Mail className="w-2.5 h-2.5" /> {c.email}</a>}
-                {c.phone && <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5"><Phone className="w-2.5 h-2.5" /> {c.phone}</div>}
+                {editingContactId === c.id ? (
+                  <div className="space-y-1.5">
+                    <input value={editContact.name || ""} onChange={e => setEditContact({...editContact, name: e.target.value})} placeholder="Name *" className={cn(inputClass, "text-xs py-1.5")} />
+                    <input value={editContact.title || ""} onChange={e => setEditContact({...editContact, title: e.target.value})} placeholder="Title" className={cn(inputClass, "text-xs py-1.5")} />
+                    <input value={editContact.email || ""} onChange={e => setEditContact({...editContact, email: e.target.value})} placeholder="Email" className={cn(inputClass, "text-xs py-1.5")} />
+                    <input value={editContact.phone || ""} onChange={e => setEditContact({...editContact, phone: e.target.value})} placeholder="Phone" className={cn(inputClass, "text-xs py-1.5")} />
+                    <textarea value={editContact.notes || ""} onChange={e => setEditContact({...editContact, notes: e.target.value})} placeholder="Notes" className={cn(inputClass, "text-xs py-1.5 resize-none")} rows={2} />
+                    <div className="flex gap-2">
+                      <button onClick={saveEditContact} className="px-3 py-1.5 bg-primary text-primary-foreground text-xs rounded-md hover:bg-primary/90">Save</button>
+                      <button onClick={() => { setEditingContactId(null); setEditContact({}); }} className="px-3 py-1.5 bg-muted text-muted-foreground text-xs rounded-md">Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div onClick={() => startEditContact(c)} className="cursor-pointer">
+                    <div className="font-medium text-xs text-foreground">{c.name}</div>
+                    {c.title && <div className="text-[10px] text-muted-foreground">{c.title}</div>}
+                    {c.email && <a href={`mailto:${c.email}`} onClick={e => e.stopPropagation()} className="text-[10px] text-primary hover:underline flex items-center gap-1 mt-1"><Mail className="w-2.5 h-2.5" /> {c.email}</a>}
+                    {c.phone && <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5"><Phone className="w-2.5 h-2.5" /> {c.phone}</div>}
+                    {c.notes && <div className="text-[10px] text-muted-foreground mt-1.5 pt-1.5 border-t border-border italic">📝 {c.notes}</div>}
+                  </div>
+                )}
               </div>
             ))}
             {(prospect.contacts || []).length === 0 && !showAddContact && <p className="text-xs text-muted-foreground">No contacts yet.</p>}
