@@ -175,7 +175,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
 
   const startEditContact = (c: Contact) => {
     setEditingContactId(c.id);
-    setEditContact({ name: c.name, title: c.title, email: c.email, phone: c.phone, notes: c.notes });
+    setEditContact({ name: c.name, title: c.title, email: c.email, phone: c.phone, notes: c.notes, role: c.role, relationshipStrength: c.relationshipStrength } as any);
   };
 
   const saveEditContact = () => {
