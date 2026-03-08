@@ -8,9 +8,11 @@ import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   INDUSTRIES, STAGES, PRIORITIES, TIERS, COMPETITORS, INTERACTION_TYPES,
+  CONTACT_ROLES, RELATIONSHIP_STRENGTHS,
   scoreProspect, scoreBreakdown, getScoreLabel, getLogoUrl,
   type Prospect, type Contact, type InteractionLog, type NoteEntry, type Task,
 } from "@/data/prospects";
+import { RoleBadge, StrengthDot } from "@/components/ContactBadges";
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
   ExternalLink, Plus, X, Mail, Phone, Building2, MessageSquare, PhoneCall,
@@ -159,6 +161,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
     const contact: Contact = {
       id: Date.now().toString(), name: newContact.name || "", email: newContact.email || "",
       phone: newContact.phone || "", title: newContact.title || "", notes: newContact.notes || "",
+      role: (newContact as any).role || "Unknown", relationshipStrength: (newContact as any).relationshipStrength || "Unknown",
     };
     update(prospect.id, { contacts: [...(prospect.contacts || []), contact] });
     setNewContact({}); setShowAddContact(false);
@@ -172,7 +175,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
 
   const startEditContact = (c: Contact) => {
     setEditingContactId(c.id);
-    setEditContact({ name: c.name, title: c.title, email: c.email, phone: c.phone, notes: c.notes });
+    setEditContact({ name: c.name, title: c.title, email: c.email, phone: c.phone, notes: c.notes, role: c.role, relationshipStrength: c.relationshipStrength } as any);
   };
 
   const saveEditContact = () => {
@@ -442,6 +445,20 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
                 <input value={newContact.title || ""} onChange={e => setNewContact({...newContact, title: e.target.value})} placeholder="Title" className={cn(inputClass, "text-xs py-1.5")} />
                 <input value={newContact.email || ""} onChange={e => setNewContact({...newContact, email: e.target.value})} placeholder="Email" className={cn(inputClass, "text-xs py-1.5")} />
                 <input value={newContact.phone || ""} onChange={e => setNewContact({...newContact, phone: e.target.value})} placeholder="Phone" className={cn(inputClass, "text-xs py-1.5")} />
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-0.5">
+                    <label className="text-[9px] font-semibold text-muted-foreground uppercase">Role</label>
+                    <select value={(newContact as any).role || "Unknown"} onChange={e => setNewContact({...newContact, role: e.target.value} as any)} className={cn(selectClass, "text-xs py-1.5")}>
+                      {CONTACT_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-0.5">
+                    <label className="text-[9px] font-semibold text-muted-foreground uppercase">Relationship</label>
+                    <select value={(newContact as any).relationshipStrength || "Unknown"} onChange={e => setNewContact({...newContact, relationshipStrength: e.target.value} as any)} className={cn(selectClass, "text-xs py-1.5")}>
+                      {RELATIONSHIP_STRENGTHS.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                </div>
                 <textarea value={newContact.notes || ""} onChange={e => setNewContact({...newContact, notes: e.target.value})} placeholder="Notes (e.g. CMO previously at a Yext customer)" className={cn(inputClass, "text-xs py-1.5 resize-none")} rows={2} />
                 <div className="flex gap-2">
                   <button onClick={addContact} className="px-3 py-1.5 bg-primary text-primary-foreground text-xs rounded-md hover:bg-primary/90">Add</button>
@@ -460,6 +477,20 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
                     <input value={editContact.title || ""} onChange={e => setEditContact({...editContact, title: e.target.value})} placeholder="Title" className={cn(inputClass, "text-xs py-1.5")} />
                     <input value={editContact.email || ""} onChange={e => setEditContact({...editContact, email: e.target.value})} placeholder="Email" className={cn(inputClass, "text-xs py-1.5")} />
                     <input value={editContact.phone || ""} onChange={e => setEditContact({...editContact, phone: e.target.value})} placeholder="Phone" className={cn(inputClass, "text-xs py-1.5")} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-0.5">
+                        <label className="text-[9px] font-semibold text-muted-foreground uppercase">Role</label>
+                        <select value={(editContact as any).role || "Unknown"} onChange={e => setEditContact({...editContact, role: e.target.value} as any)} className={cn(selectClass, "text-xs py-1.5")}>
+                          {CONTACT_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-0.5">
+                        <label className="text-[9px] font-semibold text-muted-foreground uppercase">Relationship</label>
+                        <select value={(editContact as any).relationshipStrength || "Unknown"} onChange={e => setEditContact({...editContact, relationshipStrength: e.target.value} as any)} className={cn(selectClass, "text-xs py-1.5")}>
+                          {RELATIONSHIP_STRENGTHS.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
+                    </div>
                     <textarea value={editContact.notes || ""} onChange={e => setEditContact({...editContact, notes: e.target.value})} placeholder="Notes" className={cn(inputClass, "text-xs py-1.5 resize-none")} rows={2} />
                     <div className="flex gap-2">
                       <button onClick={saveEditContact} className="px-3 py-1.5 bg-primary text-primary-foreground text-xs rounded-md hover:bg-primary/90">Save</button>
@@ -468,8 +499,12 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
                   </div>
                 ) : (
                   <div onClick={() => startEditContact(c)} className="cursor-pointer">
-                    <div className="font-medium text-xs text-foreground">{c.name}</div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-medium text-xs text-foreground">{c.name}</span>
+                      <RoleBadge role={c.role} />
+                    </div>
                     {c.title && <div className="text-[10px] text-muted-foreground">{c.title}</div>}
+                    <div className="mt-1"><StrengthDot strength={c.relationshipStrength} /></div>
                     {c.email && <a href={`mailto:${c.email}`} onClick={e => e.stopPropagation()} className="text-[10px] text-primary hover:underline flex items-center gap-1 mt-1"><Mail className="w-2.5 h-2.5" /> {c.email}</a>}
                     {c.phone && <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5"><Phone className="w-2.5 h-2.5" /> {c.phone}</div>}
                     {c.notes && <div className="text-[10px] text-muted-foreground mt-1.5 pt-1.5 border-t border-border italic">📝 {c.notes}</div>}

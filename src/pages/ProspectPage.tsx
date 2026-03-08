@@ -9,6 +9,8 @@ import {
   TIERS,
   COMPETITORS,
   INTERACTION_TYPES,
+  CONTACT_ROLES,
+  RELATIONSHIP_STRENGTHS,
   scoreProspect,
   scoreBreakdown,
   getScoreLabel,
@@ -54,6 +56,9 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { RoleBadge, StrengthDot } from "@/components/ContactBadges";
+import { StakeholderMap } from "@/components/StakeholderMap";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // --- Logo with upload ---
 function LogoImg({
@@ -208,6 +213,20 @@ function EditableContact({
         <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="Title" className={inputClass} />
         <input value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="Email" className={inputClass} />
         <input value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} placeholder="Phone" className={inputClass} />
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-0.5">
+            <label className="text-[9px] font-semibold text-muted-foreground uppercase">Role</label>
+            <select value={draft.role || "Unknown"} onChange={(e) => setDraft({ ...draft, role: e.target.value as any })} className={inputClass}>
+              {CONTACT_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div className="space-y-0.5">
+            <label className="text-[9px] font-semibold text-muted-foreground uppercase">Relationship</label>
+            <select value={draft.relationshipStrength || "Unknown"} onChange={(e) => setDraft({ ...draft, relationshipStrength: e.target.value as any })} className={inputClass}>
+              {RELATIONSHIP_STRENGTHS.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+        </div>
         <input value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} placeholder="Notes" className={inputClass} />
         <div className="flex gap-2">
           <button
@@ -237,8 +256,12 @@ function EditableContact({
           <X className="w-3 h-3 text-destructive" />
         </button>
       </div>
-      <div className="font-medium text-xs text-foreground">{contact.name}</div>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="font-medium text-xs text-foreground">{contact.name}</span>
+        <RoleBadge role={contact.role} />
+      </div>
       {contact.title && <div className="text-[10px] text-muted-foreground">{contact.title}</div>}
+      <div className="mt-1"><StrengthDot strength={contact.relationshipStrength} /></div>
       {contact.email && (
         <a href={`mailto:${contact.email}`} className="text-[10px] text-primary hover:underline flex items-center gap-1 mt-1">
           <Mail className="w-2.5 h-2.5" /> {contact.email}
@@ -369,6 +392,8 @@ export default function ProspectPage() {
       phone: newContact.phone || "",
       title: newContact.title || "",
       notes: newContact.notes || "",
+      role: (newContact as any).role || "Unknown",
+      relationshipStrength: (newContact as any).relationshipStrength || "Unknown",
     };
     update(prospect.id, { contacts: [...(prospect.contacts || []), contact] });
     setNewContact({});
@@ -792,6 +817,20 @@ export default function ProspectPage() {
                   <input value={newContact.title || ""} onChange={(e) => setNewContact({ ...newContact, title: e.target.value })} placeholder="Title" className={cn(inputClass, "text-xs py-1.5")} />
                   <input value={newContact.email || ""} onChange={(e) => setNewContact({ ...newContact, email: e.target.value })} placeholder="Email" className={cn(inputClass, "text-xs py-1.5")} />
                   <input value={newContact.phone || ""} onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })} placeholder="Phone" className={cn(inputClass, "text-xs py-1.5")} />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-0.5">
+                      <label className="text-[9px] font-semibold text-muted-foreground uppercase">Role</label>
+                      <select value={(newContact as any).role || "Unknown"} onChange={e => setNewContact({...newContact, role: e.target.value} as any)} className={cn(inputClass, "text-xs py-1.5")}>
+                        {CONTACT_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-0.5">
+                      <label className="text-[9px] font-semibold text-muted-foreground uppercase">Relationship</label>
+                      <select value={(newContact as any).relationshipStrength || "Unknown"} onChange={e => setNewContact({...newContact, relationshipStrength: e.target.value} as any)} className={cn(inputClass, "text-xs py-1.5")}>
+                        {RELATIONSHIP_STRENGTHS.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                  </div>
                   <input value={newContact.notes || ""} onChange={(e) => setNewContact({ ...newContact, notes: e.target.value })} placeholder="Notes" className={cn(inputClass, "text-xs py-1.5")} />
                   <div className="flex gap-2">
                     <button onClick={addContact} className="px-3 py-1.5 bg-primary text-primary-foreground text-xs rounded-md hover:bg-primary/90">Add</button>
@@ -814,6 +853,12 @@ export default function ProspectPage() {
                   />
                 ))}
               </div>
+            </div>
+
+            {/* Stakeholder Map */}
+            <div className="glass-card rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
+              <h2 className="text-sm font-semibold text-foreground mb-4">Stakeholder Map</h2>
+              <StakeholderMap contacts={prospect.contacts || []} />
             </div>
 
             <div className="glass-card rounded-xl p-5 space-y-2 animate-fade-in-up" style={{ animationDelay: "150ms" }}>

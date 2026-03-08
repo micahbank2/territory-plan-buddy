@@ -1580,6 +1580,19 @@ export default function TerritoryPlanner() {
                               <ExternalLink className="w-3.5 h-3.5" />
                             </a>
                           )}
+                          {/* Contact coverage indicator */}
+                          {(() => {
+                            const contacts = (p as any).contacts || [];
+                            if (contacts.length === 0) return null;
+                            const hasChampion = contacts.some((c: any) => c.role === "Champion");
+                            const hasDM = contacts.some((c: any) => c.role === "Decision Maker");
+                            const strong = hasChampion && hasDM;
+                            return (
+                              <span title={strong ? "Champion + Decision Maker identified" : "Contacts exist but missing Champion or Decision Maker"}>
+                                <Users className={cn("w-3.5 h-3.5", strong ? "text-[hsl(var(--success))]" : "text-[hsl(var(--warning))]")} />
+                              </span>
+                            );
+                          })()}
                           {p.nextStepDate && new Date(p.nextStepDate) < new Date() && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive overdue-flag" title={`Overdue: ${p.nextStep}`}>
                               ⚠ Overdue

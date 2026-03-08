@@ -55,6 +55,28 @@ export const COMPETITORS = [
   "Other",
 ];
 
+export const CONTACT_ROLES = [
+  "Unknown",
+  "Champion",
+  "Decision Maker",
+  "Influencer",
+  "Technical Evaluator",
+  "Blocker",
+  "End User",
+  "Executive Sponsor",
+] as const;
+
+export const RELATIONSHIP_STRENGTHS = [
+  "Unknown",
+  "Strong",
+  "Warm",
+  "Cold",
+  "At Risk",
+] as const;
+
+export type ContactRole = typeof CONTACT_ROLES[number];
+export type RelationshipStrength = typeof RELATIONSHIP_STRENGTHS[number];
+
 export interface Contact {
   id: string;
   name: string;
@@ -62,6 +84,8 @@ export interface Contact {
   phone: string;
   title: string;
   notes: string;
+  role?: ContactRole;
+  relationshipStrength?: RelationshipStrength;
 }
 
 export interface InteractionLog {
