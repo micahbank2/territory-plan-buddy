@@ -25,6 +25,7 @@ import { ProspectSheet } from "@/components/ProspectSheet";
 import { CSVUploadDialog } from "@/components/CSVUploadDialog";
 import { ShareTerritoryDialog } from "@/components/ShareTerritoryDialog";
 import { BulkEditDialog } from "@/components/BulkEditDialog";
+import { PasteImportDialog } from "@/components/PasteImportDialog";
 
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
