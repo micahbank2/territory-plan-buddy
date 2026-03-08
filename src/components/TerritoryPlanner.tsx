@@ -920,6 +920,9 @@ export default function TerritoryPlanner() {
                   <CommandItem onSelect={() => { setCmdOpen(false); setShowUpload(true); }}>
                     <Upload className="w-4 h-4 mr-2" /> Upload CSV
                   </CommandItem>
+                  <CommandItem onSelect={() => { setCmdOpen(false); setShowPasteImport(true); }}>
+                    <ClipboardPaste className="w-4 h-4 mr-2" /> Paste Import
+                  </CommandItem>
                   <CommandItem onSelect={() => { setCmdOpen(false); navigate("/insights"); }}>
                     <BarChart3 className="w-4 h-4 mr-2" /> Open Insights
                   </CommandItem>
@@ -1071,6 +1074,9 @@ export default function TerritoryPlanner() {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setShowUpload(true)}>
                       <Upload className="w-4 h-4 mr-2" /> Upload CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowPasteImport(true)}>
+                      <ClipboardPaste className="w-4 h-4 mr-2" /> Paste Import
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setShowShare(true)}>
                       <Share2 className="w-4 h-4 mr-2" /> Share Territory
