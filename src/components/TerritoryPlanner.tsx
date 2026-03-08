@@ -892,7 +892,39 @@ export default function TerritoryPlanner() {
                   <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-foreground truncate">Territory Planner</h1>
                   <span className="hidden sm:inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">{data.length}</span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-0.5 hidden sm:block">Manage, prioritize, and close your territory</p>
+                <p className="text-sm text-muted-foreground mt-0.5 hidden sm:block flex items-center gap-2">
+                  {territories.length > 1 ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="flex items-center gap-1 hover:text-foreground transition-colors">
+                          <Users className="w-3 h-3" />
+                          <span className="truncate max-w-[200px]">{activeTerrObj?.name || "My Territory"}</span>
+                          <ChevronDown className="w-3 h-3" />
+                          {isReadOnly && <span className="text-[9px] bg-muted rounded px-1 ml-1">VIEW ONLY</span>}
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-56 bg-popover border-border z-50">
+                        {territories.map((t) => (
+                          <DropdownMenuItem
+                            key={t.id}
+                            onClick={() => switchTerritory(t.id)}
+                            className={t.id === activeTerritory ? "bg-primary/10" : ""}
+                          >
+                            <Users className="w-3.5 h-3.5 mr-2" />
+                            <span className="truncate">{t.name}</span>
+                            {t.owner_id === user?.id && <span className="ml-auto text-[9px] text-muted-foreground">owner</span>}
+                          </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setShowNewTerritory(true)}>
+                          <Plus className="w-3.5 h-3.5 mr-2" /> New Territory
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <span>{activeTerrObj?.name || "Manage, prioritize, and close your territory"}</span>
+                  )}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
