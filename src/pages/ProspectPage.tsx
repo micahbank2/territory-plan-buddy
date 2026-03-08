@@ -213,6 +213,20 @@ function EditableContact({
         <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="Title" className={inputClass} />
         <input value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="Email" className={inputClass} />
         <input value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} placeholder="Phone" className={inputClass} />
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-0.5">
+            <label className="text-[9px] font-semibold text-muted-foreground uppercase">Role</label>
+            <select value={draft.role || "Unknown"} onChange={(e) => setDraft({ ...draft, role: e.target.value as any })} className={inputClass}>
+              {CONTACT_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div className="space-y-0.5">
+            <label className="text-[9px] font-semibold text-muted-foreground uppercase">Relationship</label>
+            <select value={draft.relationshipStrength || "Unknown"} onChange={(e) => setDraft({ ...draft, relationshipStrength: e.target.value as any })} className={inputClass}>
+              {RELATIONSHIP_STRENGTHS.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+        </div>
         <input value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} placeholder="Notes" className={inputClass} />
         <div className="flex gap-2">
           <button
