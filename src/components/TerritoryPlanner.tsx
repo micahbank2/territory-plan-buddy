@@ -358,9 +358,16 @@ const PAGE_SIZE = 25;
 const OWNER_EMAILS = ["micahbank2@gmail.com", "mbank@yext.com"];
 
 export default function TerritoryPlanner() {
-  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete, seedData, seeding } = useProspects();
+  const {
+    territories, activeTerritory, members, myRole, loading: terrLoading,
+    switchTerritory, renameTerritory, inviteMember, removeMember, updateMemberRole, createTerritory,
+  } = useTerritories();
+  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete, seedData, seeding } = useProspects(activeTerritory);
   const { signOut, user } = useAuth();
   const isOwner = user?.email && OWNER_EMAILS.includes(user.email);
+  const activeTerrObj = territories.find((t) => t.id === activeTerritory) || null;
+  const isReadOnly = myRole === "viewer";
+  const canManageTerritory = myRole === "owner";
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const searchRef = useRef<HTMLInputElement>(null);
