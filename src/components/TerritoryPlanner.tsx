@@ -436,6 +436,11 @@ export default function TerritoryPlanner() {
 
   // Archive viewer
   const [showArchive, setShowArchive] = useState(false);
+  // Share territory dialog
+  const [showShare, setShowShare] = useState(false);
+  // New territory dialog
+  const [showNewTerritory, setShowNewTerritory] = useState(false);
+  const [newTerritoryName, setNewTerritoryName] = useState("");
 
   // Keyboard shortcut for Cmd+K → command palette
   useEffect(() => {
