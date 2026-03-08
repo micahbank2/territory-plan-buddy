@@ -1796,11 +1796,58 @@ export default function TerritoryPlanner() {
         </DialogContent>
       </Dialog>
 
-  // Share territory dialog
-  const [showShare, setShowShare] = useState(false);
-  // New territory dialog
-  const [showNewTerritory, setShowNewTerritory] = useState(false);
-  const [newTerritoryName, setNewTerritoryName] = useState("");
+      {/* Share Territory Dialog */}
+      <ShareTerritoryDialog
+        open={showShare}
+        onOpenChange={setShowShare}
+        territory={activeTerrObj}
+        members={members}
+        myRole={myRole}
+        currentUserId={user?.id || ""}
+        onInvite={inviteMember}
+        onRemove={removeMember}
+        onUpdateRole={updateMemberRole}
+        onRename={renameTerritory}
+      />
+
+      {/* New Territory Dialog */}
+      <Dialog open={showNewTerritory} onOpenChange={setShowNewTerritory}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Create Territory</DialogTitle>
+            <DialogDescription>Create a new territory to organize a different set of accounts.</DialogDescription>
+          </DialogHeader>
+          <input
+            value={newTerritoryName}
+            onChange={(e) => setNewTerritoryName(e.target.value)}
+            placeholder="Territory name"
+            className={inputClass}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newTerritoryName.trim()) {
+                createTerritory(newTerritoryName.trim());
+                setNewTerritoryName("");
+                setShowNewTerritory(false);
+              }
+            }}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewTerritory(false)}>Cancel</Button>
+            <Button
+              onClick={() => {
+                if (newTerritoryName.trim()) {
+                  createTerritory(newTerritoryName.trim());
+                  setNewTerritoryName("");
+                  setShowNewTerritory(false);
+                }
+              }}
+              disabled={!newTerritoryName.trim()}
+            >
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
