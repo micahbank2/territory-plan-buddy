@@ -392,6 +392,8 @@ export default function ProspectPage() {
       phone: newContact.phone || "",
       title: newContact.title || "",
       notes: newContact.notes || "",
+      role: (newContact as any).role || "Unknown",
+      relationshipStrength: (newContact as any).relationshipStrength || "Unknown",
     };
     update(prospect.id, { contacts: [...(prospect.contacts || []), contact] });
     setNewContact({});
