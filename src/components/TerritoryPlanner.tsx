@@ -24,6 +24,7 @@ import { MultiSelect } from "@/components/MultiSelect";
 import { ProspectSheet } from "@/components/ProspectSheet";
 import { CSVUploadDialog } from "@/components/CSVUploadDialog";
 import { ShareTerritoryDialog } from "@/components/ShareTerritoryDialog";
+import { BulkEditDialog } from "@/components/BulkEditDialog";
 
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
@@ -388,6 +389,11 @@ export default function TerritoryPlanner() {
   const [selected, setSelected] = useState<Set<any>>(new Set());
   const [bulkStage, setBulkStage] = useState("");
   const [bulkTier, setBulkTier] = useState("");
+  const [bulkIndustry, setBulkIndustry] = useState("");
+  const [bulkPriority, setBulkPriority] = useState("");
+  const [bulkCompetitor, setBulkCompetitor] = useState("");
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
+  const [bulkConfirm, setBulkConfirm] = useState<{ label: string; action: () => void } | null>(null);
 
   // Quick Add
   const [showAdd, setShowAdd] = useState(false);
@@ -672,18 +678,65 @@ export default function TerritoryPlanner() {
   };
 
   // --- Bulk Actions ---
+  const confirmAndApplyBulk = (label: string, action: () => void) => {
+    setBulkConfirm({ label: `Apply [${label}] to ${selected.size} selected prospects?`, action });
+  };
+
   const handleBulkStage = () => {
     if (!bulkStage || selected.size === 0) return;
-    bulkUpdate(Array.from(selected), { outreach: bulkStage });
-    toast.success("🚀 Stage updated!", { description: `${selected.size} prospects moved to "${bulkStage}"` });
-    setSelected(new Set()); setBulkStage("");
+    confirmAndApplyBulk(`Outreach: ${bulkStage}`, () => {
+      bulkUpdate(Array.from(selected), { outreach: bulkStage });
+      toast.success(`Updated ${selected.size} prospects`, { description: `Outreach → ${bulkStage}` });
+      setSelected(new Set()); setBulkStage("");
+    });
   };
 
   const handleBulkTier = () => {
     if (!bulkTier || selected.size === 0) return;
-    bulkUpdate(Array.from(selected), { tier: bulkTier });
-    toast.success("🏷️ Tier updated!", { description: `${selected.size} prospects tagged` });
-    setSelected(new Set()); setBulkTier("");
+    confirmAndApplyBulk(`Tier: ${bulkTier}`, () => {
+      bulkUpdate(Array.from(selected), { tier: bulkTier });
+      toast.success(`Updated ${selected.size} prospects`, { description: `Tier → ${bulkTier}` });
+      setSelected(new Set()); setBulkTier("");
+    });
+  };
+
+  const handleBulkIndustry = () => {
+    if (!bulkIndustry || selected.size === 0) return;
+    confirmAndApplyBulk(`Industry: ${bulkIndustry}`, () => {
+      bulkUpdate(Array.from(selected), { industry: bulkIndustry } as any);
+      toast.success(`Updated ${selected.size} prospects`, { description: `Industry → ${bulkIndustry}` });
+      setSelected(new Set()); setBulkIndustry("");
+    });
+  };
+
+  const handleBulkPriority = () => {
+    if (!bulkPriority || selected.size === 0) return;
+    const val = bulkPriority === "__none__" ? "" : bulkPriority;
+    confirmAndApplyBulk(`Priority: ${val || "None"}`, () => {
+      bulkUpdate(Array.from(selected), { priority: val });
+      toast.success(`Updated ${selected.size} prospects`, { description: `Priority → ${val || "None"}` });
+      setSelected(new Set()); setBulkPriority("");
+    });
+  };
+
+  const handleBulkCompetitor = () => {
+    if (!bulkCompetitor || selected.size === 0) return;
+    const val = bulkCompetitor === "__none__" ? "" : bulkCompetitor;
+    confirmAndApplyBulk(`Competitor: ${val || "None"}`, () => {
+      bulkUpdate(Array.from(selected), { competitor: val } as any);
+      toast.success(`Updated ${selected.size} prospects`, { description: `Competitor → ${val || "None"}` });
+      setSelected(new Set()); setBulkCompetitor("");
+    });
+  };
+
+  const handleBulkEditApply = (changes: Record<string, string | number | null>) => {
+    const labels = Object.entries(changes).map(([k, v]) => `${k}: ${v}`).join(", ");
+    confirmAndApplyBulk(labels, () => {
+      bulkUpdate(Array.from(selected), changes as any);
+      toast.success(`Updated ${selected.size} prospects`);
+      setSelected(new Set());
+      setShowBulkEdit(false);
+    });
   };
 
   const handleBulkDelete = () => {
@@ -692,6 +745,11 @@ export default function TerritoryPlanner() {
     toast("🗑️ Cleaned up!", { description: `${count} prospects removed` });
     setSelected(new Set());
     setShowBulkDelete(false);
+  };
+
+  const selectAllFiltered = () => {
+    setSelected(new Set(filtered.map((p) => p.id)));
+    toast(`Selected all ${filtered.length} filtered prospects`);
   };
 
   // --- Inline edit ---
@@ -1359,16 +1417,46 @@ export default function TerritoryPlanner() {
         {selected.size > 0 && (
           <div className="mt-4 p-3 rounded-xl border border-primary/20 bg-primary/5 flex items-center gap-3 flex-wrap animate-fade-in-up backdrop-blur-sm">
             <span className="text-sm font-semibold text-primary">{selected.size} selected</span>
-            <select value={bulkStage} onChange={(e) => setBulkStage(e.target.value)} className="px-2 py-1 text-xs rounded-md border border-border bg-background text-foreground">
-              <option value="">Set stage...</option>
+            {hasFilters && selected.size < filtered.length && (
+              <button onClick={selectAllFiltered} className="text-xs text-primary hover:underline font-medium">
+                Select all {filtered.length} filtered
+              </button>
+            )}
+            <div className="w-px h-6 bg-border" />
+            <select value={bulkStage} onChange={(e) => { setBulkStage(e.target.value); }} className="px-2 py-1 text-xs rounded-md border border-border bg-background text-foreground">
+              <option value="">Stage...</option>
               {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
             {bulkStage && <Button size="sm" variant="outline" onClick={handleBulkStage} className="text-xs h-7">Apply</Button>}
             <select value={bulkTier} onChange={(e) => setBulkTier(e.target.value)} className="px-2 py-1 text-xs rounded-md border border-border bg-background text-foreground">
-              <option value="">Set tier...</option>
+              <option value="">Tier...</option>
               {TIERS.filter(Boolean).map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
             {bulkTier && <Button size="sm" variant="outline" onClick={handleBulkTier} className="text-xs h-7">Apply</Button>}
+            <select value={bulkIndustry} onChange={(e) => setBulkIndustry(e.target.value)} className="px-2 py-1 text-xs rounded-md border border-border bg-background text-foreground">
+              <option value="">Industry...</option>
+              {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
+            </select>
+            {bulkIndustry && <Button size="sm" variant="outline" onClick={handleBulkIndustry} className="text-xs h-7">Apply</Button>}
+            <select value={bulkPriority} onChange={(e) => setBulkPriority(e.target.value)} className="px-2 py-1 text-xs rounded-md border border-border bg-background text-foreground">
+              <option value="">Priority...</option>
+              <option value="__none__">None</option>
+              <option value="Hot">Hot</option>
+              <option value="Warm">Warm</option>
+              <option value="Cold">Cold</option>
+              <option value="Dead">Dead</option>
+            </select>
+            {bulkPriority && <Button size="sm" variant="outline" onClick={handleBulkPriority} className="text-xs h-7">Apply</Button>}
+            <select value={bulkCompetitor} onChange={(e) => setBulkCompetitor(e.target.value)} className="px-2 py-1 text-xs rounded-md border border-border bg-background text-foreground">
+              <option value="">Competitor...</option>
+              <option value="__none__">None</option>
+              {COMPETITORS.filter(Boolean).map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            {bulkCompetitor && <Button size="sm" variant="outline" onClick={handleBulkCompetitor} className="text-xs h-7">Apply</Button>}
+            <div className="w-px h-6 bg-border" />
+            <Button size="sm" variant="outline" onClick={() => setShowBulkEdit(true)} className="text-xs h-7 gap-1">
+              <SlidersHorizontal className="w-3 h-3" /> Bulk Edit
+            </Button>
             <Button size="sm" variant="destructive" onClick={() => setShowBulkDelete(true)} className="text-xs h-7 gap-1 ml-auto delete-glow">
               <Trash2 className="w-3 h-3" /> Delete
             </Button>
