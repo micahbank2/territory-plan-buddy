@@ -170,6 +170,22 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
     toast("👤 Contact removed");
   };
 
+  const startEditContact = (c: Contact) => {
+    setEditingContactId(c.id);
+    setEditContact({ name: c.name, title: c.title, email: c.email, phone: c.phone, notes: c.notes });
+  };
+
+  const saveEditContact = () => {
+    if (!editingContactId || !editContact.name) return;
+    const updated = (prospect.contacts || []).map(c =>
+      c.id === editingContactId ? { ...c, ...editContact } : c
+    );
+    update(prospect.id, { contacts: updated });
+    setEditingContactId(null);
+    setEditContact({});
+    toast.success("✅ Contact updated!");
+  };
+
   const logInteraction = () => {
     const interaction: InteractionLog = {
       id: Date.now().toString(), type: interactionType,
