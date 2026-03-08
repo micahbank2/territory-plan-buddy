@@ -8,9 +8,11 @@ import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   INDUSTRIES, STAGES, PRIORITIES, TIERS, COMPETITORS, INTERACTION_TYPES,
+  CONTACT_ROLES, RELATIONSHIP_STRENGTHS,
   scoreProspect, scoreBreakdown, getScoreLabel, getLogoUrl,
   type Prospect, type Contact, type InteractionLog, type NoteEntry, type Task,
 } from "@/data/prospects";
+import { RoleBadge, StrengthDot } from "@/components/ContactBadges";
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
   ExternalLink, Plus, X, Mail, Phone, Building2, MessageSquare, PhoneCall,
