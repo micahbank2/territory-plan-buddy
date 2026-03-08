@@ -777,7 +777,7 @@ export default function TerritoryPlanner() {
     </div>
   );
 
-  if (!ok)
+  if (!ok || terrLoading)
     return (
       <div className="bg-background min-h-screen px-4 sm:px-8 pt-8 yext-grid-bg">
         <div className="h-8 w-48 skeleton-shimmer rounded-lg mb-6" />
