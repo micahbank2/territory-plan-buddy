@@ -26,6 +26,7 @@ import { CSVUploadDialog } from "@/components/CSVUploadDialog";
 import { ShareTerritoryDialog } from "@/components/ShareTerritoryDialog";
 import { BulkEditDialog } from "@/components/BulkEditDialog";
 import { PasteImportDialog } from "@/components/PasteImportDialog";
+import { EnrichmentQueue } from "@/components/EnrichmentQueue";
 
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
@@ -56,6 +57,7 @@ import {
    Upload,
    ClipboardPaste,
   Zap,
+  Sparkles,
   Target,
   ChevronDown,
   ChevronUp as ChevronUpIcon,
@@ -438,6 +440,7 @@ export default function TerritoryPlanner() {
   // CSV Upload
   const [showUpload, setShowUpload] = useState(false);
   const [showPasteImport, setShowPasteImport] = useState(false);
+  const [showEnrich, setShowEnrich] = useState(false);
 
   // Reset confirmation
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -923,6 +926,9 @@ export default function TerritoryPlanner() {
                   <CommandItem onSelect={() => { setCmdOpen(false); setShowPasteImport(true); }}>
                     <ClipboardPaste className="w-4 h-4 mr-2" /> Paste Import
                   </CommandItem>
+                  <CommandItem onSelect={() => { setCmdOpen(false); setShowEnrich(true); }}>
+                    <Sparkles className="w-4 h-4 mr-2" /> Enrich Prospects
+                  </CommandItem>
                   <CommandItem onSelect={() => { setCmdOpen(false); navigate("/insights"); }}>
                     <BarChart3 className="w-4 h-4 mr-2" /> Open Insights
                   </CommandItem>
@@ -1006,6 +1012,9 @@ export default function TerritoryPlanner() {
                 <Button variant="outline" size="sm" onClick={() => setShowPasteImport(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <ClipboardPaste className="w-3.5 h-3.5" /> Paste
                 </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowEnrich(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
+                  <Sparkles className="w-3.5 h-3.5" /> Enrich
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => setShowShare(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <Share2 className="w-3.5 h-3.5" /> Share
                 </Button>
@@ -1077,6 +1086,9 @@ export default function TerritoryPlanner() {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setShowPasteImport(true)}>
                       <ClipboardPaste className="w-4 h-4 mr-2" /> Paste Import
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowEnrich(true)}>
+                      <Sparkles className="w-4 h-4 mr-2" /> Enrich
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setShowShare(true)}>
                       <Share2 className="w-4 h-4 mr-2" /> Share Territory
@@ -2042,6 +2054,14 @@ export default function TerritoryPlanner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {showEnrich && (
+        <EnrichmentQueue
+          prospects={data}
+          onUpdate={async (id, changes) => { await update(id, changes); }}
+          onClose={() => setShowEnrich(false)}
+        />
+      )}
 
     </div>
   );
