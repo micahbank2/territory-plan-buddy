@@ -69,6 +69,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
 
   const [newContact, setNewContact] = useState<Partial<Contact>>({});
   const [showAddContact, setShowAddContact] = useState(false);
+  const [editingContactId, setEditingContactId] = useState<string | null>(null);
+  const [editContact, setEditContact] = useState<Partial<Contact>>({});
   const [interactionType, setInteractionType] = useState(INTERACTION_TYPES[0]);
   const [interactionNotes, setInteractionNotes] = useState("");
   const [newNote, setNewNote] = useState("");
