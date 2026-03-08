@@ -22,6 +22,8 @@ export type Database = {
           notes: string
           phone: string
           prospect_id: string
+          relationship_strength: string | null
+          role: string | null
           title: string
           user_id: string
         }
@@ -32,6 +34,8 @@ export type Database = {
           notes?: string
           phone?: string
           prospect_id: string
+          relationship_strength?: string | null
+          role?: string | null
           title?: string
           user_id: string
         }
@@ -42,6 +46,8 @@ export type Database = {
           notes?: string
           phone?: string
           prospect_id?: string
+          relationship_strength?: string | null
+          role?: string | null
           title?: string
           user_id?: string
         }
