@@ -1896,7 +1896,17 @@ export default function TerritoryPlanner() {
         }}
       />
 
-      {/* Reset Confirmation Dialog */}
+      {/* Paste Import Dialog */}
+      <PasteImportDialog
+        open={showPasteImport}
+        onOpenChange={setShowPasteImport}
+        existingData={data}
+        onImport={(newRows, updates) => {
+          if (newRows.length > 0) bulkAdd(newRows);
+          if (updates.length > 0) bulkMerge(updates);
+        }}
+      />
+
       <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
