@@ -259,6 +259,9 @@ export function useProspects(territoryId?: string | null) {
     if ("tier" in u) dbFields.tier = u.tier;
     if ("priority" in u) dbFields.priority = u.priority;
     if ("status" in u) dbFields.status = u.status;
+    if ("industry" in u) dbFields.industry = u.industry;
+    if ("competitor" in u) dbFields.competitor = u.competitor;
+    if ("locationCount" in u) dbFields.location_count = u.locationCount;
     dbFields.last_touched = new Date().toISOString().split("T")[0];
 
     await supabase.from("prospects").update(dbFields).in("id", ids);
