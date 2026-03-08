@@ -17,11 +17,184 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   X, ChevronLeft, ChevronRight, ExternalLink, Linkedin,
-  Search as SearchIcon, Globe, UserPlus, ChevronDown, PartyPopper, Sparkles,
+  Search as SearchIcon, Globe, UserPlus, ChevronDown, PartyPopper, Sparkles, Loader2,
 } from "lucide-react";
 
 const PRIORITIES = ["Hot", "Warm", "Cold", "Dead"];
 
+// --- Wikidata industry mapping ---
+const INDUSTRY_KEYWORDS: [RegExp, string][] = [
+  [/fast food|quick service|fast casual|burger|pizza|taco|chicken|sandwich/i, "QSR/Fast Casual"],
+  [/casual dining|diner|steakhouse|grill/i, "Casual Dining"],
+  [/fine dining/i, "Fine Dining"],
+  [/grocery|supermarket|food retail|food store/i, "Grocery"],
+  [/gas station|fuel|petroleum|convenience store|c-store|petrol/i, "Gas Stations"],
+  [/hotel|hospitality|resort|lodging|motel|inn/i, "Hospitality/Hotels"],
+  [/healthcare|hospital|medical|clinic|health system|pharmacy chain/i, "Healthcare"],
+  [/car wash|auto wash/i, "Car Wash Chain"],
+  [/auto dealer|car dealer|vehicle dealer|automotive retail/i, "Auto Dealerships"],
+  [/bank|financial|credit union|investment|wealth management/i, "Financial Services"],
+  [/insurance/i, "Other"],
+  [/real estate|property management|realty/i, "Commercial Real Estate"],
+  [/fashion|clothing|apparel|boutique/i, "Fashion Retail"],
+  [/home service|plumbing|hvac|roofing|cleaning/i, "HVAC/R Distribution"],
+  [/gym|fitness|health club|yoga|pilates/i, "Other"],
+  [/education|school|university|learning|tutoring/i, "Daycare/Tutoring"],
+  [/law firm|legal|attorney/i, "Other"],
+  [/pet|veterinary|animal/i, "Other"],
+  [/salon|beauty|spa|barber|cosmet/i, "Other"],
+  [/storage|parking/i, "Storage"],
+  [/entertainment|cinema|theater|amusement|arcade/i, "Other"],
+  [/senior|assisted living|nursing|elder care/i, "Healthcare"],
+  [/pharmacy|drugstore/i, "Healthcare"],
+  [/telecom|wireless|mobile carrier|internet provider/i, "Other"],
+  [/staffing|recruiting|employment agency/i, "Other"],
+  [/restaurant/i, "Casual Dining"],
+  [/retail|department store|general merchandise|discount store/i, "Retail"],
+  [/golf/i, "Golf Retail"],
+  [/book/i, "Bookstore Retail"],
+  [/sporting goods/i, "Sporting Goods"],
+  [/moving/i, "Moving/Storage"],
+  [/landscap/i, "Commercial Landscaping"],
+  [/non-profit|thrift/i, "Non-Profit Retail/Thrift"],
+  [/office supply/i, "Office Supply Retail"],
+  [/transit|transportation|bus|rail/i, "Public Transportation"],
+  [/multifamily|reit|apartment/i, "Multifamily REIT"],
+  [/daycare|child care/i, "Daycare/Tutoring"],
+];
+
+function mapWikidataIndustry(description: string, industryLabel: string): string | null {
+  const combined = `${description} ${industryLabel}`.toLowerCase();
+  for (const [re, industry] of INDUSTRY_KEYWORDS) {
+    if (re.test(combined)) return industry;
+  }
+  return null;
+}
+
+const COMPANY_KEYWORDS = /company|corporation|brand|retailer|chain|enterprise|business|group|inc|llc|ltd|store|shop|franchise|conglomerate|firm|provider|operator|network/i;
+
+// --- Wikidata types ---
+interface WikidataResult {
+  description: string | null;
+  industryLabel: string | null;
+  employeeCount: number | null;
+  officialWebsite: string | null;
+  country: string | null;
+  mappedIndustry: string | null;
+  confidence: "high" | "uncertain" | "none";
+  entityId: string | null;
+}
+
+const EMPTY_WIKI: WikidataResult = {
+  description: null, industryLabel: null, employeeCount: null,
+  officialWebsite: null, country: null, mappedIndustry: null,
+  confidence: "none", entityId: null,
+};
+
+async function fetchEntityLabel(id: string): Promise<string> {
+  try {
+    const r = await fetch(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${id}&languages=en&props=labels&format=json&origin=*`);
+    const d = await r.json();
+    return d.entities?.[id]?.labels?.en?.value || "";
+  } catch { return ""; }
+}
+
+async function queryWikidata(companyName: string, prospectWebsite?: string): Promise<WikidataResult> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    const searchUrl = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(companyName)}&language=en&format=json&limit=5&type=item&origin=*`;
+    const searchRes = await fetch(searchUrl, { signal: controller.signal });
+    clearTimeout(timeout);
+    const searchData = await searchRes.json();
+
+    if (!searchData.search?.length) return EMPTY_WIKI;
+
+    // Pick best entity — prefer ones with business-related descriptions
+    let bestEntity: any = null;
+    for (const s of searchData.search) {
+      const desc = (s.description || "").toLowerCase();
+      if (COMPANY_KEYWORDS.test(desc)) { bestEntity = s; break; }
+    }
+    if (!bestEntity) {
+      // fallback to first result if its description doesn't look like a person/place
+      const first = searchData.search[0];
+      const d = (first.description || "").toLowerCase();
+      const isPerson = /born|politician|actor|singer|writer|athlete|player|artist|scientist/i.test(d);
+      const isPlace = /^(city|town|village|municipality|district|county|province|state|country)\b/i.test(d);
+      if (!isPerson && !isPlace) bestEntity = first;
+    }
+
+    if (!bestEntity) return { ...EMPTY_WIKI, confidence: "none" };
+
+    const entityId = bestEntity.id;
+    const entityUrl = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${entityId}&languages=en&props=descriptions|claims&format=json&origin=*`;
+    const entityRes = await fetch(entityUrl);
+    const entityData = await entityRes.json();
+    const entity = entityData.entities?.[entityId];
+    if (!entity) return EMPTY_WIKI;
+
+    const description = entity.descriptions?.en?.value || null;
+
+    // P452 = industry
+    let industryLabel: string | null = null;
+    const p452 = entity.claims?.P452;
+    if (p452?.length) {
+      const indId = p452[0].mainsnak?.datavalue?.value?.id;
+      if (indId) industryLabel = await fetchEntityLabel(indId);
+    }
+
+    // P1128 = employees
+    let employeeCount: number | null = null;
+    const p1128 = entity.claims?.P1128;
+    if (p1128?.length) {
+      const amt = p1128[p1128.length - 1].mainsnak?.datavalue?.value?.amount;
+      if (amt) employeeCount = parseInt(String(amt).replace("+", ""), 10) || null;
+    }
+
+    // P856 = official website
+    let officialWebsite: string | null = null;
+    const p856 = entity.claims?.P856;
+    if (p856?.length) {
+      officialWebsite = p856[0].mainsnak?.datavalue?.value || null;
+    }
+
+    // P17 = country
+    let country: string | null = null;
+    const p17 = entity.claims?.P17;
+    if (p17?.length) {
+      const countryId = p17[0].mainsnak?.datavalue?.value?.id;
+      if (countryId) country = await fetchEntityLabel(countryId);
+    }
+
+    const mappedIndustry = mapWikidataIndustry(description || "", industryLabel || "");
+
+    // Confidence logic
+    let confidence: "high" | "uncertain" | "none" = "uncertain";
+    if (description && COMPANY_KEYWORDS.test(description)) {
+      confidence = "high";
+    }
+    // Website domain match boosts confidence
+    if (prospectWebsite && officialWebsite) {
+      const normDomain = (u: string) => {
+        try { return new URL(u.startsWith("http") ? u : `https://${u}`).hostname.replace(/^www\./, ""); }
+        catch { return u.toLowerCase(); }
+      };
+      if (normDomain(prospectWebsite) === normDomain(officialWebsite)) {
+        confidence = "high";
+      } else {
+        confidence = "uncertain";
+      }
+    }
+
+    return { description, industryLabel, employeeCount, officialWebsite, country, mappedIndustry, confidence, entityId };
+  } catch {
+    return EMPTY_WIKI;
+  }
+}
+
+// --- Component ---
 interface Props {
   prospects: Prospect[];
   onUpdate: (id: any, changes: Partial<Prospect>) => Promise<void>;
@@ -73,6 +246,12 @@ export function EnrichmentQueue({ prospects, onUpdate, onClose }: Props) {
   const [contactPhone, setContactPhone] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Wikidata state
+  const wikiCache = useRef<Map<string, WikidataResult>>(new Map());
+  const [wikiResult, setWikiResult] = useState<WikidataResult | null>(null);
+  const [wikiLoading, setWikiLoading] = useState(false);
+  const [wikiSuggestionApplied, setWikiSuggestionApplied] = useState(false);
+
   const formRef = useRef<HTMLDivElement>(null);
 
   // Timer
@@ -98,7 +277,37 @@ export function EnrichmentQueue({ prospects, onUpdate, onClose }: Props) {
 
   const current = queue[currentIdx] || null;
 
-  // Reset form when prospect changes
+  // Fetch Wikidata when prospect changes
+  useEffect(() => {
+    if (!current) { setWikiResult(null); return; }
+
+    const cached = wikiCache.current.get(current.id);
+    if (cached) {
+      setWikiResult(cached);
+      setWikiLoading(false);
+      return;
+    }
+
+    setWikiLoading(true);
+    setWikiResult(null);
+    queryWikidata(current.name, current.website).then((result) => {
+      wikiCache.current.set(current.id, result);
+      setWikiResult(result);
+      setWikiLoading(false);
+    });
+  }, [current?.id, current?.name, current?.website]);
+
+  // Preload next prospect's wikidata
+  useEffect(() => {
+    const next = queue[currentIdx + 1];
+    if (next && !wikiCache.current.has(next.id)) {
+      queryWikidata(next.name, next.website).then((result) => {
+        wikiCache.current.set(next.id, result);
+      });
+    }
+  }, [currentIdx, queue]);
+
+  // Reset form when prospect changes + apply wiki suggestion
   useEffect(() => {
     setIndustry("");
     setLocationCount("");
@@ -111,13 +320,25 @@ export function EnrichmentQueue({ prospects, onUpdate, onClose }: Props) {
     setContactTitle("");
     setContactEmail("");
     setContactPhone("");
+    setWikiSuggestionApplied(false);
     formRef.current?.scrollTo(0, 0);
   }, [current?.id]);
+
+  // Auto-apply wiki industry suggestion when result arrives
+  useEffect(() => {
+    if (wikiResult?.mappedIndustry && wikiResult.confidence === "high" && !wikiSuggestionApplied && current) {
+      const missing = missingFields(current);
+      if (missing.industry && !industry) {
+        setIndustry(wikiResult.mappedIndustry);
+        setWikiSuggestionApplied(true);
+      }
+    }
+  }, [wikiResult, current?.id, wikiSuggestionApplied, industry, current]);
 
   // Celebrate milestones
   useEffect(() => {
     const pct = completenessPercent;
-    [50, 75, 100].forEach((milestone) => {
+    [25, 50, 75, 100].forEach((milestone) => {
       if (pct >= milestone && !celebrated.has(milestone)) {
         setCelebrated((prev) => new Set([...prev, milestone]));
         if (milestone === 100) {
@@ -157,7 +378,6 @@ export function EnrichmentQueue({ prospects, onUpdate, onClose }: Props) {
       changes.notes = existingNotes ? `${existingNotes}\n${notes}` : notes;
     }
 
-    // Add contact if filled
     if (contactName || contactEmail) {
       const newContact: Contact = {
         id: crypto.randomUUID(),
@@ -227,7 +447,7 @@ export function EnrichmentQueue({ prospects, onUpdate, onClose }: Props) {
           <div className="flex-1 flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full">
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span><strong className="text-foreground">{prospects.length}</strong> total</span>
-              <span><strong className="text-[hsl(var(--success))]">{enrichedCount}</strong> enriched</span>
+              <span><strong className="text-primary">{enrichedCount}</strong> enriched</span>
               <span><strong className="text-foreground">{prospects.length - enrichedCount}</strong> remaining</span>
             </div>
             <div className="flex-1 min-w-[120px]">
@@ -287,8 +507,11 @@ export function EnrichmentQueue({ prospects, onUpdate, onClose }: Props) {
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       )}
-                      <div>
-                        <h2 className="text-xl font-bold text-foreground">{current.name}</h2>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-xl font-bold text-foreground truncate">{current.name}</h2>
+                          {wikiLoading && <Loader2 className="w-4 h-4 text-muted-foreground animate-spin shrink-0" />}
+                        </div>
                         {current.website && (
                           <a
                             href={current.website.startsWith("http") ? current.website : `https://${current.website}`}
@@ -327,6 +550,58 @@ export function EnrichmentQueue({ prospects, onUpdate, onClose }: Props) {
                       )}
                       {current.outreach && current.outreach !== "Not Started" && (
                         <Badge variant="outline" className="text-xs">{current.outreach}</Badge>
+                      )}
+                    </div>
+
+                    {/* Wikidata match section */}
+                    <div className="space-y-2 pt-2 border-t border-border">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Wikidata</span>
+                      {wikiLoading ? (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Searching Wikidata...</span>
+                        </div>
+                      ) : wikiResult && wikiResult.confidence !== "none" ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant={wikiResult.confidence === "high" ? "default" : "outline"}
+                              className={cn(
+                                "text-xs",
+                                wikiResult.confidence === "high" && "bg-primary text-primary-foreground",
+                                wikiResult.confidence === "uncertain" && "border-amber-500 text-amber-600 dark:text-amber-400",
+                              )}
+                            >
+                              {wikiResult.confidence === "high" ? "Wikidata Match" : "Uncertain Match — verify manually"}
+                            </Badge>
+                          </div>
+                          {wikiResult.description && (
+                            <p className="text-sm italic text-foreground/80">
+                              {wikiResult.description}
+                              <span className="text-xs text-muted-foreground ml-1 not-italic">via Wikidata</span>
+                            </p>
+                          )}
+                          <div className="flex flex-wrap gap-1.5">
+                            {wikiResult.industryLabel && (
+                              <Badge variant="outline" className="text-xs">Industry: {wikiResult.industryLabel}</Badge>
+                            )}
+                            {wikiResult.employeeCount != null && (
+                              <Badge variant="outline" className="text-xs">~{wikiResult.employeeCount.toLocaleString()} employees</Badge>
+                            )}
+                            {wikiResult.country && (
+                              <Badge variant="outline" className="text-xs">{wikiResult.country}</Badge>
+                            )}
+                            {wikiResult.officialWebsite && (
+                              <Badge variant="outline" className="text-xs">
+                                <a href={wikiResult.officialWebsite} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                                  Official site <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No Wikidata match found</p>
                       )}
                     </div>
 
@@ -411,7 +686,7 @@ export function EnrichmentQueue({ prospects, onUpdate, onClose }: Props) {
                       <div className="space-y-1.5">
                         <Label className="text-xs text-muted-foreground">Industry</Label>
                         <Select value={industry} onValueChange={setIndustry}>
-                          <SelectTrigger className="bg-background">
+                          <SelectTrigger className={cn("bg-background", industry && wikiSuggestionApplied && "border-primary ring-1 ring-primary/30")}>
                             <SelectValue placeholder="Select industry..." />
                           </SelectTrigger>
                           <SelectContent className="max-h-64">
@@ -420,6 +695,9 @@ export function EnrichmentQueue({ prospects, onUpdate, onClose }: Props) {
                             ))}
                           </SelectContent>
                         </Select>
+                        {industry && wikiSuggestionApplied && (
+                          <p className="text-xs text-primary">Suggested by Wikidata</p>
+                        )}
                       </div>
                     )}
 
