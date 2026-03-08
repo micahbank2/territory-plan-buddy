@@ -25,6 +25,7 @@ import { ProspectSheet } from "@/components/ProspectSheet";
 import { CSVUploadDialog } from "@/components/CSVUploadDialog";
 import { ShareTerritoryDialog } from "@/components/ShareTerritoryDialog";
 import { BulkEditDialog } from "@/components/BulkEditDialog";
+import { PasteImportDialog } from "@/components/PasteImportDialog";
 
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
@@ -52,7 +53,8 @@ import {
   FileSearch,
   BarChart3,
   GitCompare,
-  Upload,
+   Upload,
+   ClipboardPaste,
   Zap,
   Target,
   ChevronDown,
@@ -435,6 +437,7 @@ export default function TerritoryPlanner() {
 
   // CSV Upload
   const [showUpload, setShowUpload] = useState(false);
+  const [showPasteImport, setShowPasteImport] = useState(false);
 
   // Reset confirmation
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -917,6 +920,9 @@ export default function TerritoryPlanner() {
                   <CommandItem onSelect={() => { setCmdOpen(false); setShowUpload(true); }}>
                     <Upload className="w-4 h-4 mr-2" /> Upload CSV
                   </CommandItem>
+                  <CommandItem onSelect={() => { setCmdOpen(false); setShowPasteImport(true); }}>
+                    <ClipboardPaste className="w-4 h-4 mr-2" /> Paste Import
+                  </CommandItem>
                   <CommandItem onSelect={() => { setCmdOpen(false); navigate("/insights"); }}>
                     <BarChart3 className="w-4 h-4 mr-2" /> Open Insights
                   </CommandItem>
@@ -997,6 +1003,9 @@ export default function TerritoryPlanner() {
                 <Button variant="outline" size="sm" onClick={() => setShowUpload(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <Upload className="w-3.5 h-3.5" /> Upload
                 </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowPasteImport(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
+                  <ClipboardPaste className="w-3.5 h-3.5" /> Paste
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => setShowShare(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <Share2 className="w-3.5 h-3.5" /> Share
                 </Button>
@@ -1065,6 +1074,9 @@ export default function TerritoryPlanner() {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setShowUpload(true)}>
                       <Upload className="w-4 h-4 mr-2" /> Upload CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowPasteImport(true)}>
+                      <ClipboardPaste className="w-4 h-4 mr-2" /> Paste Import
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setShowShare(true)}>
                       <Share2 className="w-4 h-4 mr-2" /> Share Territory
@@ -1884,7 +1896,17 @@ export default function TerritoryPlanner() {
         }}
       />
 
-      {/* Reset Confirmation Dialog */}
+      {/* Paste Import Dialog */}
+      <PasteImportDialog
+        open={showPasteImport}
+        onOpenChange={setShowPasteImport}
+        existingData={data}
+        onImport={(newRows, updates) => {
+          if (newRows.length > 0) bulkAdd(newRows);
+          if (updates.length > 0) bulkMerge(updates);
+        }}
+      />
+
       <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
