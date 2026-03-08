@@ -215,7 +215,7 @@ export function useProspects(territoryId?: string | null) {
 
     const p = initProspect({ ...partial, id: 0 }); // id will be uuid
 
-    const { data: inserted, error } = await supabase.from("prospects").insert({
+    const insertData: any = {
       user_id: user.id,
       name: p.name,
       website: p.website,
@@ -232,7 +232,10 @@ export function useProspects(territoryId?: string | null) {
       competitor: p.competitor,
       tier: p.tier,
       transition_owner: p.transitionOwner,
-    }).select().single();
+    };
+    if (territoryId) insertData.territory_id = territoryId;
+
+    const { data: inserted, error } = await supabase.from("prospects").insert(insertData).select().single();
 
     if (error || !inserted) {
       console.error("Error adding prospect:", error);
