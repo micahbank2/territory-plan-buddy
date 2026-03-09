@@ -71,10 +71,11 @@ function SheetLogoImg({ website, size = 32, customLogo }: { website?: string; si
   return <img src={url} alt="" className="rounded-lg bg-muted object-contain" style={{ width: size, height: size }} onError={() => setErr(true)} />;
 }
 
-export function ProspectSheet({ prospectId, onClose, data, update, remove }: ProspectSheetProps) {
+export function ProspectSheet({ prospectId, onClose, data, update, remove, signals = [], addSignal, removeSignal, territoryId }: ProspectSheetProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const prospect = useMemo(() => data.find(p => p.id === prospectId), [data, prospectId]);
+  const prospectSignals = useMemo(() => signals.filter(s => s.prospect_id === prospectId), [signals, prospectId]);
 
   const [newContact, setNewContact] = useState<Partial<Contact>>({});
   const [showAddContact, setShowAddContact] = useState(false);
