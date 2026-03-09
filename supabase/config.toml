@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.enrich-prospect]
 verify_jwt = false
+
+[functions.ai-readiness]
+verify_jwt = false

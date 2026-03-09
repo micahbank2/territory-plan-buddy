@@ -13,6 +13,7 @@ import {
   type Prospect, type Contact, type InteractionLog, type NoteEntry, type Task,
 } from "@/data/prospects";
 import { RoleBadge, StrengthDot } from "@/components/ContactBadges";
+import { AIReadinessCard } from "@/components/AIReadinessCard";
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
   ExternalLink, Plus, X, Mail, Phone, Building2, MessageSquare, PhoneCall,
@@ -513,6 +514,11 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
               </div>
             ))}
             {(prospect.contacts || []).length === 0 && !showAddContact && <p className="text-xs text-muted-foreground">No contacts yet.</p>}
+          </div>
+
+          {/* AI Readiness */}
+          <div className="animate-fade-in-up" style={{ animationDelay: "180ms" }}>
+            <AIReadinessCard prospect={prospect} onUpdate={update} compact />
           </div>
 
           {/* Activity Timeline */}

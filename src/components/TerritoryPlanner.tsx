@@ -27,6 +27,7 @@ import { ShareTerritoryDialog } from "@/components/ShareTerritoryDialog";
 import { BulkEditDialog } from "@/components/BulkEditDialog";
 import { PasteImportDialog } from "@/components/PasteImportDialog";
 import { EnrichmentQueue } from "@/components/EnrichmentQueue";
+import { AIReadinessBadge } from "@/components/AIReadinessCard";
 
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
@@ -1593,6 +1594,7 @@ export default function TerritoryPlanner() {
                               </span>
                             );
                           })()}
+                          <AIReadinessBadge prospect={p as any} onClick={() => setSheetProspectId(p.id)} />
                           {p.nextStepDate && new Date(p.nextStepDate) < new Date() && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive overdue-flag" title={`Overdue: ${p.nextStep}`}>
                               ⚠ Overdue
