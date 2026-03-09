@@ -485,6 +485,18 @@ export function useProspects(territoryId?: string | null) {
   const restore = useCallback((_id: any) => {}, []);
   const permanentDelete = useCallback((_id: any) => {}, []);
 
+  const deleteNote = useCallback(async (prospectId: any, noteId: string) => {
+    if (!user) return;
+    await supabase.from("prospect_notes").delete().eq("id", noteId);
+    setData((prev) =>
+      prev.map((p) =>
+        p.id === prospectId
+          ? { ...p, noteLog: (p.noteLog || []).filter((n) => n.id !== noteId) }
+          : p
+      )
+    );
+  }, [user]);
+
   return {
     data,
     ok,
@@ -501,5 +513,6 @@ export function useProspects(territoryId?: string | null) {
     permanentDelete,
     seedData,
     seeding,
+    deleteNote,
   };
 }
