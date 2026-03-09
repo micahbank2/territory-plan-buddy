@@ -58,6 +58,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RoleBadge, StrengthDot } from "@/components/ContactBadges";
 import { StakeholderMap } from "@/components/StakeholderMap";
+import { AIReadinessCard } from "@/components/AIReadinessCard";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // --- Logo with upload ---
@@ -750,6 +751,11 @@ export default function ProspectPage() {
                   placeholder="Where did the location data come from?"
                 />
               </Field>
+            </div>
+
+            {/* AI Search Readiness */}
+            <div className="glass-card rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: "180ms" }}>
+              <AIReadinessCard prospect={prospect} onUpdate={(id, u) => update(id, u)} />
             </div>
 
             {/* Activity Timeline */}
