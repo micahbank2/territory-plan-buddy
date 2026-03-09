@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Zap, Plus, X, Brain, Loader2 } from "lucide-react";
+import { Zap, Plus, X, Brain, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +41,29 @@ const SIGNAL_TYPE_COLORS: Record<string, string> = {
   "Other": "bg-muted text-muted-foreground",
 };
 
+const SIGNAL_TYPE_TIPS: Record<string, string> = {
+  "Leadership Change": "A new CMO, VP Marketing, CTO, or other key decision maker was hired. New leaders often re-evaluate vendors.",
+  "Expansion": "The company announced new locations, entered new markets, or is scaling rapidly. Growth strains existing systems.",
+  "Competitor Contract Ending": "Their current vendor contract (SOCi, Birdeye, etc.) is expiring or they expressed dissatisfaction. Prime switching window.",
+  "Bad Reviews / Reputation Issue": "Negative press, review bombing, or public reputation problems. Creates urgency for reputation management.",
+  "Rebrand / Redesign": "Company is rebranding, updating their website, or refreshing their digital presence. Natural time to evaluate new tools.",
+  "Acquisition / Merger": "Company was acquired or merged. New ownership often means new vendor evaluations and budget reallocation.",
+  "New Locations": "Specific location openings announced. Each new location needs listings, pages, and local SEO.",
+  "Funding Round": "Received new investment. More budget available for growth tools and infrastructure.",
+  "Tech Vendor Evaluation": "Actively evaluating new technology vendors. Could be in an RFP process or informal research phase.",
+  "Website Redesign": "Rebuilding their website or digital properties. Good time to pitch Yext Pages or Search.",
+  "Other": "Any other relevant trigger event not covered above.",
+};
+
+const OPPORTUNITY_TYPE_TIPS: Record<string, string> = {
+  "Executive": "Opportunity driven by a leadership change or executive relationship",
+  "Expansion": "Opportunity driven by company growth or new locations",
+  "Churn": "Opportunity to win back a churned customer or capture a competitor's churning client",
+  "Reputation": "Opportunity driven by review/reputation issues the prospect is facing",
+  "Competitive Displacement": "Opportunity to replace an existing competitor vendor",
+  "Other": "Other opportunity type",
+};
+
 function relativeTime(dateStr: string): string {
   const now = new Date();
   const then = new Date(dateStr);
@@ -50,6 +74,27 @@ function relativeTime(dateStr: string): string {
   if (diffDays < 7) return `${diffDays}d ago`;
   if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
   return `${Math.floor(diffDays / 30)}mo ago`;
+}
+
+function FieldWithTooltip({ label, tip, children }: { label: string; tip?: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-0.5">
+      <div className="flex items-center gap-1">
+        <label className="text-[9px] font-semibold text-muted-foreground uppercase">{label}</label>
+        {tip && (
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="w-2.5 h-2.5 text-muted-foreground/60 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs text-xs">{tip}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
+      {children}
+    </div>
+  );
 }
 
 export function SignalsSection({ prospect, signals, onAdd, onRemove, territoryId, compact = false }: SignalsSectionProps) {
@@ -129,8 +174,19 @@ export function SignalsSection({ prospect, signals, onAdd, onRemove, territoryId
 
       {showForm && (
         <div className="space-y-2 p-3 border border-border rounded-lg bg-muted/30 animate-fade-in-up">
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Signal title *" className={cn(inputClass, "text-xs")} />
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description (optional)" className={cn(inputClass, "text-xs resize-none")} rows={2} />
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g., New VP Marketing hired from Domino's"
+            className={cn(inputClass, "text-xs")}
+          />
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="e.g., Previously oversaw Yext implementation at Domino's. Likely familiar with the platform and its value."
+            className={cn(inputClass, "text-xs resize-none")}
+            rows={2}
+          />
           <div className="flex gap-2 items-center">
             <Button onClick={autoCategorize} disabled={categorizing || !title.trim()} size="sm" variant="outline" className="gap-1 text-xs shrink-0">
               {categorizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Brain className="w-3 h-3" />}
@@ -138,28 +194,29 @@ export function SignalsSection({ prospect, signals, onAdd, onRemove, territoryId
             </Button>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-0.5">
-              <label className="text-[9px] font-semibold text-muted-foreground uppercase">Signal Type</label>
+            <FieldWithTooltip label="Signal Type" tip={SIGNAL_TYPE_TIPS[signalType]}>
               <select value={signalType} onChange={(e) => setSignalType(e.target.value)} className={cn(selectClass, "text-xs py-1.5")}>
                 {SIGNAL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
-            </div>
-            <div className="space-y-0.5">
-              <label className="text-[9px] font-semibold text-muted-foreground uppercase">Opportunity</label>
+            </FieldWithTooltip>
+            <FieldWithTooltip label="Opportunity" tip={OPPORTUNITY_TYPE_TIPS[opportunityType]}>
               <select value={opportunityType} onChange={(e) => setOpportunityType(e.target.value)} className={cn(selectClass, "text-xs py-1.5")}>
                 {OPPORTUNITY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
-            </div>
-            <div className="space-y-0.5">
-              <label className="text-[9px] font-semibold text-muted-foreground uppercase">Relevance</label>
+            </FieldWithTooltip>
+            <FieldWithTooltip label="Relevance">
               <select value={relevance} onChange={(e) => setRelevance(e.target.value)} className={cn(selectClass, "text-xs py-1.5")}>
                 {SIGNAL_RELEVANCE.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
-            </div>
-            <div className="space-y-0.5">
-              <label className="text-[9px] font-semibold text-muted-foreground uppercase">Source</label>
-              <input value={source} onChange={(e) => setSource(e.target.value)} placeholder="LinkedIn, News..." className={cn(inputClass, "text-xs py-1.5")} />
-            </div>
+            </FieldWithTooltip>
+            <FieldWithTooltip label="Source">
+              <input
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                placeholder="e.g., LinkedIn, Google News, industry contact"
+                className={cn(inputClass, "text-xs py-1.5")}
+              />
+            </FieldWithTooltip>
           </div>
           <div className="flex gap-2">
             <Button onClick={handleSubmit} disabled={!title.trim()} size="sm" className="text-xs gap-1">
@@ -171,7 +228,11 @@ export function SignalsSection({ prospect, signals, onAdd, onRemove, territoryId
       )}
 
       {signals.length === 0 && !showForm && (
-        <p className="text-xs text-muted-foreground">No signals tracked yet.</p>
+        <div className="p-3 rounded-lg border border-dashed border-border bg-muted/20">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            No signals logged yet. Signals are trigger events that indicate a prospect might be ready to buy — like leadership changes, expansion plans, or competitor contracts ending. Add one when you spot something relevant during your research.
+          </p>
+        </div>
       )}
 
       <div className="space-y-2">
