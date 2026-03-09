@@ -19,7 +19,7 @@ import { type Signal } from "@/hooks/useSignals";
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
   ExternalLink, Plus, X, Mail, Phone, Building2, MessageSquare, PhoneCall,
-  Linkedin, Clock, CalendarIcon, Target, ArrowRight, Check, CheckCircle,
+  Linkedin, Clock, CalendarIcon, Target, ArrowRight, Check, CheckCircle, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ interface ProspectSheetProps {
   data: Prospect[];
   update: (id: any, u: Partial<Prospect>) => void;
   remove: (id: any) => void;
+  deleteNote?: (prospectId: any, noteId: string) => void;
   signals?: Signal[];
   addSignal?: (signal: Omit<Signal, "id" | "created_at" | "user_id">) => Promise<Signal | null>;
   removeSignal?: (id: string) => Promise<void>;
