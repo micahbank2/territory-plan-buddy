@@ -29,6 +29,7 @@ import { PasteImportDialog } from "@/components/PasteImportDialog";
 import { EnrichmentQueue } from "@/components/EnrichmentQueue";
 import { AIReadinessBadge } from "@/components/AIReadinessCard";
 import { SignalIndicator } from "@/components/SignalsSection";
+import { AddProspectDialog } from "@/components/AddProspectDialog";
 import { useSignals } from "@/hooks/useSignals";
 
 import { cn, normalizeUrl } from "@/lib/utils";
@@ -370,7 +371,7 @@ export default function TerritoryPlanner() {
     territories, activeTerritory, members, myRole, loading: terrLoading,
     switchTerritory, renameTerritory, inviteMember, removeMember, updateMemberRole, createTerritory,
   } = useTerritories();
-  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete, seedData, seeding, deleteNote } = useProspects(activeTerritory);
+  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete, seedData, seeding, deleteNote, addNote } = useProspects(activeTerritory);
   const { signals, addSignal, removeSignal, getProspectSignalRelevance } = useSignals(activeTerritory);
   const { signOut, user } = useAuth();
   const isOwner = user?.email && OWNER_EMAILS.includes(user.email);
@@ -615,9 +616,9 @@ export default function TerritoryPlanner() {
   };
 
   // --- Quick Add ---
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newName.trim()) return;
-    add({
+    await add({
       name: newName.trim(),
       website: newWebsite.trim(),
       industry: newIndustry,
