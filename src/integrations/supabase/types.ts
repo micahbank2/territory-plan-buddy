@@ -128,6 +128,63 @@ export type Database = {
           },
         ]
       }
+      prospect_signals: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          opportunity_type: string
+          prospect_id: string
+          relevance: string
+          signal_type: string
+          source: string
+          territory_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          opportunity_type?: string
+          prospect_id: string
+          relevance?: string
+          signal_type?: string
+          source?: string
+          territory_id?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          opportunity_type?: string
+          prospect_id?: string
+          relevance?: string
+          signal_type?: string
+          source?: string
+          territory_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_signals_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_signals_territory_id_fkey"
+            columns: ["territory_id"]
+            isOneToOne: false
+            referencedRelation: "territories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prospect_tasks: {
         Row: {
           due_date: string
