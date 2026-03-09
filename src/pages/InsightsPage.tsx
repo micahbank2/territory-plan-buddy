@@ -230,7 +230,7 @@ export default function InsightsPage() {
     <div className="bg-background min-h-screen text-foreground yext-grid-bg">
       {/* Yext Header */}
       <header className="yext-gradient border-b border-primary/10 px-4 sm:px-8 py-5 relative overflow-hidden">
-        <RetroGrid className="opacity-40" />
+        <RetroGrid className="opacity-60" />
         <div className="flex items-center justify-between relative z-10">
           <div className="flex items-center gap-4">
             <button onClick={() => navigate("/")} className="p-1.5 rounded-md hover:bg-primary/10 transition-colors">

@@ -24,7 +24,7 @@ export function RetroGrid({
           className={cn(
             "animate-grid",
             "[background-repeat:repeat] [background-size:60px_60px] [height:300vh] [inset:0%_0px] [margin-left:-200%] [transform-origin:100%_0_0] [width:600vw]",
-            "[background-image:linear-gradient(to_right,hsl(var(--primary)/0.15)_1px,transparent_0),linear-gradient(to_bottom,hsl(var(--primary)/0.15)_1px,transparent_0)]",
+            "[background-image:linear-gradient(to_right,hsl(var(--primary)/0.4)_1px,transparent_0),linear-gradient(to_bottom,hsl(var(--primary)/0.4)_1px,transparent_0)]",
           )}
         />
       </div>

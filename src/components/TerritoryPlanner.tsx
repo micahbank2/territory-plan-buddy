@@ -950,7 +950,7 @@ export default function TerritoryPlanner() {
 
       {/* ===== YEXT HEADER ===== */}
       <div className="yext-gradient border-b border-primary/10 relative overflow-hidden">
-        <RetroGrid className="opacity-40" />
+        <RetroGrid className="opacity-60" />
         <div className="px-4 sm:px-8 py-4 sm:py-6 relative z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 sm:gap-4 min-w-0">
