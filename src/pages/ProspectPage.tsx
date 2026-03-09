@@ -59,6 +59,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { RoleBadge, StrengthDot } from "@/components/ContactBadges";
 import { StakeholderMap } from "@/components/StakeholderMap";
 import { AIReadinessCard } from "@/components/AIReadinessCard";
+import { SignalsSection } from "@/components/SignalsSection";
+import { useSignals } from "@/hooks/useSignals";
+import { useTerritories } from "@/hooks/useTerritories";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // --- Logo with upload ---
@@ -300,12 +303,15 @@ function InteractionIcon({ type }: { type: string }) {
 export default function ProspectPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data, ok, update, remove } = useProspects();
+  const { activeTerritory } = useTerritories();
+  const { data, ok, update, remove } = useProspects(activeTerritory);
+  const { signals, addSignal, removeSignal, getProspectSignals } = useSignals(activeTerritory);
 
   const prospect = useMemo(
     () => data.find((p) => String(p.id) === id),
     [data, id]
   );
+  const prospectSignals = useMemo(() => id ? getProspectSignals(id) : [], [id, getProspectSignals]);
 
   const [newContact, setNewContact] = useState<Partial<Contact>>({});
   const [showAddContact, setShowAddContact] = useState(false);
@@ -751,6 +757,17 @@ export default function ProspectPage() {
                   placeholder="Where did the location data come from?"
                 />
               </Field>
+            </div>
+
+            {/* Signals */}
+            <div className="glass-card rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: "170ms" }}>
+              <SignalsSection
+                prospect={prospect}
+                signals={prospectSignals}
+                onAdd={addSignal}
+                onRemove={removeSignal}
+                territoryId={activeTerritory}
+              />
             </div>
 
             {/* AI Search Readiness */}

@@ -28,6 +28,8 @@ import { BulkEditDialog } from "@/components/BulkEditDialog";
 import { PasteImportDialog } from "@/components/PasteImportDialog";
 import { EnrichmentQueue } from "@/components/EnrichmentQueue";
 import { AIReadinessBadge } from "@/components/AIReadinessCard";
+import { SignalIndicator } from "@/components/SignalsSection";
+import { useSignals } from "@/hooks/useSignals";
 
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
@@ -369,6 +371,7 @@ export default function TerritoryPlanner() {
     switchTerritory, renameTerritory, inviteMember, removeMember, updateMemberRole, createTerritory,
   } = useTerritories();
   const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete, seedData, seeding } = useProspects(activeTerritory);
+  const { signals, addSignal, removeSignal, getProspectSignalRelevance } = useSignals(activeTerritory);
   const { signOut, user } = useAuth();
   const isOwner = user?.email && OWNER_EMAILS.includes(user.email);
   const activeTerrObj = territories.find((t) => t.id === activeTerritory) || null;
@@ -1004,6 +1007,12 @@ export default function TerritoryPlanner() {
                 <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <BarChart3 className="w-3.5 h-3.5" /> Insights
                 </Button>
+                <Button variant="outline" size="sm" onClick={() => navigate("/signals")} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
+                  <Zap className="w-3.5 h-3.5 text-[hsl(var(--warning))]" /> Signals
+                  {signals.filter(s => s.relevance === "Hot").length > 0 && (
+                    <span className="w-2 h-2 rounded-full bg-destructive" />
+                  )}
+                </Button>
                 <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <Download className="w-3.5 h-3.5" /> CSV
                 </Button>
@@ -1595,6 +1604,7 @@ export default function TerritoryPlanner() {
                             );
                           })()}
                           <AIReadinessBadge prospect={p as any} onClick={() => setSheetProspectId(p.id)} />
+                          <SignalIndicator relevance={getProspectSignalRelevance(p.id as string)} onClick={() => setSheetProspectId(p.id)} />
                           {p.nextStepDate && new Date(p.nextStepDate) < new Date() && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive overdue-flag" title={`Overdue: ${p.nextStep}`}>
                               ⚠ Overdue
@@ -1910,6 +1920,10 @@ export default function TerritoryPlanner() {
         data={data}
         update={update}
         remove={(id) => { remove(id); setSheetProspectId(null); toast("📦 Prospect archived"); }}
+        signals={signals}
+        addSignal={addSignal}
+        removeSignal={removeSignal}
+        territoryId={activeTerritory}
       />
 
       {/* CSV Upload Dialog */}

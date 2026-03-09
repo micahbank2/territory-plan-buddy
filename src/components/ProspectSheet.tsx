@@ -14,6 +14,8 @@ import {
 } from "@/data/prospects";
 import { RoleBadge, StrengthDot } from "@/components/ContactBadges";
 import { AIReadinessCard } from "@/components/AIReadinessCard";
+import { SignalsSection } from "@/components/SignalsSection";
+import { type Signal } from "@/hooks/useSignals";
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
   ExternalLink, Plus, X, Mail, Phone, Building2, MessageSquare, PhoneCall,
@@ -31,6 +33,10 @@ interface ProspectSheetProps {
   data: Prospect[];
   update: (id: any, u: Partial<Prospect>) => void;
   remove: (id: any) => void;
+  signals?: Signal[];
+  addSignal?: (signal: Omit<Signal, "id" | "created_at" | "user_id">) => Promise<Signal | null>;
+  removeSignal?: (id: string) => Promise<void>;
+  territoryId?: string | null;
 }
 
 const STAGE_EMOJI: Record<string, string> = {
@@ -65,10 +71,11 @@ function SheetLogoImg({ website, size = 32, customLogo }: { website?: string; si
   return <img src={url} alt="" className="rounded-lg bg-muted object-contain" style={{ width: size, height: size }} onError={() => setErr(true)} />;
 }
 
-export function ProspectSheet({ prospectId, onClose, data, update, remove }: ProspectSheetProps) {
+export function ProspectSheet({ prospectId, onClose, data, update, remove, signals = [], addSignal, removeSignal, territoryId }: ProspectSheetProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const prospect = useMemo(() => data.find(p => p.id === prospectId), [data, prospectId]);
+  const prospectSignals = useMemo(() => signals.filter(s => s.prospect_id === prospectId), [signals, prospectId]);
 
   const [newContact, setNewContact] = useState<Partial<Contact>>({});
   const [showAddContact, setShowAddContact] = useState(false);
@@ -515,6 +522,20 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove }: Pro
             ))}
             {(prospect.contacts || []).length === 0 && !showAddContact && <p className="text-xs text-muted-foreground">No contacts yet.</p>}
           </div>
+
+          {/* Signals */}
+          {addSignal && removeSignal && (
+            <div className="animate-fade-in-up" style={{ animationDelay: "170ms" }}>
+              <SignalsSection
+                prospect={prospect}
+                signals={prospectSignals}
+                onAdd={addSignal}
+                onRemove={removeSignal}
+                territoryId={territoryId}
+                compact
+              />
+            </div>
+          )}
 
           {/* AI Readiness */}
           <div className="animate-fade-in-up" style={{ animationDelay: "180ms" }}>
