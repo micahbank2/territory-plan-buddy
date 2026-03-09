@@ -107,6 +107,14 @@ export interface Task {
   dueDate: string;
 }
 
+export interface AIReadinessData {
+  summary: string;
+  strengths: string[];
+  risks: string[];
+  yext_opportunity: string;
+  talking_point: string;
+}
+
 export interface Prospect {
   id: any;
   name: string;
@@ -136,6 +144,10 @@ export interface Prospect {
   /** @deprecated use tasks[] instead */
   nextStepDate?: string;
   customLogo?: string;
+  aiReadinessScore?: number | null;
+  aiReadinessGrade?: string | null;
+  aiReadinessData?: AIReadinessData | null;
+  aiReadinessUpdatedAt?: string | null;
 }
 
 // --- Score helpers ---

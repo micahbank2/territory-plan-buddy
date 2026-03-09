@@ -11,7 +11,7 @@ export interface ArchivedProspect extends Prospect {
 // Convert DB row to Prospect
 function dbToProspect(row: any, contacts: any[], interactions: any[], notes: any[], tasks: any[]): Prospect {
   return {
-    id: row.id, // uuid string but we'll use it
+    id: row.id,
     name: row.name,
     website: row.website || "",
     lastModified: row.last_modified || "",
@@ -35,7 +35,11 @@ function dbToProspect(row: any, contacts: any[], interactions: any[], notes: any
     createdAt: row.created_at,
     tasks: tasks.map((t: any) => ({ id: t.id, text: t.text, dueDate: t.due_date })),
     customLogo: row.custom_logo,
-  } as any; // id is now uuid string
+    aiReadinessScore: row.ai_readiness_score ?? null,
+    aiReadinessGrade: row.ai_readiness_grade ?? null,
+    aiReadinessData: row.ai_readiness_data ?? null,
+    aiReadinessUpdatedAt: row.ai_readiness_updated_at ?? null,
+  } as any;
 }
 
 export function useProspects(territoryId?: string | null) {
@@ -133,6 +137,10 @@ export function useProspects(territoryId?: string | null) {
       if ("tier" in prospectFields) dbFields.tier = prospectFields.tier;
       if ("transitionOwner" in prospectFields) dbFields.transition_owner = prospectFields.transitionOwner;
       if ("customLogo" in prospectFields) dbFields.custom_logo = prospectFields.customLogo;
+      if ("aiReadinessScore" in prospectFields) dbFields.ai_readiness_score = prospectFields.aiReadinessScore;
+      if ("aiReadinessGrade" in prospectFields) dbFields.ai_readiness_grade = prospectFields.aiReadinessGrade;
+      if ("aiReadinessData" in prospectFields) dbFields.ai_readiness_data = prospectFields.aiReadinessData;
+      if ("aiReadinessUpdatedAt" in prospectFields) dbFields.ai_readiness_updated_at = prospectFields.aiReadinessUpdatedAt;
       dbFields.last_touched = new Date().toISOString().split("T")[0];
 
       if (Object.keys(dbFields).length > 0) {
@@ -477,6 +485,18 @@ export function useProspects(territoryId?: string | null) {
   const restore = useCallback((_id: any) => {}, []);
   const permanentDelete = useCallback((_id: any) => {}, []);
 
+  const deleteNote = useCallback(async (prospectId: any, noteId: string) => {
+    if (!user) return;
+    await supabase.from("prospect_notes").delete().eq("id", noteId);
+    setData((prev) =>
+      prev.map((p) =>
+        p.id === prospectId
+          ? { ...p, noteLog: (p.noteLog || []).filter((n) => n.id !== noteId) }
+          : p
+      )
+    );
+  }, [user]);
+
   return {
     data,
     ok,
@@ -493,5 +513,6 @@ export function useProspects(territoryId?: string | null) {
     permanentDelete,
     seedData,
     seeding,
+    deleteNote,
   };
 }

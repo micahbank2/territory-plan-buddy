@@ -304,7 +304,7 @@ export default function ProspectPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { activeTerritory } = useTerritories();
-  const { data, ok, update, remove } = useProspects(activeTerritory);
+  const { data, ok, update, remove, deleteNote } = useProspects(activeTerritory);
   const { signals, addSignal, removeSignal, getProspectSignals } = useSignals(activeTerritory);
 
   const prospect = useMemo(
@@ -727,12 +727,19 @@ export default function ProspectPage() {
               {(prospect.noteLog || []).length > 0 && (
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {[...(prospect.noteLog || [])].reverse().map((note) => (
-                    <div key={note.id} className="p-3 rounded-lg bg-muted/50 border border-border">
-                      <p className="text-xs text-foreground">{note.text}</p>
+                    <div key={note.id} className="group p-3 rounded-lg bg-muted/50 border border-border relative">
+                      <p className="text-xs text-foreground pr-6">{note.text}</p>
                       <div className="flex items-center gap-1 mt-1.5">
                         <Clock className="w-2.5 h-2.5 text-muted-foreground" />
                         <span className="text-[10px] text-muted-foreground">{relativeTime(note.timestamp)}</span>
                       </div>
+                      <button
+                        onClick={() => { deleteNote(prospect.id, note.id); toast.success("Note deleted"); }}
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                        title="Delete note"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
                     </div>
                   ))}
                 </div>

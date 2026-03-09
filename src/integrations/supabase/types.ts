@@ -219,6 +219,10 @@ export type Database = {
       }
       prospects: {
         Row: {
+          ai_readiness_data: Json | null
+          ai_readiness_grade: string | null
+          ai_readiness_score: number | null
+          ai_readiness_updated_at: string | null
           competitor: string
           contact_email: string
           contact_name: string
@@ -243,6 +247,10 @@ export type Database = {
           website: string
         }
         Insert: {
+          ai_readiness_data?: Json | null
+          ai_readiness_grade?: string | null
+          ai_readiness_score?: number | null
+          ai_readiness_updated_at?: string | null
           competitor?: string
           contact_email?: string
           contact_name?: string
@@ -267,6 +275,10 @@ export type Database = {
           website?: string
         }
         Update: {
+          ai_readiness_data?: Json | null
+          ai_readiness_grade?: string | null
+          ai_readiness_score?: number | null
+          ai_readiness_updated_at?: string | null
           competitor?: string
           contact_email?: string
           contact_name?: string

@@ -19,7 +19,7 @@ import { type Signal } from "@/hooks/useSignals";
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
   ExternalLink, Plus, X, Mail, Phone, Building2, MessageSquare, PhoneCall,
-  Linkedin, Clock, CalendarIcon, Target, ArrowRight, Check, CheckCircle,
+  Linkedin, Clock, CalendarIcon, Target, ArrowRight, Check, CheckCircle, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ interface ProspectSheetProps {
   data: Prospect[];
   update: (id: any, u: Partial<Prospect>) => void;
   remove: (id: any) => void;
+  deleteNote?: (prospectId: any, noteId: string) => void;
   signals?: Signal[];
   addSignal?: (signal: Omit<Signal, "id" | "created_at" | "user_id">) => Promise<Signal | null>;
   removeSignal?: (id: string) => Promise<void>;
@@ -71,7 +72,7 @@ function SheetLogoImg({ website, size = 32, customLogo }: { website?: string; si
   return <img src={url} alt="" className="rounded-lg bg-muted object-contain" style={{ width: size, height: size }} onError={() => setErr(true)} />;
 }
 
-export function ProspectSheet({ prospectId, onClose, data, update, remove, signals = [], addSignal, removeSignal, territoryId }: ProspectSheetProps) {
+export function ProspectSheet({ prospectId, onClose, data, update, remove, deleteNote, signals = [], addSignal, removeSignal, territoryId }: ProspectSheetProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const prospect = useMemo(() => data.find(p => p.id === prospectId), [data, prospectId]);
@@ -432,9 +433,18 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, signa
             {(prospect.noteLog || []).length > 0 && (
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {[...(prospect.noteLog || [])].reverse().map(note => (
-                  <div key={note.id} className="p-2.5 rounded-lg bg-muted/50 border border-border">
-                    <p className="text-xs text-foreground">{note.text}</p>
+                  <div key={note.id} className="group p-2.5 rounded-lg bg-muted/50 border border-border relative">
+                    <p className="text-xs text-foreground pr-6">{note.text}</p>
                     <span className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1"><Clock className="w-2.5 h-2.5" />{relativeTime(note.timestamp)}</span>
+                    {deleteNote && (
+                      <button
+                        onClick={() => { deleteNote(prospect.id, note.id); toast.success("Note deleted"); }}
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                        title="Delete note"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
