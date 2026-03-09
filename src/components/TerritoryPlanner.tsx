@@ -1003,31 +1003,35 @@ export default function TerritoryPlanner() {
             </div>
             <div className="flex items-center gap-2">
               {/* Desktop buttons */}
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-1.5">
                 <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <BarChart3 className="w-3.5 h-3.5" /> Insights
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate("/signals")} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
-                  <Zap className="w-3.5 h-3.5 text-[hsl(var(--warning))]" /> Signals
-                  {signals.filter(s => s.relevance === "Hot").length > 0 && (
-                    <span className="w-2 h-2 rounded-full bg-destructive" />
-                  )}
-                </Button>
-                <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
-                  <Download className="w-3.5 h-3.5" /> CSV
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setShowUpload(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
-                  <Upload className="w-3.5 h-3.5" /> Upload
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setShowPasteImport(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
-                  <ClipboardPaste className="w-3.5 h-3.5" /> Paste
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => setShowEnrich(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <Sparkles className="w-3.5 h-3.5" /> Enrich
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setShowShare(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
-                  <Share2 className="w-3.5 h-3.5" /> Share
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
+                      <SlidersHorizontal className="w-3.5 h-3.5" /> Actions <ChevronDown className="w-3 h-3 opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 bg-popover border-border z-50">
+                    <DropdownMenuItem onClick={exportCSV}>
+                      <Download className="w-4 h-4 mr-2" /> Export CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowUpload(true)}>
+                      <Upload className="w-4 h-4 mr-2" /> Upload CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowPasteImport(true)}>
+                      <ClipboardPaste className="w-4 h-4 mr-2" /> Paste Import
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setShowShare(true)}>
+                      <Share2 className="w-4 h-4 mr-2" /> Share Territory
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
               <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5 bg-primary hover:bg-primary/90 glow-blue font-semibold">
                 <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Add Prospect</span><span className="sm:hidden">Add</span>
