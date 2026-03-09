@@ -137,6 +137,10 @@ export function useProspects(territoryId?: string | null) {
       if ("tier" in prospectFields) dbFields.tier = prospectFields.tier;
       if ("transitionOwner" in prospectFields) dbFields.transition_owner = prospectFields.transitionOwner;
       if ("customLogo" in prospectFields) dbFields.custom_logo = prospectFields.customLogo;
+      if ("aiReadinessScore" in prospectFields) dbFields.ai_readiness_score = prospectFields.aiReadinessScore;
+      if ("aiReadinessGrade" in prospectFields) dbFields.ai_readiness_grade = prospectFields.aiReadinessGrade;
+      if ("aiReadinessData" in prospectFields) dbFields.ai_readiness_data = prospectFields.aiReadinessData;
+      if ("aiReadinessUpdatedAt" in prospectFields) dbFields.ai_readiness_updated_at = prospectFields.aiReadinessUpdatedAt;
       dbFields.last_touched = new Date().toISOString().split("T")[0];
 
       if (Object.keys(dbFields).length > 0) {
