@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { MultiSelect } from "@/components/MultiSelect";
 import yextLogoBlack from "@/assets/yext-logo-black.jpg";
 import yextLogoWhite from "@/assets/yext-logo-white.jpg";
+import { RetroGrid } from "@/components/ui/retro-grid";
 
 const STAGE_COLORS = [
   "hsl(225, 15%, 50%)",

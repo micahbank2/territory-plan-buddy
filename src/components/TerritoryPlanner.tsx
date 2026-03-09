@@ -30,6 +30,7 @@ import { EnrichmentQueue } from "@/components/EnrichmentQueue";
 import { AIReadinessBadge } from "@/components/AIReadinessCard";
 import { SignalIndicator } from "@/components/SignalsSection";
 import { AddProspectDialog } from "@/components/AddProspectDialog";
+import { RetroGrid } from "@/components/ui/retro-grid";
 import { useSignals } from "@/hooks/useSignals";
 
 import { cn, normalizeUrl } from "@/lib/utils";

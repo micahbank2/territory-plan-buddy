@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import yextLogoBlack from "@/assets/yext-logo-black.jpg";
+import { RetroGrid } from "@/components/ui/retro-grid";
 
 export default function AuthPage() {
   const { user, loading: authLoading } = useAuth();
