@@ -523,6 +523,20 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, signa
             {(prospect.contacts || []).length === 0 && !showAddContact && <p className="text-xs text-muted-foreground">No contacts yet.</p>}
           </div>
 
+          {/* Signals */}
+          {addSignal && removeSignal && (
+            <div className="animate-fade-in-up" style={{ animationDelay: "170ms" }}>
+              <SignalsSection
+                prospect={prospect}
+                signals={prospectSignals}
+                onAdd={addSignal}
+                onRemove={removeSignal}
+                territoryId={territoryId}
+                compact
+              />
+            </div>
+          )}
+
           {/* AI Readiness */}
           <div className="animate-fade-in-up" style={{ animationDelay: "180ms" }}>
             <AIReadinessCard prospect={prospect} onUpdate={update} compact />
