@@ -1007,6 +1007,12 @@ export default function TerritoryPlanner() {
                 <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <BarChart3 className="w-3.5 h-3.5" /> Insights
                 </Button>
+                <Button variant="outline" size="sm" onClick={() => navigate("/signals")} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
+                  <Zap className="w-3.5 h-3.5 text-[hsl(var(--warning))]" /> Signals
+                  {signals.filter(s => s.relevance === "Hot").length > 0 && (
+                    <span className="w-2 h-2 rounded-full bg-destructive" />
+                  )}
+                </Button>
                 <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <Download className="w-3.5 h-3.5" /> CSV
                 </Button>
