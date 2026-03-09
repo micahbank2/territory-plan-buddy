@@ -55,7 +55,7 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 relative overflow-hidden">
-      <RetroGrid className="opacity-30" />
+      <RetroGrid className="opacity-50" />
       <div className="w-full max-w-sm space-y-8 relative z-10">
         <div className="text-center space-y-3">
           <img src={yextLogoBlack} alt="Yext" className="h-10 mx-auto dark:hidden" />
