@@ -28,6 +28,8 @@ import { BulkEditDialog } from "@/components/BulkEditDialog";
 import { PasteImportDialog } from "@/components/PasteImportDialog";
 import { EnrichmentQueue } from "@/components/EnrichmentQueue";
 import { AIReadinessBadge } from "@/components/AIReadinessCard";
+import { SignalIndicator } from "@/components/SignalsSection";
+import { useSignals } from "@/hooks/useSignals";
 
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
@@ -369,6 +371,7 @@ export default function TerritoryPlanner() {
     switchTerritory, renameTerritory, inviteMember, removeMember, updateMemberRole, createTerritory,
   } = useTerritories();
   const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete, seedData, seeding } = useProspects(activeTerritory);
+  const { signals, addSignal, removeSignal, getProspectSignalRelevance } = useSignals(activeTerritory);
   const { signOut, user } = useAuth();
   const isOwner = user?.email && OWNER_EMAILS.includes(user.email);
   const activeTerrObj = territories.find((t) => t.id === activeTerritory) || null;
@@ -1595,6 +1598,7 @@ export default function TerritoryPlanner() {
                             );
                           })()}
                           <AIReadinessBadge prospect={p as any} onClick={() => setSheetProspectId(p.id)} />
+                          <SignalIndicator relevance={getProspectSignalRelevance(p.id as string)} onClick={() => setSheetProspectId(p.id)} />
                           {p.nextStepDate && new Date(p.nextStepDate) < new Date() && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive overdue-flag" title={`Overdue: ${p.nextStep}`}>
                               ⚠ Overdue
@@ -1910,6 +1914,10 @@ export default function TerritoryPlanner() {
         data={data}
         update={update}
         remove={(id) => { remove(id); setSheetProspectId(null); toast("📦 Prospect archived"); }}
+        signals={signals}
+        addSignal={addSignal}
+        removeSignal={removeSignal}
+        territoryId={activeTerritory}
       />
 
       {/* CSV Upload Dialog */}
