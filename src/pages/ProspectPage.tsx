@@ -759,6 +759,17 @@ export default function ProspectPage() {
               </Field>
             </div>
 
+            {/* Signals */}
+            <div className="glass-card rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: "170ms" }}>
+              <SignalsSection
+                prospect={prospect}
+                signals={prospectSignals}
+                onAdd={addSignal}
+                onRemove={removeSignal}
+                territoryId={activeTerritory}
+              />
+            </div>
+
             {/* AI Search Readiness */}
             <div className="glass-card rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: "180ms" }}>
               <AIReadinessCard prospect={prospect} onUpdate={(id, u) => update(id, u)} />
