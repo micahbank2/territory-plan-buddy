@@ -370,7 +370,7 @@ export default function TerritoryPlanner() {
     territories, activeTerritory, members, myRole, loading: terrLoading,
     switchTerritory, renameTerritory, inviteMember, removeMember, updateMemberRole, createTerritory,
   } = useTerritories();
-  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete, seedData, seeding } = useProspects(activeTerritory);
+  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete, seedData, seeding, deleteNote } = useProspects(activeTerritory);
   const { signals, addSignal, removeSignal, getProspectSignalRelevance } = useSignals(activeTerritory);
   const { signOut, user } = useAuth();
   const isOwner = user?.email && OWNER_EMAILS.includes(user.email);
@@ -1924,6 +1924,7 @@ export default function TerritoryPlanner() {
         data={data}
         update={update}
         remove={(id) => { remove(id); setSheetProspectId(null); toast("📦 Prospect archived"); }}
+        deleteNote={deleteNote}
         signals={signals}
         addSignal={addSignal}
         removeSignal={removeSignal}
