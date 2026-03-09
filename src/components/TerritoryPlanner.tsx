@@ -883,25 +883,16 @@ export default function TerritoryPlanner() {
               <LogOut className="w-4 h-4" /> Sign Out
             </Button>
           </div>
-          {/* Quick Add Dialog must render here too for empty state */}
-          <Dialog open={showAdd} onOpenChange={setShowAdd}>
-            <DialogContent>
-              <DialogHeader>
-              <DialogTitle>Add Your First Prospect</DialogTitle>
-              <DialogDescription>Add a new company to your territory.</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-3">
-              <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Company Name *" className={inputClass} />
-              <input value={newWebsite} onChange={(e) => setNewWebsite(e.target.value)} placeholder="Website (e.g. example.com)" className={inputClass} />
-              <input value={newIndustry} onChange={(e) => setNewIndustry(e.target.value)} placeholder="Industry" className={inputClass} />
-              <input type="number" value={newLocs} onChange={(e) => setNewLocs(e.target.value)} placeholder="Locations" className={inputClass} />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
-                <Button onClick={handleAdd} disabled={!newName.trim()} className="glow-blue">Add Prospect</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          {/* Quick Add Dialog for empty state */}
+          <AddProspectDialog
+            open={showAdd}
+            onOpenChange={setShowAdd}
+            onAdd={add}
+            onAddNote={addNote}
+            existingNames={data.map((p) => p.name)}
+            inputClass={inputClass}
+            selectClass={selectClass}
+          />
         </div>
       </div>
     );
@@ -1776,47 +1767,16 @@ export default function TerritoryPlanner() {
           </div>
         </div>
       )}
-
       {/* --- Quick Add Dialog --- */}
-      <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Prospect</DialogTitle>
-            <DialogDescription>Add a new company to your territory.</DialogDescription>
-          </DialogHeader>
-          {duplicateWarning && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-[hsl(var(--warning))]/10 border border-[hsl(var(--warning))]/30 text-sm">
-              <AlertTriangle className="w-4 h-4 text-[hsl(var(--warning))] shrink-0" />
-              <span className="text-[hsl(var(--warning))]">{duplicateWarning}</span>
-            </div>
-          )}
-          <div className="grid gap-3">
-            <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Company Name *" className={inputClass} />
-            <input value={newWebsite} onChange={(e) => setNewWebsite(e.target.value)} placeholder="Website (e.g. example.com)" className={inputClass} />
-            <div className="grid grid-cols-2 gap-3">
-              <select value={newIndustry} onChange={(e) => setNewIndustry(e.target.value)} className={selectClass}>
-                <option value="">Industry</option>
-                {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
-              </select>
-              <input type="number" value={newLocs} onChange={(e) => setNewLocs(e.target.value)} placeholder="Locations" className={inputClass} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <select value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className={selectClass}>
-                <option value="Prospect">Prospect</option>
-                <option value="Churned">Churned</option>
-              </select>
-              <select value={newTier} onChange={(e) => setNewTier(e.target.value)} className={selectClass}>
-                <option value="">Tier</option>
-                {TIERS.filter(Boolean).map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={!newName.trim()} className="glow-blue">Add Prospect</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AddProspectDialog
+        open={showAdd}
+        onOpenChange={setShowAdd}
+        onAdd={add}
+        onAddNote={addNote}
+        existingNames={data.map((p) => p.name)}
+        inputClass={inputClass}
+        selectClass={selectClass}
+      />
 
       {/* --- Save View Dialog --- */}
       <Dialog open={showSaveView} onOpenChange={setShowSaveView}>
