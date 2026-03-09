@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.ai-readiness]
 verify_jwt = false
+
+[functions.categorize-signal]
+verify_jwt = false

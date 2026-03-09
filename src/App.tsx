@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import ProspectPage from "./pages/ProspectPage";
 import InsightsPage from "./pages/InsightsPage";
+import SignalsPage from "./pages/SignalsPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -28,6 +29,7 @@ const AppRoutes = () => (
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/prospect/:id" element={<ProtectedRoute><ProspectPage /></ProtectedRoute>} />
     <Route path="/insights" element={<ProtectedRoute><InsightsPage /></ProtectedRoute>} />
+    <Route path="/signals" element={<ProtectedRoute><SignalsPage /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

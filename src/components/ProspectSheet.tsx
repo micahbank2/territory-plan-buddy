@@ -14,6 +14,8 @@ import {
 } from "@/data/prospects";
 import { RoleBadge, StrengthDot } from "@/components/ContactBadges";
 import { AIReadinessCard } from "@/components/AIReadinessCard";
+import { SignalsSection } from "@/components/SignalsSection";
+import { type Signal } from "@/hooks/useSignals";
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
   ExternalLink, Plus, X, Mail, Phone, Building2, MessageSquare, PhoneCall,
