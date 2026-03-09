@@ -33,6 +33,10 @@ interface ProspectSheetProps {
   data: Prospect[];
   update: (id: any, u: Partial<Prospect>) => void;
   remove: (id: any) => void;
+  signals?: Signal[];
+  addSignal?: (signal: Omit<Signal, "id" | "created_at" | "user_id">) => Promise<Signal | null>;
+  removeSignal?: (id: string) => Promise<void>;
+  territoryId?: string | null;
 }
 
 const STAGE_EMOJI: Record<string, string> = {
