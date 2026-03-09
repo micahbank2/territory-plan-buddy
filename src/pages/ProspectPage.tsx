@@ -303,12 +303,15 @@ function InteractionIcon({ type }: { type: string }) {
 export default function ProspectPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data, ok, update, remove } = useProspects();
+  const { activeTerritory } = useTerritories();
+  const { data, ok, update, remove } = useProspects(activeTerritory);
+  const { signals, addSignal, removeSignal, getProspectSignals } = useSignals(activeTerritory);
 
   const prospect = useMemo(
     () => data.find((p) => String(p.id) === id),
     [data, id]
   );
+  const prospectSignals = useMemo(() => id ? getProspectSignals(id) : [], [id, getProspectSignals]);
 
   const [newContact, setNewContact] = useState<Partial<Contact>>({});
   const [showAddContact, setShowAddContact] = useState(false);
