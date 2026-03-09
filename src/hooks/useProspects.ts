@@ -11,7 +11,7 @@ export interface ArchivedProspect extends Prospect {
 // Convert DB row to Prospect
 function dbToProspect(row: any, contacts: any[], interactions: any[], notes: any[], tasks: any[]): Prospect {
   return {
-    id: row.id, // uuid string but we'll use it
+    id: row.id,
     name: row.name,
     website: row.website || "",
     lastModified: row.last_modified || "",
@@ -35,7 +35,11 @@ function dbToProspect(row: any, contacts: any[], interactions: any[], notes: any
     createdAt: row.created_at,
     tasks: tasks.map((t: any) => ({ id: t.id, text: t.text, dueDate: t.due_date })),
     customLogo: row.custom_logo,
-  } as any; // id is now uuid string
+    aiReadinessScore: row.ai_readiness_score ?? null,
+    aiReadinessGrade: row.ai_readiness_grade ?? null,
+    aiReadinessData: row.ai_readiness_data ?? null,
+    aiReadinessUpdatedAt: row.ai_readiness_updated_at ?? null,
+  } as any;
 }
 
 export function useProspects(territoryId?: string | null) {
