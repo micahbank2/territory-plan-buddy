@@ -59,6 +59,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { RoleBadge, StrengthDot } from "@/components/ContactBadges";
 import { StakeholderMap } from "@/components/StakeholderMap";
 import { AIReadinessCard } from "@/components/AIReadinessCard";
+import { SignalsSection } from "@/components/SignalsSection";
+import { useSignals } from "@/hooks/useSignals";
+import { useTerritories } from "@/hooks/useTerritories";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // --- Logo with upload ---
