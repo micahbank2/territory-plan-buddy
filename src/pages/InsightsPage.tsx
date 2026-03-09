@@ -228,8 +228,9 @@ export default function InsightsPage() {
   return (
     <div className="bg-background min-h-screen text-foreground yext-grid-bg">
       {/* Yext Header */}
-      <header className="yext-gradient border-b border-primary/10 px-4 sm:px-8 py-5">
-        <div className="flex items-center justify-between">
+      <header className="yext-gradient border-b border-primary/10 px-4 sm:px-8 py-5 relative overflow-hidden">
+        <RetroGrid className="opacity-40" />
+        <div className="flex items-center justify-between relative z-10">
           <div className="flex items-center gap-4">
             <button onClick={() => navigate("/")} className="p-1.5 rounded-md hover:bg-primary/10 transition-colors">
               <ArrowLeft className="w-4 h-4 text-foreground/60" />
@@ -237,7 +238,7 @@ export default function InsightsPage() {
             <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-8 w-auto object-contain" />
             <div className="flex items-center gap-3">
               <BarChart3 className="w-5 h-5 text-primary" />
-              <h1 className="text-2xl font-black text-foreground">Insights</h1>
+              <h1 className="text-2xl font-black gradient-text">Insights</h1>
             </div>
           </div>
         </div>

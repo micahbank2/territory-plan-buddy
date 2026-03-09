@@ -948,14 +948,15 @@ export default function TerritoryPlanner() {
       )}
 
       {/* ===== YEXT HEADER ===== */}
-      <div className="yext-gradient border-b border-primary/10">
-        <div className="px-4 sm:px-8 py-4 sm:py-6">
+      <div className="yext-gradient border-b border-primary/10 relative overflow-hidden">
+        <RetroGrid className="opacity-40" />
+        <div className="px-4 sm:px-8 py-4 sm:py-6 relative z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 sm:gap-4 min-w-0">
               <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-8 sm:h-10 w-auto object-contain shrink-0" />
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-foreground truncate">Territory Planner</h1>
+                  <h1 className="text-2xl sm:text-4xl font-black tracking-tight truncate gradient-text">Territory Planner</h1>
                   <span className="hidden sm:inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">{data.length}</span>
                 </div>
                 <p className="text-sm text-muted-foreground mt-0.5 hidden sm:block flex items-center gap-2">
