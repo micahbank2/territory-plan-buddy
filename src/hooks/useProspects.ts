@@ -220,8 +220,8 @@ export function useProspects(territoryId?: string | null) {
     );
   }, [user]);
 
-  const add = useCallback(async (partial: Partial<Prospect> & { name: string }) => {
-    if (!user) return;
+  const add = useCallback(async (partial: Partial<Prospect> & { name: string }): Promise<string | undefined> => {
+    if (!user) return undefined;
 
     const p = initProspect({ ...partial, id: 0 }); // id will be uuid
 
@@ -249,11 +249,30 @@ export function useProspects(territoryId?: string | null) {
 
     if (error || !inserted) {
       console.error("Error adding prospect:", error);
-      return;
+      return undefined;
     }
 
     const newProspect = { ...p, id: inserted.id, createdAt: inserted.created_at } as any;
     setData((prev) => [newProspect, ...prev]);
+    return inserted.id;
+  }, [user]);
+
+  const addNote = useCallback(async (prospectId: string, text: string) => {
+    if (!user) return;
+    const { data: note } = await supabase.from("prospect_notes").insert({
+      prospect_id: prospectId,
+      user_id: user.id,
+      text,
+    }).select().single();
+    if (note) {
+      setData((prev) =>
+        prev.map((p) =>
+          p.id === prospectId
+            ? { ...p, noteLog: [{ id: note.id, text: note.text, timestamp: note.timestamp }, ...(p.noteLog || [])] }
+            : p
+        )
+      );
+    }
   }, [user]);
 
   const remove = useCallback(async (id: any) => {
@@ -514,5 +533,6 @@ export function useProspects(territoryId?: string | null) {
     seedData,
     seeding,
     deleteNote,
+    addNote,
   };
 }
