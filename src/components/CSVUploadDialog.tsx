@@ -65,7 +65,11 @@ function detectContactMode(headers: string[]): boolean {
   const normalized = headers.map(normalizeHeader);
   const hasFirstName = normalized.some((h) => CONTACT_COLUMNS[h] === "firstName" || h.includes("first name"));
   const hasLastName = normalized.some((h) => CONTACT_COLUMNS[h] === "lastName" || h.includes("last name"));
-  return hasFirstName || hasLastName;
+  const hasFullName = normalized.some((h) => CONTACT_COLUMNS[h] === "fullName" || h.includes("contact name") || h.includes("full name"));
+  const hasTitle = normalized.some((h) => CONTACT_COLUMNS[h] === "title" || h.includes("job title"));
+  const hasCompany = normalized.some((h) => CONTACT_COLUMNS[h] === "company");
+  // Trigger contact mode if: first/last name columns exist, OR full name column exists, OR job title + company combo
+  return hasFirstName || hasLastName || hasFullName || (hasTitle && hasCompany);
 }
 
 // Match a contact column header
