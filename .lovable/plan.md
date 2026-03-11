@@ -1,41 +1,56 @@
 
+## Add Contact Import Support to CSV Upload
 
-## Plan: Fix CSV Contact Import Detection and Mapping
+### Problem
+The CSV upload system only understands prospect/account-level fields. When you upload a contacts CSV (with First Name, Last Name, Title, Email, Company), the system:
+- Can't map "First Name", "Last Name", or "Title" columns -- warns they'll be omitted
+- Maps "Email" to the account-level contactEmail field instead of a contact record
+- Maps "Company" as a prospect name, potentially creating duplicates or overwriting data
+- Has no way to add contacts to existing prospects
 
-### Root Cause
+### Solution
+Detect when a CSV contains contact-specific columns, switch to a "contact import" mode, and merge contacts into matching existing prospects without touching any other account data.
 
-The uploaded CSV has columns: `Company, Contact Name, Job Title, ...`
+### How It Will Work
+1. **Auto-detect contact CSVs** -- If the file has columns like "First Name" or "Last Name", treat it as a contact import
+2. **Match by Company name** -- Use the Company column to find the existing prospect (using the same fuzzy matching already in place)
+3. **Add contacts, don't overwrite** -- Append new contacts to the prospect's contacts list; skip duplicates (matched by email)
+4. **Never create new prospects** -- Contact-only rows that don't match an existing company are flagged for review, not auto-created
+5. **Never touch account fields** -- No prospect fields (industry, tier, outreach, etc.) are modified during a contact import
 
-The current `detectContactMode()` function **only** triggers contact import mode when it finds "First Name" or "Last Name" columns. Your CSV uses "Contact Name" (a single full-name field), so it falls through to **prospect mode** instead. In prospect mode, "Company" maps to prospect `name` and each row tries to create a separate prospect — contacts are never created.
+### Technical Details
 
-Even if contact mode were forced, `mapContactRow` has no alias for "Contact Name", so the name would be blank and the row would be skipped.
+**File: `src/components/CSVUploadDialog.tsx`**
 
-### Changes to `src/components/CSVUploadDialog.tsx`
+1. Add contact-specific column aliases to detect contact CSVs:
+   - "first name", "fname", "given name" -> contactFirstName
+   - "last name", "lname", "surname", "family name" -> contactLastName  
+   - "title", "job title", "position", "role" -> contactTitle
+   - "email", "email address", "e-mail" -> contactEmail (already partially exists)
+   - "phone", "phone number", "mobile" -> contactPhone
 
-**1. Expand `detectContactMode` to recognize more contact CSV patterns:**
-- Add detection for "Contact Name" column (full name, not split first/last)
-- Add detection for "Job Title" + "Company" column combo (strong signal of contact data)
-- Keep existing first/last name detection
+2. Add a detection step after parsing headers: if contact-specific columns (first name, last name) are present, flag the import as `mode: "contacts"` instead of `mode: "prospects"`
 
-**2. Add contact column aliases for common ZoomInfo/Sales Nav formats:**
-- `"contact name"`, `"full name"`, `"name"` → `"fullName"` (new field)
-- `"job title"`, `"position"` → `"title"` (already exists but not triggering detection)
+3. In contact mode, change `mapRow` behavior:
+   - Map "Company" to a lookup key (not to `name` for creating prospects)
+   - Combine First Name + Last Name into a contact name
+   - Map Title, Email, Phone to contact fields
+   - Return a structured contact object instead of a flat prospect partial
 
-**3. Update `mapContactRow` to handle full name field:**
-- If `fullName` is populated (from "Contact Name"), use it directly as `contact.name`
-- Still fall back to `firstName + lastName` combination when those columns exist
-- This makes both ZoomInfo format (`Contact Name`) and split-name format (`First Name, Last Name`) work
+4. In contact mode, change the matching/preview logic:
+   - Match each row's Company value against existing prospects (exact, then fuzzy)
+   - If matched: action = "update" (will add contact to that prospect)
+   - If no match: action = "review" (user decides; cannot auto-create)
+   - If contact email already exists on that prospect: action = "skip" (duplicate)
 
-**4. Relax the company-matching threshold slightly:**
-- Currently uses exact match then fuzzy > 0.7 for auto-include. The company names from ZoomInfo should match well since they're official names.
+5. In contact mode, change `handleConfirm`:
+   - For each "update" row, append the new contact to the matched prospect's existing contacts array
+   - Call `onImport` with updates that only modify the `contacts` field
+   - Never pass new prospect rows
 
-### What This Fixes
-- "The Learning Experience" contacts (Christian Manzano, Stella Carter, Kenneth Deon) will be detected as contacts, matched to the existing prospect, and imported
-- All 61 rows in the CSV will be processed as contact imports instead of prospect imports
-- The preview will show contact names, titles, and matched companies correctly
+6. Update the preview table columns to show contact-relevant info (Name, Title, Email, Company) instead of prospect fields when in contact mode
 
-### Files Modified
-| File | Change |
-|------|--------|
-| `src/components/CSVUploadDialog.tsx` | Fix `detectContactMode`, add "contact name"/"full name" aliases, update `mapContactRow` to handle full name field |
+7. Update the dialog description to indicate "Contact Import" when in contact mode
 
+**File: `src/hooks/useProspects.ts`**
+- No changes needed -- the existing `update` function already handles syncing contacts when `contacts` is included in the update payload
