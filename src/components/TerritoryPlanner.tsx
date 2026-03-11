@@ -1331,8 +1331,10 @@ export default function TerritoryPlanner() {
           </div>
         )}
 
-        {/* Search + Filters - Sticky */}
-        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pb-3 space-y-3 -mx-4 sm:-mx-8 px-4 sm:px-8 pt-3 border-b border-transparent [&.is-stuck]:border-border/50 [&.is-stuck]:shadow-sm">
+      </div>
+
+      {/* Search + Filters - Sticky */}
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pb-3 space-y-3 px-4 sm:px-8 pt-3 border-b border-border/30 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -1447,7 +1449,7 @@ export default function TerritoryPlanner() {
 
         {/* Bulk action bar */}
         {selected.size > 0 && (
-          <div className="mt-4 p-3 rounded-xl border border-primary/20 bg-primary/5 flex items-center gap-3 flex-wrap animate-fade-in-up backdrop-blur-sm">
+          <div className="mx-4 sm:mx-8 mt-4 p-3 rounded-xl border border-primary/20 bg-primary/5 flex items-center gap-3 flex-wrap animate-fade-in-up backdrop-blur-sm">
             <span className="text-sm font-semibold text-primary">{selected.size} selected</span>
             {hasFilters && selected.size < filtered.length && (
               <button onClick={selectAllFiltered} className="text-xs text-primary hover:underline font-medium">
@@ -1495,7 +1497,6 @@ export default function TerritoryPlanner() {
             <button onClick={() => setSelected(new Set())} className="text-xs text-muted-foreground hover:text-foreground transition-colors">Deselect</button>
           </div>
         )}
-      </div>
 
       {/* TABLE VIEW */}
       {viewMode === "table" && (
