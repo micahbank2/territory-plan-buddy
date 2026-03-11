@@ -197,16 +197,20 @@ export function mapRow(raw: Record<string, string>, unmappedCols: Set<string>): 
 }
 
 function mapContactRow(raw: Record<string, string>, unmappedCols: Set<string>): ContactData {
-  const contact: any = { firstName: "", lastName: "", name: "", title: "", email: "", phone: "", notes: "", company: "" };
+  const contact: any = { firstName: "", lastName: "", fullName: "", name: "", title: "", email: "", phone: "", notes: "", company: "" };
   for (const [header, value] of Object.entries(raw)) {
     const field = matchContactColumn(header);
     if (!field) { unmappedCols.add(header); continue; }
     if (!value.trim()) continue;
     contact[field] = value.trim();
   }
-  // Combine first + last name
-  const parts = [contact.firstName, contact.lastName].filter(Boolean);
-  contact.name = parts.join(" ");
+  // Use fullName if available (e.g. "Contact Name"), otherwise combine first + last
+  if (contact.fullName) {
+    contact.name = contact.fullName;
+  } else {
+    const parts = [contact.firstName, contact.lastName].filter(Boolean);
+    contact.name = parts.join(" ");
+  }
   return contact;
 }
 
