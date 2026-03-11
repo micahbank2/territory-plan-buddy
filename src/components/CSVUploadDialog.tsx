@@ -199,6 +199,9 @@ export function mapRow(raw: Record<string, string>, unmappedCols: Set<string>): 
 function mapContactRow(raw: Record<string, string>, unmappedCols: Set<string>): ContactData {
   const contact: any = { firstName: "", lastName: "", fullName: "", name: "", title: "", email: "", phone: "", notes: "", company: "" };
   for (const [header, value] of Object.entries(raw)) {
+    const norm = normalizeHeader(header);
+    // Skip boolean indicator columns like "Has Email", "Has Mobile", "Has Phone"
+    if (norm.startsWith("has ") || norm.startsWith("has_")) { unmappedCols.add(header); continue; }
     const field = matchContactColumn(header);
     if (!field) { unmappedCols.add(header); continue; }
     if (!value.trim()) continue;
