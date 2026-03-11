@@ -1420,7 +1420,7 @@ export default function TerritoryPlanner() {
                     onValueChange={(val) => setFLocRange(val as [number, number])}
                     min={0}
                     max={maxLocs}
-                    step={locStep}
+                    step={maxLocs > 500 ? 10 : maxLocs > 100 ? 5 : 1}
                     minStepsBetweenThumbs={1}
                     className="w-full"
                   />
