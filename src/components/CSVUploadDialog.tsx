@@ -53,6 +53,7 @@ const addContactAliases = (aliases: string[], field: string) =>
 
 addContactAliases(["first name", "fname", "given name", "first"], "firstName");
 addContactAliases(["last name", "lname", "surname", "family name", "last"], "lastName");
+addContactAliases(["contact name", "full name", "name"], "fullName");
 addContactAliases(["title", "job title", "position", "role"], "title");
 addContactAliases(["email", "email address", "e mail", "e-mail"], "email");
 addContactAliases(["phone", "phone number", "mobile", "cell"], "phone");
