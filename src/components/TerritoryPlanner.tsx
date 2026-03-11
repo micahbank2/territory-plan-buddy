@@ -1331,8 +1331,8 @@ export default function TerritoryPlanner() {
           </div>
         )}
 
-        {/* Search + Filters */}
-        <div className="space-y-3">
+        {/* Search + Filters - Sticky */}
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pb-3 space-y-3 -mx-4 sm:-mx-8 px-4 sm:px-8 pt-3 border-b border-transparent [&.is-stuck]:border-border/50 [&.is-stuck]:shadow-sm">
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -1420,7 +1420,7 @@ export default function TerritoryPlanner() {
                     onValueChange={(val) => setFLocRange(val as [number, number])}
                     min={0}
                     max={maxLocs}
-                    step={10}
+                    step={maxLocs > 500 ? 10 : maxLocs > 100 ? 5 : 1}
                     minStepsBetweenThumbs={1}
                     className="w-full"
                   />
