@@ -530,7 +530,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 )}
               </div>
             ))}
-            {(prospect.contacts || []).length === 0 && !showAddContact && <p className="text-xs text-muted-foreground">No contacts yet.</p>}
+            {(prospect.contacts || []).length === 0 && !showAddContact && <p className="text-sm text-muted-foreground">No contacts yet.</p>}
           </div>
 
           {/* Signals */}
