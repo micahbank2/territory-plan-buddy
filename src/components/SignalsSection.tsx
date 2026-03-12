@@ -161,8 +161,8 @@ export function SignalsSection({ prospect, signals, onAdd, onRemove, territoryId
     <div className={cn("space-y-3", compact ? "" : "")}>
       <div className="flex items-center justify-between">
         <h3 className={cn(
-          "font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5",
-          compact ? "text-xs" : "text-sm text-foreground"
+          "font-bold uppercase tracking-wider flex items-center gap-1.5",
+          compact ? "text-sm text-foreground" : "text-sm text-foreground"
         )}>
           <Zap className={cn("text-[hsl(var(--warning))]", compact ? "w-3.5 h-3.5" : "w-4 h-4")} />
           Signals {signals.length > 0 && <span className="text-muted-foreground">({signals.length})</span>}
