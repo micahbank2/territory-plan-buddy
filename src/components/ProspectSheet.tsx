@@ -331,7 +331,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Competitor</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Competitor</label>
                 <select value={competitorSelectValue} onChange={e => {
                   const val = e.target.value;
                   if (val === "Other") {
