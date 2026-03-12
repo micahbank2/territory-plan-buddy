@@ -179,20 +179,16 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
                 <span className="text-[10px] text-muted-foreground">{relativeTime(prospect.aiReadinessUpdatedAt)}</span>
               )}
             </div>
-            <div className="flex items-center justify-between pt-1 border-t border-border">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="text-[10px] text-primary cursor-help flex items-center gap-1">
-                      <Lightbulb className="w-3 h-3" /> Talking point
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs text-xs">{data.talking_point}</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <Button onClick={copyTalkingPoint} size="sm" variant="ghost" className="h-6 text-[10px] gap-1">
-                <Copy className="w-3 h-3" /> Copy
-              </Button>
+            <div className="pt-2 border-t border-border space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-semibold text-primary uppercase flex items-center gap-1">
+                  <Lightbulb className="w-3 h-3" /> Talking Point
+                </span>
+                <Button onClick={copyTalkingPoint} size="sm" variant="ghost" className="h-6 text-[10px] gap-1">
+                  <Copy className="w-3 h-3" /> Copy
+                </Button>
+              </div>
+              <p className="text-xs text-foreground/80 leading-relaxed italic">"{data.talking_point}"</p>
             </div>
           </div>
         )}
