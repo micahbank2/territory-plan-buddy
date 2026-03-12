@@ -349,7 +349,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 )}
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Status</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Status</label>
                 <select value={prospect.status} onChange={e => handleUpdate("status", e.target.value)} className={selectClass}>
                   <option value="Prospect">🎯 Prospect</option>
                   <option value="Churned">💀 Churned</option>
