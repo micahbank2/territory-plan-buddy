@@ -155,7 +155,7 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
         >
           <div className="flex items-center gap-2">
             <Brain className="w-4 h-4 text-primary" />
-            <span className="text-xs font-semibold text-muted-foreground uppercase">AI Readiness</span>
+            <span className="text-sm font-bold text-foreground uppercase">AI Readiness</span>
           </div>
           <div className="flex items-center gap-2">
             <span className={cn("text-2xl font-black", GRADE_COLORS[grade])}>{score}</span>
