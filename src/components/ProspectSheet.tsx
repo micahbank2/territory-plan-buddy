@@ -362,7 +362,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "50ms" }}>
             <div className="flex items-center gap-2">
               <Target className="w-4 h-4 text-primary" />
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tasks</h3>
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Tasks</h3>
             </div>
             {/* Add task form */}
             <div className="grid grid-cols-2 gap-3">
