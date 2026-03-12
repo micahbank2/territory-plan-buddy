@@ -218,7 +218,7 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
 
       {expanded && (
         <div className="p-5 space-y-4 border-t border-border">
-          <p className="text-sm text-muted-foreground">{data.summary}</p>
+          <p className="text-sm text-foreground/80 leading-relaxed">{data.summary}</p>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
