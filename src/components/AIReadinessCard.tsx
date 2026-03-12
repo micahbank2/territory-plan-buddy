@@ -165,7 +165,7 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
         </button>
         {expanded && (
           <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
-            <p className="text-xs text-muted-foreground">{data.summary}</p>
+            <p className="text-sm text-foreground/80 leading-relaxed">{data.summary}</p>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Button onClick={analyze} size="sm" variant="ghost" className="h-6 text-[10px] gap-1" disabled={loading}>
@@ -179,20 +179,16 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
                 <span className="text-[10px] text-muted-foreground">{relativeTime(prospect.aiReadinessUpdatedAt)}</span>
               )}
             </div>
-            <div className="flex items-center justify-between pt-1 border-t border-border">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="text-[10px] text-primary cursor-help flex items-center gap-1">
-                      <Lightbulb className="w-3 h-3" /> Talking point
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs text-xs">{data.talking_point}</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <Button onClick={copyTalkingPoint} size="sm" variant="ghost" className="h-6 text-[10px] gap-1">
-                <Copy className="w-3 h-3" /> Copy
-              </Button>
+            <div className="pt-2 border-t border-border space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-semibold text-primary uppercase flex items-center gap-1">
+                  <Lightbulb className="w-3 h-3" /> Talking Point
+                </span>
+                <Button onClick={copyTalkingPoint} size="sm" variant="ghost" className="h-6 text-[10px] gap-1">
+                  <Copy className="w-3 h-3" /> Copy
+                </Button>
+              </div>
+              <p className="text-xs text-foreground/80 leading-relaxed italic">"{data.talking_point}"</p>
             </div>
           </div>
         )}
@@ -222,7 +218,7 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
 
       {expanded && (
         <div className="p-5 space-y-4 border-t border-border">
-          <p className="text-sm text-muted-foreground">{data.summary}</p>
+          <p className="text-sm text-foreground/80 leading-relaxed">{data.summary}</p>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -231,8 +227,8 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
               </h4>
               <ul className="space-y-1.5">
                 {data.strengths.map((s, i) => (
-                  <li key={i} className="text-xs text-foreground flex items-start gap-2">
-                    <CheckCircle className="w-3 h-3 text-[hsl(var(--success))] shrink-0 mt-0.5" />
+                  <li key={i} className="text-sm text-foreground/80 flex items-start gap-2 leading-relaxed">
+                    <CheckCircle className="w-3.5 h-3.5 text-[hsl(var(--success))] shrink-0 mt-0.5" />
                     <span>{s}</span>
                   </li>
                 ))}
@@ -245,8 +241,8 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
               </h4>
               <ul className="space-y-1.5">
                 {data.risks.map((r, i) => (
-                  <li key={i} className="text-xs text-foreground flex items-start gap-2">
-                    <AlertTriangle className="w-3 h-3 text-[hsl(var(--warning))] shrink-0 mt-0.5" />
+                  <li key={i} className="text-sm text-foreground/80 flex items-start gap-2 leading-relaxed">
+                    <AlertTriangle className="w-3.5 h-3.5 text-[hsl(var(--warning))] shrink-0 mt-0.5" />
                     <span>{r}</span>
                   </li>
                 ))}
@@ -259,7 +255,7 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
               <Lightbulb className="w-4 h-4 text-primary" />
               <h4 className="text-xs font-semibold text-primary uppercase">Yext Opportunity</h4>
             </div>
-            <p className="text-sm text-foreground">{data.yext_opportunity}</p>
+            <p className="text-sm text-foreground/80 leading-relaxed">{data.yext_opportunity}</p>
           </div>
 
           <div className="flex items-center justify-between pt-3 border-t border-border">
