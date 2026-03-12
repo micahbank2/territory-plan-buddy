@@ -425,7 +425,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
             )}
           </div>
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Notes</h3>
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Notes</h3>
             <div className="flex gap-2">
               <input value={newNote} onChange={e => setNewNote(e.target.value)} placeholder="Add a note..." className={cn(inputClass, "flex-1")} onKeyDown={e => e.key === "Enter" && addNote()} />
               <Button size="sm" onClick={addNote} disabled={!newNote.trim()}>Add</Button>
