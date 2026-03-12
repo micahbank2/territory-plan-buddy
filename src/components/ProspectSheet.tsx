@@ -321,7 +321,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Tier</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Tier</label>
                 <select value={prospect.tier} onChange={e => handleUpdate("tier", e.target.value)} className={selectClass}>
                   <option value="">None</option>
                   <option value="Tier 1">⭐ Tier 1</option>
