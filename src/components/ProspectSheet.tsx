@@ -518,14 +518,14 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 ) : (
                   <div onClick={() => startEditContact(c)} className="cursor-pointer">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-medium text-xs text-foreground">{c.name}</span>
+                     <span className="font-semibold text-sm text-foreground">{c.name}</span>
                       <RoleBadge role={c.role} />
                     </div>
-                    {c.title && <div className="text-[10px] text-muted-foreground">{c.title}</div>}
-                    <div className="mt-1"><StrengthDot strength={c.relationshipStrength} /></div>
-                    {c.email && <a href={`mailto:${c.email}`} onClick={e => e.stopPropagation()} className="text-[10px] text-primary hover:underline flex items-center gap-1 mt-1"><Mail className="w-2.5 h-2.5" /> {c.email}</a>}
-                    {c.phone && <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5"><Phone className="w-2.5 h-2.5" /> {c.phone}</div>}
-                    {c.notes && <div className="text-[10px] text-muted-foreground mt-1.5 pt-1.5 border-t border-border italic">📝 {c.notes}</div>}
+                    {c.title && <div className="text-xs text-muted-foreground mt-0.5">{c.title}</div>}
+                     <div className="mt-1"><StrengthDot strength={c.relationshipStrength} /></div>
+                    {c.email && <a href={`mailto:${c.email}`} onClick={e => e.stopPropagation()} className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"><Mail className="w-3 h-3" /> {c.email}</a>}
+                    {c.phone && <div className="text-xs text-foreground/70 flex items-center gap-1 mt-0.5"><Phone className="w-3 h-3" /> {c.phone}</div>}
+                    {c.notes && <div className="text-xs text-foreground/70 mt-1.5 pt-1.5 border-t border-border italic">📝 {c.notes}</div>}
                   </div>
                 )}
               </div>
