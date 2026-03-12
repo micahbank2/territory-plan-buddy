@@ -434,8 +434,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {[...(prospect.noteLog || [])].reverse().map(note => (
                   <div key={note.id} className="group p-2.5 rounded-lg bg-muted/50 border border-border relative">
-                    <p className="text-xs text-foreground pr-6">{note.text}</p>
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1"><Clock className="w-2.5 h-2.5" />{relativeTime(note.timestamp)}</span>
+                     <p className="text-sm text-foreground pr-6">{note.text}</p>
+                     <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><Clock className="w-3 h-3" />{relativeTime(note.timestamp)}</span>
                     {deleteNote && (
                       <button
                         onClick={() => { deleteNote(prospect.id, note.id); toast.success("Note deleted"); }}
