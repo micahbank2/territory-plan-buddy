@@ -583,7 +583,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 </div>
               </div>
             )}
-            {(prospect.interactions || []).length === 0 && <p className="text-xs text-muted-foreground text-center py-3">No interactions logged yet.</p>}
+            {(prospect.interactions || []).length === 0 && <p className="text-sm text-muted-foreground text-center py-3">No interactions logged yet.</p>}
           </div>
 
           {/* Location Notes */}
