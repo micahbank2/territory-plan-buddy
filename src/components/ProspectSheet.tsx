@@ -554,7 +554,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
 
           {/* Activity Timeline */}
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activity Timeline</h3>
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Activity Timeline</h3>
             <div className="flex gap-2">
               <select value={interactionType} onChange={e => setInteractionType(e.target.value)} className={cn(selectClass, "w-32 text-xs")}>
                 {INTERACTION_TYPES.filter(t => t !== "Task Completed").map(t => <option key={t} value={t}>{t}</option>)}
