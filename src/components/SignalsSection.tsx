@@ -80,7 +80,7 @@ function FieldWithTooltip({ label, tip, children }: { label: string; tip?: strin
   return (
     <div className="space-y-0.5">
       <div className="flex items-center gap-1">
-        <label className="text-[9px] font-semibold text-muted-foreground uppercase">{label}</label>
+        <label className="text-xs font-semibold text-muted-foreground uppercase">{label}</label>
         {tip && (
           <TooltipProvider delayDuration={200}>
             <Tooltip>
