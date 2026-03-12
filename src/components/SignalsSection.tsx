@@ -80,7 +80,7 @@ function FieldWithTooltip({ label, tip, children }: { label: string; tip?: strin
   return (
     <div className="space-y-0.5">
       <div className="flex items-center gap-1">
-        <label className="text-[9px] font-semibold text-muted-foreground uppercase">{label}</label>
+        <label className="text-xs font-semibold text-muted-foreground uppercase">{label}</label>
         {tip && (
           <TooltipProvider delayDuration={200}>
             <Tooltip>
@@ -161,8 +161,8 @@ export function SignalsSection({ prospect, signals, onAdd, onRemove, territoryId
     <div className={cn("space-y-3", compact ? "" : "")}>
       <div className="flex items-center justify-between">
         <h3 className={cn(
-          "font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5",
-          compact ? "text-xs" : "text-sm text-foreground"
+          "font-bold uppercase tracking-wider flex items-center gap-1.5",
+          compact ? "text-sm text-foreground" : "text-sm text-foreground"
         )}>
           <Zap className={cn("text-[hsl(var(--warning))]", compact ? "w-3.5 h-3.5" : "w-4 h-4")} />
           Signals {signals.length > 0 && <span className="text-muted-foreground">({signals.length})</span>}
@@ -229,7 +229,7 @@ export function SignalsSection({ prospect, signals, onAdd, onRemove, territoryId
 
       {signals.length === 0 && !showForm && (
         <div className="p-3 rounded-lg border border-dashed border-border bg-muted/20">
-          <p className="text-xs text-muted-foreground leading-relaxed">
+          <p className="text-sm text-foreground/60 leading-relaxed">
             No signals logged yet. Signals are trigger events that indicate a prospect might be ready to buy — like leadership changes, expansion plans, or competitor contracts ending. Add one when you spot something relevant during your research.
           </p>
         </div>
@@ -241,18 +241,18 @@ export function SignalsSection({ prospect, signals, onAdd, onRemove, territoryId
             <Zap className={cn("w-4 h-4 mt-0.5 shrink-0", RELEVANCE_ICON_COLORS[s.relevance] || "text-muted-foreground")} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-semibold text-foreground">{s.title}</span>
-                <span className={cn("px-1.5 py-0.5 text-[9px] font-bold rounded", SIGNAL_TYPE_COLORS[s.signal_type] || "bg-muted text-muted-foreground")}>
+                <span className="text-sm font-semibold text-foreground">{s.title}</span>
+                <span className={cn("px-1.5 py-0.5 text-[10px] font-bold rounded", SIGNAL_TYPE_COLORS[s.signal_type] || "bg-muted text-muted-foreground")}>
                   {s.signal_type}
                 </span>
-                <span className="px-1.5 py-0.5 text-[9px] font-medium rounded bg-muted text-muted-foreground">
+                <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-muted text-muted-foreground">
                   {s.opportunity_type}
                 </span>
               </div>
-              {s.description && <p className="text-[10px] text-muted-foreground mt-0.5">{s.description}</p>}
-              <div className="flex items-center gap-2 mt-1">
-                {s.source && <span className="text-[9px] text-muted-foreground">via {s.source}</span>}
-                <span className="text-[9px] text-muted-foreground">{relativeTime(s.created_at)}</span>
+              {s.description && <p className="text-xs text-foreground/70 mt-1 leading-relaxed">{s.description}</p>}
+              <div className="flex items-center gap-2 mt-1.5">
+                {s.source && <span className="text-xs text-muted-foreground">via {s.source}</span>}
+                <span className="text-xs text-muted-foreground">{relativeTime(s.created_at)}</span>
               </div>
             </div>
             <button

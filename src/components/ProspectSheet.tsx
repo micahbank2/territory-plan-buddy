@@ -245,10 +245,10 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                   onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
                   className="text-base font-extrabold truncate bg-transparent border-b border-transparent hover:border-border focus:border-primary focus:outline-none transition-colors max-w-[200px]"
                 />
-                <span className={cn("px-2 py-0.5 text-[10px] font-bold rounded-md uppercase",
+                <span className={cn("px-2 py-0.5 text-xs font-bold rounded-md uppercase",
                   prospect.status === "Churned" ? "bg-destructive/15 text-destructive" : "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]"
                 )}>{prospect.status === "Churned" ? "💀 Churned" : "🎯 Prospect"}</span>
-                {prospect.tier && <span className={cn("px-2 py-0.5 text-[10px] font-bold rounded-md",
+                {prospect.tier && <span className={cn("px-2 py-0.5 text-xs font-bold rounded-md",
                   prospect.tier === "Tier 1" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
                 )}>{prospect.tier === "Tier 1" ? "⭐" : prospect.tier === "Tier 2" ? "🥈" : "🥉"} {prospect.tier}</span>}
               </div>
@@ -260,8 +260,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="text-center px-3 cursor-help">
-                    <div className="text-xl font-black animate-count-up" style={{ color: scoreInfo.color }}>{score}</div>
-                    <div className="text-[10px] font-bold" style={{ color: scoreInfo.color }}>{scoreInfo.label}</div>
+                    <div className="text-2xl font-black animate-count-up" style={{ color: scoreInfo.color }}>{score}</div>
+                    <div className="text-xs font-bold" style={{ color: scoreInfo.color }}>{scoreInfo.label}</div>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" align="end" collisionPadding={16} className="text-xs max-w-[220px] p-3 z-[100]">
@@ -281,8 +281,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
               </Tooltip>
             </TooltipProvider>
           </div>
-          <button onClick={() => { onClose(); navigate(`/prospect/${prospect.id}`); }}
-            className="text-[10px] text-primary hover:underline mt-2 inline-flex items-center gap-1">
+            <button onClick={() => { onClose(); navigate(`/prospect/${prospect.id}`); }}
+            className="text-xs font-medium text-primary hover:underline mt-2 inline-flex items-center gap-1">
             Open full page <ArrowRight className="w-3 h-3" />
           </button>
         </div>
@@ -411,7 +411,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                           <span className="text-sm text-foreground">{task.text}</span>
                         </div>
                         {task.dueDate && (
-                          <span className={cn("text-[10px] shrink-0", isOverdue ? "text-destructive font-semibold" : "text-muted-foreground")}>
+                          <span className={cn("text-xs shrink-0", isOverdue ? "text-destructive font-semibold" : "text-muted-foreground")}>
                             {isOverdue ? "⚠️ " : ""}{task.dueDate}
                           </span>
                         )}
@@ -465,13 +465,13 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 <input value={newContact.phone || ""} onChange={e => setNewContact({...newContact, phone: e.target.value})} placeholder="Phone" className={cn(inputClass, "text-xs py-1.5")} />
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-0.5">
-                    <label className="text-[9px] font-semibold text-muted-foreground uppercase">Role</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase">Role</label>
                     <select value={(newContact as any).role || "Unknown"} onChange={e => setNewContact({...newContact, role: e.target.value} as any)} className={cn(selectClass, "text-xs py-1.5")}>
                       {CONTACT_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                     </select>
                   </div>
                   <div className="space-y-0.5">
-                    <label className="text-[9px] font-semibold text-muted-foreground uppercase">Relationship</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Relationship</label>
                     <select value={(newContact as any).relationshipStrength || "Unknown"} onChange={e => setNewContact({...newContact, relationshipStrength: e.target.value} as any)} className={cn(selectClass, "text-xs py-1.5")}>
                       {RELATIONSHIP_STRENGTHS.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
@@ -497,13 +497,13 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                     <input value={editContact.phone || ""} onChange={e => setEditContact({...editContact, phone: e.target.value})} placeholder="Phone" className={cn(inputClass, "text-xs py-1.5")} />
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-0.5">
-                        <label className="text-[9px] font-semibold text-muted-foreground uppercase">Role</label>
+                        <label className="text-xs font-semibold text-muted-foreground uppercase">Role</label>
                         <select value={(editContact as any).role || "Unknown"} onChange={e => setEditContact({...editContact, role: e.target.value} as any)} className={cn(selectClass, "text-xs py-1.5")}>
                           {CONTACT_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                       </div>
                       <div className="space-y-0.5">
-                        <label className="text-[9px] font-semibold text-muted-foreground uppercase">Relationship</label>
+                        <label className="text-xs font-semibold text-muted-foreground uppercase">Relationship</label>
                         <select value={(editContact as any).relationshipStrength || "Unknown"} onChange={e => setEditContact({...editContact, relationshipStrength: e.target.value} as any)} className={cn(selectClass, "text-xs py-1.5")}>
                           {RELATIONSHIP_STRENGTHS.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
@@ -530,7 +530,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 )}
               </div>
             ))}
-            {(prospect.contacts || []).length === 0 && !showAddContact && <p className="text-xs text-muted-foreground">No contacts yet.</p>}
+            {(prospect.contacts || []).length === 0 && !showAddContact && <p className="text-sm text-muted-foreground">No contacts yet.</p>}
           </div>
 
           {/* Signals */}
@@ -609,7 +609,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
 
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-3/4 sm:max-w-2xl overflow-y-auto p-0">
+      <SheetContent side="right" className="w-full sm:w-[700px] sm:max-w-[50vw] overflow-y-auto p-0">
         {sheetContent}
       </SheetContent>
     </Sheet>

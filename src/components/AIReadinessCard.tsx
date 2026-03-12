@@ -155,7 +155,7 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
         >
           <div className="flex items-center gap-2">
             <Brain className="w-4 h-4 text-primary" />
-            <span className="text-xs font-semibold text-muted-foreground uppercase">AI Readiness</span>
+            <span className="text-sm font-bold text-foreground uppercase">AI Readiness</span>
           </div>
           <div className="flex items-center gap-2">
             <span className={cn("text-2xl font-black", GRADE_COLORS[grade])}>{score}</span>
@@ -165,30 +165,30 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
         </button>
         {expanded && (
           <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
-            <p className="text-sm text-foreground/80 leading-relaxed">{data.summary}</p>
+            <p className="text-sm text-foreground leading-relaxed">{data.summary}</p>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Button onClick={analyze} size="sm" variant="ghost" className="h-6 text-[10px] gap-1" disabled={loading}>
+                 <Button onClick={analyze} size="sm" variant="ghost" className="h-7 text-xs gap-1" disabled={loading}>
                   <RefreshCw className="w-3 h-3" /> Re-analyze
                 </Button>
-                <Button onClick={clearResult} size="sm" variant="ghost" className="h-6 text-[10px] gap-1 text-destructive hover:text-destructive">
+                <Button onClick={clearResult} size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive hover:text-destructive">
                   <Trash2 className="w-3 h-3" /> Clear
                 </Button>
               </div>
               {prospect.aiReadinessUpdatedAt && (
-                <span className="text-[10px] text-muted-foreground">{relativeTime(prospect.aiReadinessUpdatedAt)}</span>
+                <span className="text-xs text-muted-foreground">{relativeTime(prospect.aiReadinessUpdatedAt)}</span>
               )}
             </div>
             <div className="pt-2 border-t border-border space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold text-primary uppercase flex items-center gap-1">
-                  <Lightbulb className="w-3 h-3" /> Talking Point
+                <span className="text-xs font-bold text-primary uppercase flex items-center gap-1">
+                  <Lightbulb className="w-3.5 h-3.5" /> Talking Point
                 </span>
-                <Button onClick={copyTalkingPoint} size="sm" variant="ghost" className="h-6 text-[10px] gap-1">
-                  <Copy className="w-3 h-3" /> Copy
+                <Button onClick={copyTalkingPoint} size="sm" variant="ghost" className="h-7 text-xs gap-1">
+                  <Copy className="w-3.5 h-3.5" /> Copy
                 </Button>
               </div>
-              <p className="text-xs text-foreground/80 leading-relaxed italic">"{data.talking_point}"</p>
+              <p className="text-sm text-foreground/90 leading-relaxed italic">"{data.talking_point}"</p>
             </div>
           </div>
         )}
