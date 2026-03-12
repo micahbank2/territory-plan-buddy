@@ -168,10 +168,10 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
             <p className="text-sm text-foreground leading-relaxed">{data.summary}</p>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Button onClick={analyze} size="sm" variant="ghost" className="h-6 text-[10px] gap-1" disabled={loading}>
+                 <Button onClick={analyze} size="sm" variant="ghost" className="h-7 text-xs gap-1" disabled={loading}>
                   <RefreshCw className="w-3 h-3" /> Re-analyze
                 </Button>
-                <Button onClick={clearResult} size="sm" variant="ghost" className="h-6 text-[10px] gap-1 text-destructive hover:text-destructive">
+                <Button onClick={clearResult} size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive hover:text-destructive">
                   <Trash2 className="w-3 h-3" /> Clear
                 </Button>
               </div>
