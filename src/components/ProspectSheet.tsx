@@ -372,7 +372,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                   onKeyDown={e => e.key === "Enter" && addTask()} />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Due Date</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Due Date</label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <button className={cn(inputClass, "flex items-center gap-2 text-left", !newTaskDate && "text-muted-foreground")}>
