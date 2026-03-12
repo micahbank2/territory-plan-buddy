@@ -229,7 +229,7 @@ export function SignalsSection({ prospect, signals, onAdd, onRemove, territoryId
 
       {signals.length === 0 && !showForm && (
         <div className="p-3 rounded-lg border border-dashed border-border bg-muted/20">
-          <p className="text-xs text-muted-foreground leading-relaxed">
+          <p className="text-sm text-foreground/60 leading-relaxed">
             No signals logged yet. Signals are trigger events that indicate a prospect might be ready to buy — like leadership changes, expansion plans, or competitor contracts ending. Add one when you spot something relevant during your research.
           </p>
         </div>
