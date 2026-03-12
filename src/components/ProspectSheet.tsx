@@ -454,7 +454,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
           {/* Contacts */}
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "150ms" }}>
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Contacts</h3>
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Contacts</h3>
               <button onClick={() => setShowAddContact(!showAddContact)} className="p-1 rounded-md hover:bg-primary/10"><Plus className="w-3.5 h-3.5 text-primary" /></button>
             </div>
             {showAddContact && (
