@@ -367,7 +367,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
             {/* Add task form */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Action</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Action</label>
                 <input value={newTaskText} onChange={e => setNewTaskText(e.target.value)} placeholder="e.g. Send follow-up" className={inputClass}
                   onKeyDown={e => e.key === "Enter" && addTask()} />
               </div>
