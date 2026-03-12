@@ -245,10 +245,10 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                   onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
                   className="text-base font-extrabold truncate bg-transparent border-b border-transparent hover:border-border focus:border-primary focus:outline-none transition-colors max-w-[200px]"
                 />
-                <span className={cn("px-2 py-0.5 text-[10px] font-bold rounded-md uppercase",
+                <span className={cn("px-2 py-0.5 text-xs font-bold rounded-md uppercase",
                   prospect.status === "Churned" ? "bg-destructive/15 text-destructive" : "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]"
                 )}>{prospect.status === "Churned" ? "💀 Churned" : "🎯 Prospect"}</span>
-                {prospect.tier && <span className={cn("px-2 py-0.5 text-[10px] font-bold rounded-md",
+                {prospect.tier && <span className={cn("px-2 py-0.5 text-xs font-bold rounded-md",
                   prospect.tier === "Tier 1" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
                 )}>{prospect.tier === "Tier 1" ? "⭐" : prospect.tier === "Tier 2" ? "🥈" : "🥉"} {prospect.tier}</span>}
               </div>
