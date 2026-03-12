@@ -609,7 +609,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
 
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-3/4 sm:max-w-2xl overflow-y-auto p-0">
+      <SheetContent side="right" className="w-full sm:w-[700px] sm:max-w-[50vw] overflow-y-auto p-0">
         {sheetContent}
       </SheetContent>
     </Sheet>
