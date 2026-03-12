@@ -503,7 +503,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                         </select>
                       </div>
                       <div className="space-y-0.5">
-                        <label className="text-[9px] font-semibold text-muted-foreground uppercase">Relationship</label>
+                        <label className="text-xs font-semibold text-muted-foreground uppercase">Relationship</label>
                         <select value={(editContact as any).relationshipStrength || "Unknown"} onChange={e => setEditContact({...editContact, relationshipStrength: e.target.value} as any)} className={cn(selectClass, "text-xs py-1.5")}>
                           {RELATIONSHIP_STRENGTHS.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>

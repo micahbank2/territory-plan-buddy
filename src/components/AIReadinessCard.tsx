@@ -181,14 +181,14 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
             </div>
             <div className="pt-2 border-t border-border space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold text-primary uppercase flex items-center gap-1">
-                  <Lightbulb className="w-3 h-3" /> Talking Point
+                <span className="text-xs font-bold text-primary uppercase flex items-center gap-1">
+                  <Lightbulb className="w-3.5 h-3.5" /> Talking Point
                 </span>
-                <Button onClick={copyTalkingPoint} size="sm" variant="ghost" className="h-6 text-[10px] gap-1">
-                  <Copy className="w-3 h-3" /> Copy
+                <Button onClick={copyTalkingPoint} size="sm" variant="ghost" className="h-7 text-xs gap-1">
+                  <Copy className="w-3.5 h-3.5" /> Copy
                 </Button>
               </div>
-              <p className="text-xs text-foreground/80 leading-relaxed italic">"{data.talking_point}"</p>
+              <p className="text-sm text-foreground/90 leading-relaxed italic">"{data.talking_point}"</p>
             </div>
           </div>
         )}

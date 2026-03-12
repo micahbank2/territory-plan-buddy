@@ -241,18 +241,18 @@ export function SignalsSection({ prospect, signals, onAdd, onRemove, territoryId
             <Zap className={cn("w-4 h-4 mt-0.5 shrink-0", RELEVANCE_ICON_COLORS[s.relevance] || "text-muted-foreground")} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-semibold text-foreground">{s.title}</span>
-                <span className={cn("px-1.5 py-0.5 text-[9px] font-bold rounded", SIGNAL_TYPE_COLORS[s.signal_type] || "bg-muted text-muted-foreground")}>
+                <span className="text-sm font-semibold text-foreground">{s.title}</span>
+                <span className={cn("px-1.5 py-0.5 text-[10px] font-bold rounded", SIGNAL_TYPE_COLORS[s.signal_type] || "bg-muted text-muted-foreground")}>
                   {s.signal_type}
                 </span>
-                <span className="px-1.5 py-0.5 text-[9px] font-medium rounded bg-muted text-muted-foreground">
+                <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-muted text-muted-foreground">
                   {s.opportunity_type}
                 </span>
               </div>
-              {s.description && <p className="text-[10px] text-muted-foreground mt-0.5">{s.description}</p>}
-              <div className="flex items-center gap-2 mt-1">
-                {s.source && <span className="text-[9px] text-muted-foreground">via {s.source}</span>}
-                <span className="text-[9px] text-muted-foreground">{relativeTime(s.created_at)}</span>
+              {s.description && <p className="text-xs text-foreground/70 mt-1 leading-relaxed">{s.description}</p>}
+              <div className="flex items-center gap-2 mt-1.5">
+                {s.source && <span className="text-xs text-muted-foreground">via {s.source}</span>}
+                <span className="text-xs text-muted-foreground">{relativeTime(s.created_at)}</span>
               </div>
             </div>
             <button
