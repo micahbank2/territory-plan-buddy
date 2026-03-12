@@ -260,8 +260,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="text-center px-3 cursor-help">
-                    <div className="text-xl font-black animate-count-up" style={{ color: scoreInfo.color }}>{score}</div>
-                    <div className="text-[10px] font-bold" style={{ color: scoreInfo.color }}>{scoreInfo.label}</div>
+                    <div className="text-2xl font-black animate-count-up" style={{ color: scoreInfo.color }}>{score}</div>
+                    <div className="text-xs font-bold" style={{ color: scoreInfo.color }}>{scoreInfo.label}</div>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" align="end" collisionPadding={16} className="text-xs max-w-[220px] p-3 z-[100]">
