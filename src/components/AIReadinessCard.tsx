@@ -255,7 +255,7 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
               <Lightbulb className="w-4 h-4 text-primary" />
               <h4 className="text-xs font-semibold text-primary uppercase">Yext Opportunity</h4>
             </div>
-            <p className="text-sm text-foreground">{data.yext_opportunity}</p>
+            <p className="text-sm text-foreground/80 leading-relaxed">{data.yext_opportunity}</p>
           </div>
 
           <div className="flex items-center justify-between pt-3 border-t border-border">
