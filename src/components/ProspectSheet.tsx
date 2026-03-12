@@ -575,8 +575,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                         "bg-secondary text-secondary-foreground"
                       )}><InteractionIcon type={i.type} /></div>
                       <div>
-                        <div className="flex items-center gap-2"><span className="text-xs font-semibold text-foreground">{i.type}</span><span className="text-[10px] text-muted-foreground">{relativeTime(i.date)}</span></div>
-                        {i.notes && <p className="text-xs text-muted-foreground mt-0.5">{i.notes}</p>}
+                         <div className="flex items-center gap-2"><span className="text-sm font-semibold text-foreground">{i.type}</span><span className="text-xs text-muted-foreground">{relativeTime(i.date)}</span></div>
+                        {i.notes && <p className="text-sm text-foreground/80 mt-0.5">{i.notes}</p>}
                       </div>
                     </div>
                   ))}
