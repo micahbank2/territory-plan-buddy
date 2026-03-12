@@ -291,7 +291,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
         <div className="px-6 py-5 space-y-5">
           {/* Account Details */}
           <div className="space-y-3 animate-fade-in-up">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Account Details</h3>
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Account Details</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase">Locations</label>
