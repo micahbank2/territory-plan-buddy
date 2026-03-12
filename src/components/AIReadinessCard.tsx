@@ -227,8 +227,8 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
               </h4>
               <ul className="space-y-1.5">
                 {data.strengths.map((s, i) => (
-                  <li key={i} className="text-xs text-foreground flex items-start gap-2">
-                    <CheckCircle className="w-3 h-3 text-[hsl(var(--success))] shrink-0 mt-0.5" />
+                  <li key={i} className="text-sm text-foreground/80 flex items-start gap-2 leading-relaxed">
+                    <CheckCircle className="w-3.5 h-3.5 text-[hsl(var(--success))] shrink-0 mt-0.5" />
                     <span>{s}</span>
                   </li>
                 ))}
