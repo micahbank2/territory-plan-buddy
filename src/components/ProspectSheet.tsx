@@ -589,8 +589,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
           {/* Location Notes */}
           {prospect.locationNotes && (
             <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: "250ms" }}>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Location Notes</h3>
-              <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg border border-border">{prospect.locationNotes}</p>
+               <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Location Notes</h3>
+              <p className="text-sm text-foreground/80 bg-muted/50 p-3 rounded-lg border border-border">{prospect.locationNotes}</p>
             </div>
           )}
         </div>
