@@ -411,7 +411,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                           <span className="text-sm text-foreground">{task.text}</span>
                         </div>
                         {task.dueDate && (
-                          <span className={cn("text-[10px] shrink-0", isOverdue ? "text-destructive font-semibold" : "text-muted-foreground")}>
+                          <span className={cn("text-xs shrink-0", isOverdue ? "text-destructive font-semibold" : "text-muted-foreground")}>
                             {isOverdue ? "⚠️ " : ""}{task.dueDate}
                           </span>
                         )}
