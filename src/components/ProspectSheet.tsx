@@ -291,27 +291,27 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
         <div className="px-6 py-5 space-y-5">
           {/* Account Details */}
           <div className="space-y-3 animate-fade-in-up">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Account Details</h3>
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Account Details</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Locations</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Locations</label>
                 <input type="number" value={localLocCount} onChange={e => setLocalLocCount(e.target.value)} onBlur={commitLocCount} className={inputClass} placeholder="# of locations" />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Industry</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Industry</label>
                 <select value={prospect.industry} onChange={e => handleUpdate("industry", e.target.value)} className={selectClass}>
                   <option value="">Select</option>
                   {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Outreach</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Outreach</label>
                 <select value={prospect.outreach} onChange={e => handleUpdate("outreach", e.target.value)} className={selectClass}>
                   {STAGES.map(s => <option key={s} value={s}>{STAGE_EMOJI[s] || ""} {s}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Priority</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Priority</label>
                 <select value={prospect.priority} onChange={e => handleUpdate("priority", e.target.value)} className={selectClass}>
                   <option value="">None</option>
                   <option value="Hot">🔥 Hot</option>
@@ -321,7 +321,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Tier</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Tier</label>
                 <select value={prospect.tier} onChange={e => handleUpdate("tier", e.target.value)} className={selectClass}>
                   <option value="">None</option>
                   <option value="Tier 1">⭐ Tier 1</option>
@@ -331,7 +331,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Competitor</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Competitor</label>
                 <select value={competitorSelectValue} onChange={e => {
                   const val = e.target.value;
                   if (val === "Other") {
@@ -349,7 +349,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 )}
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Status</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Status</label>
                 <select value={prospect.status} onChange={e => handleUpdate("status", e.target.value)} className={selectClass}>
                   <option value="Prospect">🎯 Prospect</option>
                   <option value="Churned">💀 Churned</option>
@@ -362,17 +362,17 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "50ms" }}>
             <div className="flex items-center gap-2">
               <Target className="w-4 h-4 text-primary" />
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tasks</h3>
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Tasks</h3>
             </div>
             {/* Add task form */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Action</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Action</label>
                 <input value={newTaskText} onChange={e => setNewTaskText(e.target.value)} placeholder="e.g. Send follow-up" className={inputClass}
                   onKeyDown={e => e.key === "Enter" && addTask()} />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Due Date</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Due Date</label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <button className={cn(inputClass, "flex items-center gap-2 text-left", !newTaskDate && "text-muted-foreground")}>
@@ -396,7 +396,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
             {/* Open tasks list */}
             {(prospect.tasks || []).length > 0 && (
               <div className="space-y-1.5 pt-2 border-t border-border">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Open Tasks</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Open Tasks</label>
                 {(prospect.tasks || [])
                   .slice()
                   .sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999"))
@@ -408,7 +408,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                           <Check className="w-2.5 h-2.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
                         <div className="flex-1 min-w-0">
-                          <span className="text-xs text-foreground">{task.text}</span>
+                          <span className="text-sm text-foreground">{task.text}</span>
                         </div>
                         {task.dueDate && (
                           <span className={cn("text-[10px] shrink-0", isOverdue ? "text-destructive font-semibold" : "text-muted-foreground")}>
@@ -425,7 +425,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
             )}
           </div>
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Notes</h3>
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Notes</h3>
             <div className="flex gap-2">
               <input value={newNote} onChange={e => setNewNote(e.target.value)} placeholder="Add a note..." className={cn(inputClass, "flex-1")} onKeyDown={e => e.key === "Enter" && addNote()} />
               <Button size="sm" onClick={addNote} disabled={!newNote.trim()}>Add</Button>
@@ -434,8 +434,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {[...(prospect.noteLog || [])].reverse().map(note => (
                   <div key={note.id} className="group p-2.5 rounded-lg bg-muted/50 border border-border relative">
-                    <p className="text-xs text-foreground pr-6">{note.text}</p>
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1"><Clock className="w-2.5 h-2.5" />{relativeTime(note.timestamp)}</span>
+                     <p className="text-sm text-foreground pr-6">{note.text}</p>
+                     <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><Clock className="w-3 h-3" />{relativeTime(note.timestamp)}</span>
                     {deleteNote && (
                       <button
                         onClick={() => { deleteNote(prospect.id, note.id); toast.success("Note deleted"); }}
@@ -454,7 +454,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
           {/* Contacts */}
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "150ms" }}>
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Contacts</h3>
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Contacts</h3>
               <button onClick={() => setShowAddContact(!showAddContact)} className="p-1 rounded-md hover:bg-primary/10"><Plus className="w-3.5 h-3.5 text-primary" /></button>
             </div>
             {showAddContact && (
@@ -518,14 +518,14 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 ) : (
                   <div onClick={() => startEditContact(c)} className="cursor-pointer">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-medium text-xs text-foreground">{c.name}</span>
+                     <span className="font-semibold text-sm text-foreground">{c.name}</span>
                       <RoleBadge role={c.role} />
                     </div>
-                    {c.title && <div className="text-[10px] text-muted-foreground">{c.title}</div>}
-                    <div className="mt-1"><StrengthDot strength={c.relationshipStrength} /></div>
-                    {c.email && <a href={`mailto:${c.email}`} onClick={e => e.stopPropagation()} className="text-[10px] text-primary hover:underline flex items-center gap-1 mt-1"><Mail className="w-2.5 h-2.5" /> {c.email}</a>}
-                    {c.phone && <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5"><Phone className="w-2.5 h-2.5" /> {c.phone}</div>}
-                    {c.notes && <div className="text-[10px] text-muted-foreground mt-1.5 pt-1.5 border-t border-border italic">📝 {c.notes}</div>}
+                    {c.title && <div className="text-xs text-muted-foreground mt-0.5">{c.title}</div>}
+                     <div className="mt-1"><StrengthDot strength={c.relationshipStrength} /></div>
+                    {c.email && <a href={`mailto:${c.email}`} onClick={e => e.stopPropagation()} className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"><Mail className="w-3 h-3" /> {c.email}</a>}
+                    {c.phone && <div className="text-xs text-foreground/70 flex items-center gap-1 mt-0.5"><Phone className="w-3 h-3" /> {c.phone}</div>}
+                    {c.notes && <div className="text-xs text-foreground/70 mt-1.5 pt-1.5 border-t border-border italic">📝 {c.notes}</div>}
                   </div>
                 )}
               </div>
@@ -554,7 +554,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
 
           {/* Activity Timeline */}
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activity Timeline</h3>
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Activity Timeline</h3>
             <div className="flex gap-2">
               <select value={interactionType} onChange={e => setInteractionType(e.target.value)} className={cn(selectClass, "w-32 text-xs")}>
                 {INTERACTION_TYPES.filter(t => t !== "Task Completed").map(t => <option key={t} value={t}>{t}</option>)}
@@ -575,22 +575,22 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                         "bg-secondary text-secondary-foreground"
                       )}><InteractionIcon type={i.type} /></div>
                       <div>
-                        <div className="flex items-center gap-2"><span className="text-xs font-semibold text-foreground">{i.type}</span><span className="text-[10px] text-muted-foreground">{relativeTime(i.date)}</span></div>
-                        {i.notes && <p className="text-xs text-muted-foreground mt-0.5">{i.notes}</p>}
+                         <div className="flex items-center gap-2"><span className="text-sm font-semibold text-foreground">{i.type}</span><span className="text-xs text-muted-foreground">{relativeTime(i.date)}</span></div>
+                        {i.notes && <p className="text-sm text-foreground/80 mt-0.5">{i.notes}</p>}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            {(prospect.interactions || []).length === 0 && <p className="text-xs text-muted-foreground text-center py-3">No interactions logged yet.</p>}
+            {(prospect.interactions || []).length === 0 && <p className="text-sm text-muted-foreground text-center py-3">No interactions logged yet.</p>}
           </div>
 
           {/* Location Notes */}
           {prospect.locationNotes && (
             <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: "250ms" }}>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Location Notes</h3>
-              <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg border border-border">{prospect.locationNotes}</p>
+               <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Location Notes</h3>
+              <p className="text-sm text-foreground/80 bg-muted/50 p-3 rounded-lg border border-border">{prospect.locationNotes}</p>
             </div>
           )}
         </div>
