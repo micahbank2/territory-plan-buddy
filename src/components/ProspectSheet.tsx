@@ -396,7 +396,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
             {/* Open tasks list */}
             {(prospect.tasks || []).length > 0 && (
               <div className="space-y-1.5 pt-2 border-t border-border">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Open Tasks</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Open Tasks</label>
                 {(prospect.tasks || [])
                   .slice()
                   .sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999"))
