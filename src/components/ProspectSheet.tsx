@@ -305,7 +305,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Outreach</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Outreach</label>
                 <select value={prospect.outreach} onChange={e => handleUpdate("outreach", e.target.value)} className={selectClass}>
                   {STAGES.map(s => <option key={s} value={s}>{STAGE_EMOJI[s] || ""} {s}</option>)}
                 </select>
