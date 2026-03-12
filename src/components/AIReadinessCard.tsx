@@ -165,7 +165,7 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
         </button>
         {expanded && (
           <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
-            <p className="text-xs text-muted-foreground">{data.summary}</p>
+            <p className="text-sm text-foreground/80 leading-relaxed">{data.summary}</p>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Button onClick={analyze} size="sm" variant="ghost" className="h-6 text-[10px] gap-1" disabled={loading}>
