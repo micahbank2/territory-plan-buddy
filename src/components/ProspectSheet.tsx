@@ -294,7 +294,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
             <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Account Details</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Locations</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Locations</label>
                 <input type="number" value={localLocCount} onChange={e => setLocalLocCount(e.target.value)} onBlur={commitLocCount} className={inputClass} placeholder="# of locations" />
               </div>
               <div className="space-y-1">
