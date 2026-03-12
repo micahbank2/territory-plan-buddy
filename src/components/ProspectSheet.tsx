@@ -408,7 +408,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                           <Check className="w-2.5 h-2.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
                         <div className="flex-1 min-w-0">
-                          <span className="text-xs text-foreground">{task.text}</span>
+                          <span className="text-sm text-foreground">{task.text}</span>
                         </div>
                         {task.dueDate && (
                           <span className={cn("text-[10px] shrink-0", isOverdue ? "text-destructive font-semibold" : "text-muted-foreground")}>
