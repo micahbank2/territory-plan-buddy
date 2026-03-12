@@ -176,7 +176,7 @@ export function AIReadinessCard({ prospect, onUpdate, compact = false }: AIReadi
                 </Button>
               </div>
               {prospect.aiReadinessUpdatedAt && (
-                <span className="text-[10px] text-muted-foreground">{relativeTime(prospect.aiReadinessUpdatedAt)}</span>
+                <span className="text-xs text-muted-foreground">{relativeTime(prospect.aiReadinessUpdatedAt)}</span>
               )}
             </div>
             <div className="pt-2 border-t border-border space-y-1.5">
