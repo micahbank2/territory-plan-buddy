@@ -311,7 +311,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase">Priority</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Priority</label>
                 <select value={prospect.priority} onChange={e => handleUpdate("priority", e.target.value)} className={selectClass}>
                   <option value="">None</option>
                   <option value="Hot">🔥 Hot</option>
