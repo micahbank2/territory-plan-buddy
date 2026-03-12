@@ -497,7 +497,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                     <input value={editContact.phone || ""} onChange={e => setEditContact({...editContact, phone: e.target.value})} placeholder="Phone" className={cn(inputClass, "text-xs py-1.5")} />
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-0.5">
-                        <label className="text-[9px] font-semibold text-muted-foreground uppercase">Role</label>
+                        <label className="text-xs font-semibold text-muted-foreground uppercase">Role</label>
                         <select value={(editContact as any).role || "Unknown"} onChange={e => setEditContact({...editContact, role: e.target.value} as any)} className={cn(selectClass, "text-xs py-1.5")}>
                           {CONTACT_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
