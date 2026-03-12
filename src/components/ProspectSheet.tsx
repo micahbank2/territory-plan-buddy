@@ -281,8 +281,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
               </Tooltip>
             </TooltipProvider>
           </div>
-          <button onClick={() => { onClose(); navigate(`/prospect/${prospect.id}`); }}
-            className="text-[10px] text-primary hover:underline mt-2 inline-flex items-center gap-1">
+            <button onClick={() => { onClose(); navigate(`/prospect/${prospect.id}`); }}
+            className="text-xs font-medium text-primary hover:underline mt-2 inline-flex items-center gap-1">
             Open full page <ArrowRight className="w-3 h-3" />
           </button>
         </div>
