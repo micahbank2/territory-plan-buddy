@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,8 +8,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, Trash2, Crown, Pencil, Eye, Link, Check } from "lucide-react";
+import { Users, UserPlus, Trash2, Crown, Pencil, Eye, Link, Check, Globe, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import type { Territory, TerritoryMember } from "@/hooks/useTerritories";
 
 interface ShareTerritoryDialogProps {
@@ -48,10 +49,33 @@ export function ShareTerritoryDialog({
   const [inviting, setInviting] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(territory?.name || "");
-  const [linkRole, setLinkRole] = useState<"editor" | "viewer">("viewer");
   const [linkCopied, setLinkCopied] = useState(false);
+  const [publicAccess, setPublicAccess] = useState<"none" | "viewer" | "editor">("none");
+  const [linkRole, setLinkRole] = useState<"editor" | "viewer">("viewer");
 
   const isOwner = myRole === "owner";
+
+  // Load current public_access when dialog opens
+  useEffect(() => {
+    if (open && territory) {
+      (async () => {
+        const { data } = await supabase
+          .from("territories")
+          .select("public_access")
+          .eq("id", territory.id)
+          .single();
+        if (data) {
+          const access = (data as any).public_access as string;
+          if (access === "viewer" || access === "editor") {
+            setPublicAccess(access);
+            setLinkRole(access);
+          } else {
+            setPublicAccess("none");
+          }
+        }
+      })();
+    }
+  }, [open, territory]);
 
   const handleInvite = async () => {
     if (!email.trim()) return;
@@ -66,6 +90,32 @@ export function ShareTerritoryDialog({
       onRename(nameInput.trim());
     }
     setEditingName(false);
+  };
+
+  const handleTogglePublicAccess = async (newAccess: "none" | "viewer" | "editor") => {
+    if (!territory) return;
+    setPublicAccess(newAccess);
+    if (newAccess !== "none") setLinkRole(newAccess as "editor" | "viewer");
+    await supabase
+      .from("territories")
+      .update({ public_access: newAccess } as any)
+      .eq("id", territory.id);
+    if (newAccess === "none") {
+      toast.success("Link sharing disabled");
+    } else {
+      toast.success(`Anyone with the link can now ${newAccess === "editor" ? "edit" : "view"}`);
+    }
+  };
+
+  const handleLinkRoleChange = async (newRole: "editor" | "viewer") => {
+    setLinkRole(newRole);
+    if (publicAccess !== "none") {
+      setPublicAccess(newRole);
+      await supabase
+        .from("territories")
+        .update({ public_access: newRole } as any)
+        .eq("id", territory!.id);
+    }
   };
 
   const handleCopyLink = () => {
@@ -156,35 +206,59 @@ export function ShareTerritoryDialog({
             </div>
           )}
 
-          {/* General access — copy link (owner only) */}
+          {/* General access (owner only) */}
           {isOwner && (
             <div className="space-y-2 border-t border-border pt-3">
               <label className="text-xs font-medium text-muted-foreground">General access</label>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                  <Link className="w-4 h-4 text-muted-foreground" />
+                  {publicAccess !== "none" ? (
+                    <Globe className="w-4 h-4 text-emerald-500" />
+                  ) : (
+                    <Lock className="w-4 h-4 text-muted-foreground" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-foreground">Anyone with the link</p>
+                  <select
+                    value={publicAccess === "none" ? "restricted" : "anyone"}
+                    onChange={(e) => {
+                      if (e.target.value === "restricted") {
+                        handleTogglePublicAccess("none");
+                      } else {
+                        handleTogglePublicAccess(linkRole);
+                      }
+                    }}
+                    className="text-sm px-2 py-1.5 rounded-lg border border-border bg-background text-foreground w-full"
+                  >
+                    <option value="restricted">Restricted</option>
+                    <option value="anyone">Anyone with the link</option>
+                  </select>
                 </div>
-                <select
-                  value={linkRole}
-                  onChange={(e) => setLinkRole(e.target.value as "editor" | "viewer")}
-                  className="px-2 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground"
-                >
-                  <option value="viewer">Viewer</option>
-                  <option value="editor">Editor</option>
-                </select>
+                {publicAccess !== "none" && (
+                  <select
+                    value={linkRole}
+                    onChange={(e) => handleLinkRoleChange(e.target.value as "editor" | "viewer")}
+                    className="px-2 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground"
+                  >
+                    <option value="viewer">Viewer</option>
+                    <option value="editor">Editor</option>
+                  </select>
+                )}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyLink}
-                className="w-full gap-1.5"
-              >
-                {linkCopied ? <Check className="w-3.5 h-3.5" /> : <Link className="w-3.5 h-3.5" />}
-                {linkCopied ? "Copied!" : "Copy link"}
-              </Button>
+              {publicAccess !== "none" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyLink}
+                  className="w-full gap-1.5"
+                >
+                  {linkCopied ? <Check className="w-3.5 h-3.5" /> : <Link className="w-3.5 h-3.5" />}
+                  {linkCopied ? "Copied!" : "Copy link"}
+                </Button>
+              )}
+              {publicAccess === "none" && (
+                <p className="text-[10px] text-muted-foreground">Only people added above can access this territory.</p>
+              )}
             </div>
           )}
 
@@ -244,7 +318,7 @@ export function ShareTerritoryDialog({
             </div>
           </div>
 
-          {/* Clean role legend */}
+          {/* Role legend */}
           <div className="text-[10px] text-muted-foreground space-y-0.5 border-t border-border pt-3">
             <p><strong>Owner</strong> — Full control, manage members</p>
             <p><strong>Editor</strong> — Can add and edit prospects</p>

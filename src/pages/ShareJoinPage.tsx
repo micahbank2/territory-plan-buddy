@@ -3,59 +3,81 @@ import { useParams, useSearchParams, useNavigate, Navigate } from "react-router-
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PublicTerritoryView } from "@/components/PublicTerritoryView";
 
 export default function ShareJoinPage() {
   const { territoryId } = useParams<{ territoryId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const [status, setStatus] = useState<"loading" | "done" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "done" | "error" | "public">("loading");
+  const [territoryName, setTerritoryName] = useState("");
 
   useEffect(() => {
-    if (authLoading || !user || !territoryId) return;
+    if (authLoading) return;
 
-    const role = searchParams.get("role") === "editor" ? "editor" : "viewer";
+    // If user is logged in, try to join
+    if (user && territoryId) {
+      const role = searchParams.get("role") === "editor" ? "editor" : "viewer";
 
-    (async () => {
-      // Check if already a member
-      const { data: existing } = await supabase
-        .from("territory_members")
-        .select("id")
-        .eq("territory_id", territoryId)
-        .eq("user_id", user.id)
-        .maybeSingle();
+      (async () => {
+        const { data: existing } = await supabase
+          .from("territory_members")
+          .select("id")
+          .eq("territory_id", territoryId)
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-      if (existing) {
+        if (existing) {
+          localStorage.setItem("tp-active-territory", territoryId);
+          toast.info("You're already a member of this territory");
+          navigate("/", { replace: true });
+          return;
+        }
+
+        const { error } = await supabase.from("territory_members").insert({
+          territory_id: territoryId,
+          user_id: user.id,
+          role,
+        });
+
+        if (error) {
+          console.error("Join error:", error);
+          toast.error("Failed to join territory");
+          setStatus("error");
+          return;
+        }
+
         localStorage.setItem("tp-active-territory", territoryId);
-        toast.info("You're already a member of this territory");
+        toast.success(`Joined territory as ${role}`);
         navigate("/", { replace: true });
-        return;
-      }
+      })();
+      return;
+    }
 
-      // Join
-      const { error } = await supabase.from("territory_members").insert({
-        territory_id: territoryId,
-        user_id: user.id,
-        role,
-      });
+    // Not logged in — check if territory is public
+    if (!user && territoryId) {
+      (async () => {
+        const { data: territory } = await supabase
+          .from("territories")
+          .select("id, name, public_access")
+          .eq("id", territoryId)
+          .maybeSingle();
 
-      if (error) {
-        console.error("Join error:", error);
-        toast.error("Failed to join territory");
-        setStatus("error");
-        return;
-      }
-
-      localStorage.setItem("tp-active-territory", territoryId);
-      toast.success(`Joined territory as ${role}`);
-      navigate("/", { replace: true });
-    })();
+        if (territory && (territory as any).public_access !== "none") {
+          setTerritoryName(territory.name);
+          setStatus("public");
+        } else {
+          // Not public — redirect to auth
+          sessionStorage.setItem("tp-share-redirect", window.location.pathname + window.location.search);
+          navigate("/auth", { replace: true });
+        }
+      })();
+    }
   }, [user, authLoading, territoryId, searchParams, navigate]);
 
-  if (!authLoading && !user) {
-    // Save the share URL so they can rejoin after login
-    sessionStorage.setItem("tp-share-redirect", window.location.pathname + window.location.search);
-    return <Navigate to="/auth" replace />;
+  if (status === "public" && territoryId) {
+    return <PublicTerritoryView territoryId={territoryId} territoryName={territoryName} />;
   }
 
   return (
