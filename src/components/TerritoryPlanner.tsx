@@ -686,7 +686,7 @@ export default function TerritoryPlanner() {
     const view: SavedView = {
       id: Date.now().toString(),
       name: viewName.trim(),
-      filters: { q, fIndustry, fStatus, fCompetitor, fTier, fLocRange, fOutreach, fPriority },
+      filters: { q, fIndustry, fStatus, fCompetitor, fTier, fLocRange, fOutreach, fPriority, fDataFilter },
     };
     const updated = [...savedViews, view];
     setSavedViews(updated);
