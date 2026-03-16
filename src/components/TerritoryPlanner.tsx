@@ -525,6 +525,27 @@ export default function TerritoryPlanner() {
     if (fCompetitor.length) r = r.filter((p) => fCompetitor.includes(p.competitor));
     if (fTier.length) r = r.filter((p) => fTier.includes(p.tier));
     if (fPriority.length) r = r.filter((p) => fPriority.includes(p.priority));
+    if (fDataFilter.length) {
+      r = r.filter((p) => {
+        return fDataFilter.every((f) => {
+          switch (f) {
+            case "Has Contacts": return (p.contacts?.length || 0) > 0;
+            case "No Contacts": return !p.contacts?.length;
+            case "Has Notes": return (p.noteLog?.length || 0) > 0 || !!p.notes;
+            case "No Notes": return (!p.noteLog?.length) && !p.notes;
+            case "Has Interactions": return (p.interactions?.length || 0) > 0;
+            case "No Interactions": return !p.interactions?.length;
+            case "Has Tasks": return (p.tasks?.length || 0) > 0;
+            case "No Tasks": return !p.tasks?.length;
+            case "Has AI Readiness": return p.aiReadinessScore != null;
+            case "No AI Readiness": return p.aiReadinessScore == null;
+            case "Has Website": return !!p.website;
+            case "No Website": return !p.website;
+            default: return true;
+          }
+        });
+      });
+    }
     if (locFilterActive) r = r.filter((p) => {
       const lc = p.locationCount || 0;
       return lc >= fLocRange[0] && lc <= fLocRange[1];
