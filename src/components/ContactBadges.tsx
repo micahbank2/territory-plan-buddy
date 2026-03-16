@@ -28,7 +28,7 @@ export function RoleBadge({ role }: { role?: ContactRole }) {
   return (
     <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-md", cfg.bg, cfg.color)}>
       {Icon && <Icon className="w-2.5 h-2.5" />}
-      {r}
+      {r === "Unknown" ? "Role: Unknown" : r}
     </span>
   );
 }
