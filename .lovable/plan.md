@@ -1,56 +1,72 @@
 
-## Add Contact Import Support to CSV Upload
 
-### Problem
-The CSV upload system only understands prospect/account-level fields. When you upload a contacts CSV (with First Name, Last Name, Title, Email, Company), the system:
-- Can't map "First Name", "Last Name", or "Title" columns -- warns they'll be omitted
-- Maps "Email" to the account-level contactEmail field instead of a contact record
-- Maps "Company" as a prospect name, potentially creating duplicates or overwriting data
-- Has no way to add contacts to existing prospects
+## Enable Public (Anonymous) Viewing via Share Link
+
+### The Problem
+Currently, "Anyone with the link" still requires login because:
+1. The `ShareJoinPage` redirects unauthenticated users to `/auth`
+2. All data tables have RLS policies that only allow `authenticated` users
+3. The `territories` SELECT policy uses `user_can_access_territory()` which checks `territory_members` — anonymous users have no membership
 
 ### Solution
-Detect when a CSV contains contact-specific columns, switch to a "contact import" mode, and merge contacts into matching existing prospects without touching any other account data.
+Add a `public_access` column to territories so owners can toggle public link sharing. When set, anonymous users can view the territory's prospects read-only without logging in.
 
-### How It Will Work
-1. **Auto-detect contact CSVs** -- If the file has columns like "First Name" or "Last Name", treat it as a contact import
-2. **Match by Company name** -- Use the Company column to find the existing prospect (using the same fuzzy matching already in place)
-3. **Add contacts, don't overwrite** -- Append new contacts to the prospect's contacts list; skip duplicates (matched by email)
-4. **Never create new prospects** -- Contact-only rows that don't match an existing company are flagged for review, not auto-created
-5. **Never touch account fields** -- No prospect fields (industry, tier, outreach, etc.) are modified during a contact import
+### Changes
 
-### Technical Details
+**1. Database migration**
+- Add `public_access text NOT NULL DEFAULT 'none'` to `territories` (values: `'none'`, `'viewer'`, `'editor'`)
+- Add a security definer function `is_territory_public(_territory_id uuid)` that returns the `public_access` value
+- Add SELECT policies for `anon` role on `territories`, `prospects`, `prospect_contacts`, `prospect_interactions`, `prospect_notes`, `prospect_signals`, `prospect_tasks` — all using `is_territory_public(territory_id) != 'none'` as the condition
+- This keeps existing authenticated policies untouched
 
-**File: `src/components/CSVUploadDialog.tsx`**
+**2. `ShareTerritoryDialog.tsx`**
+- Add a toggle/dropdown for "General access" with options: "Restricted" (login required to join) vs "Anyone with the link" (public view)
+- When "Anyone with the link" is selected, save `public_access = linkRole` to the territory
+- When "Restricted" is selected, save `public_access = 'none'`
+- The owner updates this via `supabase.from('territories').update({ public_access })` (already allowed by owner UPDATE policy)
 
-1. Add contact-specific column aliases to detect contact CSVs:
-   - "first name", "fname", "given name" -> contactFirstName
-   - "last name", "lname", "surname", "family name" -> contactLastName  
-   - "title", "job title", "position", "role" -> contactTitle
-   - "email", "email address", "e-mail" -> contactEmail (already partially exists)
-   - "phone", "phone number", "mobile" -> contactPhone
+**3. `ShareJoinPage.tsx`**
+- Remove the redirect-to-auth for unauthenticated users
+- If user is NOT logged in AND the territory has `public_access != 'none'`, render a **read-only public view** of the territory's prospects inline (a simplified version of the prospect table)
+- If user IS logged in, keep the current join-as-member behavior
+- Show a "Sign in to edit" banner for anonymous viewers
 
-2. Add a detection step after parsing headers: if contact-specific columns (first name, last name) are present, flag the import as `mode: "contacts"` instead of `mode: "prospects"`
+**4. New component: `PublicTerritoryView.tsx`**
+- A simplified read-only prospect list/table for anonymous viewers
+- Fetches prospects, contacts, etc. for the territory using the anon key (allowed by the new RLS policies)
+- Shows territory name, prospect count, basic table with name/industry/status/website
+- No editing, no filters beyond basic search — keeps it simple
 
-3. In contact mode, change `mapRow` behavior:
-   - Map "Company" to a lookup key (not to `name` for creating prospects)
-   - Combine First Name + Last Name into a contact name
-   - Map Title, Email, Phone to contact fields
-   - Return a structured contact object instead of a flat prospect partial
+**5. `useTerritories.ts`**
+- Add `updatePublicAccess(territoryId, access: 'none' | 'viewer' | 'editor')` function
+- Pass it to `ShareTerritoryDialog`
 
-4. In contact mode, change the matching/preview logic:
-   - Match each row's Company value against existing prospects (exact, then fuzzy)
-   - If matched: action = "update" (will add contact to that prospect)
-   - If no match: action = "review" (user decides; cannot auto-create)
-   - If contact email already exists on that prospect: action = "skip" (duplicate)
+**6. `App.tsx`**
+- No changes needed — `/share/:territoryId` route already exists and isn't wrapped in `ProtectedRoute`
 
-5. In contact mode, change `handleConfirm`:
-   - For each "update" row, append the new contact to the matched prospect's existing contacts array
-   - Call `onImport` with updates that only modify the `contacts` field
-   - Never pass new prospect rows
+### RLS Policy Summary
 
-6. Update the preview table columns to show contact-relevant info (Name, Title, Email, Company) instead of prospect fields when in contact mode
+```sql
+-- Allow anonymous SELECT on territories that are public
+CREATE POLICY "Public territories are viewable"
+ON public.territories FOR SELECT TO anon
+USING (public_access != 'none');
 
-7. Update the dialog description to indicate "Contact Import" when in contact mode
+-- Allow anonymous SELECT on prospects in public territories  
+CREATE POLICY "Public territory prospects are viewable"
+ON public.prospects FOR SELECT TO anon
+USING (EXISTS (
+  SELECT 1 FROM territories t 
+  WHERE t.id = prospects.territory_id 
+  AND t.public_access != 'none'
+));
 
-**File: `src/hooks/useProspects.ts`**
-- No changes needed -- the existing `update` function already handles syncing contacts when `contacts` is included in the update payload
+-- Same pattern for prospect_contacts, prospect_notes, etc.
+```
+
+### User Flow
+1. Owner opens Share dialog → sets "Anyone with the link" to Viewer
+2. Copies link → sends to someone
+3. Recipient opens link in incognito → sees read-only prospect list immediately, no login required
+4. If they want to edit, they can sign in and get added as a member
+
