@@ -702,6 +702,7 @@ export default function TerritoryPlanner() {
     setFLocRange(v.filters.fLocRange || [0, maxLocs]);
     setFOutreach(v.filters.fOutreach);
     setFPriority(v.filters.fPriority || []);
+    setFDataFilter(v.filters.fDataFilter || []);
     setActiveViewId(v.id);
     toast(`📂 Loaded "${v.name}"`);
   };
