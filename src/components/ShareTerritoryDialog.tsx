@@ -5,11 +5,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, Trash2, Crown, Pencil, Eye } from "lucide-react";
+import { Users, UserPlus, Trash2, Crown, Pencil, Eye, Link, Check } from "lucide-react";
+import { toast } from "sonner";
 import type { Territory, TerritoryMember } from "@/hooks/useTerritories";
 
 interface ShareTerritoryDialogProps {
@@ -48,6 +48,8 @@ export function ShareTerritoryDialog({
   const [inviting, setInviting] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(territory?.name || "");
+  const [linkRole, setLinkRole] = useState<"editor" | "viewer">("viewer");
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const isOwner = myRole === "owner";
 
@@ -66,6 +68,15 @@ export function ShareTerritoryDialog({
     setEditingName(false);
   };
 
+  const handleCopyLink = () => {
+    if (!territory) return;
+    const url = `${window.location.origin}/share/${territory.id}?role=${linkRole}`;
+    navigator.clipboard.writeText(url);
+    setLinkCopied(true);
+    toast.success("Link copied to clipboard");
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
   const inputClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 placeholder:text-muted-foreground transition-all";
 
   return (
@@ -77,7 +88,7 @@ export function ShareTerritoryDialog({
             Share Territory
           </DialogTitle>
           <DialogDescription>
-            Invite teammates to collaborate on this territory.
+            Invite teammates or share a link to collaborate.
           </DialogDescription>
         </DialogHeader>
 
@@ -112,10 +123,10 @@ export function ShareTerritoryDialog({
             )}
           </div>
 
-          {/* Invite form (owner only) */}
+          {/* Invite by email (owner only) */}
           {isOwner && (
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">Invite by Email</label>
+              <label className="text-xs font-medium text-muted-foreground">Add people</label>
               <div className="flex gap-2">
                 <input
                   value={email}
@@ -129,8 +140,8 @@ export function ShareTerritoryDialog({
                   onChange={(e) => setRole(e.target.value as "editor" | "viewer")}
                   className="px-2 py-2 text-xs rounded-lg border border-border bg-background text-foreground"
                 >
-                  <option value="editor">Editor (BDR)</option>
-                  <option value="viewer">Viewer (Manager)</option>
+                  <option value="editor">Editor</option>
+                  <option value="viewer">Viewer</option>
                 </select>
               </div>
               <Button
@@ -145,10 +156,42 @@ export function ShareTerritoryDialog({
             </div>
           )}
 
+          {/* General access — copy link (owner only) */}
+          {isOwner && (
+            <div className="space-y-2 border-t border-border pt-3">
+              <label className="text-xs font-medium text-muted-foreground">General access</label>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                  <Link className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-foreground">Anyone with the link</p>
+                </div>
+                <select
+                  value={linkRole}
+                  onChange={(e) => setLinkRole(e.target.value as "editor" | "viewer")}
+                  className="px-2 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground"
+                >
+                  <option value="viewer">Viewer</option>
+                  <option value="editor">Editor</option>
+                </select>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyLink}
+                className="w-full gap-1.5"
+              >
+                {linkCopied ? <Check className="w-3.5 h-3.5" /> : <Link className="w-3.5 h-3.5" />}
+                {linkCopied ? "Copied!" : "Copy link"}
+              </Button>
+            </div>
+          )}
+
           {/* Members list */}
-          <div>
+          <div className="border-t border-border pt-3">
             <label className="text-xs font-medium text-muted-foreground mb-2 block">
-              Members ({members.length})
+              People with access ({members.length})
             </label>
             <div className="space-y-2">
               {members.map((m) => {
@@ -201,11 +244,11 @@ export function ShareTerritoryDialog({
             </div>
           </div>
 
-          {/* Role legend */}
+          {/* Clean role legend */}
           <div className="text-[10px] text-muted-foreground space-y-0.5 border-t border-border pt-3">
-            <p><strong>Owner (AE):</strong> Full control — manage prospects, invite members</p>
-            <p><strong>Editor (BDR):</strong> Can add/edit prospects, but can't manage the territory</p>
-            <p><strong>Viewer (Manager):</strong> Read-only access to monitor progress</p>
+            <p><strong>Owner</strong> — Full control, manage members</p>
+            <p><strong>Editor</strong> — Can add and edit prospects</p>
+            <p><strong>Viewer</strong> — Read-only access</p>
           </div>
         </div>
       </DialogContent>
