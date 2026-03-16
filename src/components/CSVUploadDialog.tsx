@@ -615,7 +615,7 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
               {rows.length} row{rows.length !== 1 ? "s" : ""} • {includedCount} selected for import
             </div>
 
-            <ScrollArea className="flex-1 min-h-0 max-h-[50vh] border border-border rounded-lg">
+            <div className="flex-1 min-h-0 max-h-[50vh] overflow-y-auto border border-border rounded-lg">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm">
                   <tr className="border-b border-border">

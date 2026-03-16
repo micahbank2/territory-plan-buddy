@@ -46,7 +46,7 @@ export function StrengthDot({ strength }: { strength?: RelationshipStrength }) {
         )}
         style={cfg.hollow ? { backgroundColor: "transparent" } : undefined}
       />
-      <span className="text-[9px] text-muted-foreground">{s}</span>
+      <span className="text-[9px] text-muted-foreground">{s === "Unknown" ? "Relationship: Unknown" : s}</span>
     </span>
   );
 }
