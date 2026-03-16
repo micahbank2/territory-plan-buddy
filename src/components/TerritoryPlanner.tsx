@@ -630,7 +630,7 @@ export default function TerritoryPlanner() {
   };
 
   const clr = () => {
-    setQ(""); setFIndustry([]); setFOutreach([]); setFStatus([]); setFCompetitor([]); setFTier([]); setFPriority([]); setFLocRange([0, maxLocs]);
+    setQ(""); setFIndustry([]); setFOutreach([]); setFStatus([]); setFCompetitor([]); setFTier([]); setFPriority([]); setFDataFilter([]); setFLocRange([0, maxLocs]);
   };
 
   const hasFilters = fIndustry.length || fOutreach.length || fStatus.length || fCompetitor.length || fTier.length || fPriority.length || locFilterActive;
