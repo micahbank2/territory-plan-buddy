@@ -558,9 +558,9 @@ export default function TerritoryPlanner() {
       return sD === "asc" ? (av < bv ? -1 : av > bv ? 1 : 0) : (av > bv ? -1 : av < bv ? 1 : 0);
     });
     return r;
-  }, [enriched, q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fPriority, fLocRange, locFilterActive, sK, sD]);
+  }, [enriched, q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fPriority, fDataFilter, fLocRange, locFilterActive, sK, sD]);
 
-  useMemo(() => setPage(1), [q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fPriority, fLocRange]);
+  useMemo(() => setPage(1), [q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fPriority, fDataFilter, fLocRange]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
