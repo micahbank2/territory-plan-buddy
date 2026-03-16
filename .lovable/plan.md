@@ -1,56 +1,40 @@
 
-## Add Contact Import Support to CSV Upload
 
-### Problem
-The CSV upload system only understands prospect/account-level fields. When you upload a contacts CSV (with First Name, Last Name, Title, Email, Company), the system:
-- Can't map "First Name", "Last Name", or "Title" columns -- warns they'll be omitted
-- Maps "Email" to the account-level contactEmail field instead of a contact record
-- Maps "Company" as a prospect name, potentially creating duplicates or overwriting data
-- Has no way to add contacts to existing prospects
+## Revamp Share Territory Dialog (Google Docs-style)
 
-### Solution
-Detect when a CSV contains contact-specific columns, switch to a "contact import" mode, and merge contacts into matching existing prospects without touching any other account data.
+### Changes
 
-### How It Will Work
-1. **Auto-detect contact CSVs** -- If the file has columns like "First Name" or "Last Name", treat it as a contact import
-2. **Match by Company name** -- Use the Company column to find the existing prospect (using the same fuzzy matching already in place)
-3. **Add contacts, don't overwrite** -- Append new contacts to the prospect's contacts list; skip duplicates (matched by email)
-4. **Never create new prospects** -- Contact-only rows that don't match an existing company are flagged for review, not auto-created
-5. **Never touch account fields** -- No prospect fields (industry, tier, outreach, etc.) are modified during a contact import
+**1. `ShareTerritoryDialog.tsx` — UI overhaul**
 
-### Technical Details
+- **Remove role titles from dropdown options**: Change `"Editor (BDR)"` / `"Viewer (Manager)"` to just `"Editor"` / `"Viewer"` in the role `<select>`.
+- **Update bottom role legend** to be cleaner, Google Docs-style tooltips:
+  - "Editor — Can add and edit prospects"
+  - "Viewer — Read-only access"
+  - Remove the AE/BDR/Manager parentheticals.
+- **Add "Copy link" section**: A new section above or below the email invite with a "General access" area (like Google Docs). It will have:
+  - A dropdown to set the link access role (`Editor` / `Viewer`)
+  - A "Copy link" button that copies a shareable URL to clipboard
+  - The link format: `{origin}/share/{territory_id}?role={role}` — this is a client-side route that, when visited by an authenticated user, will auto-join them to the territory.
 
-**File: `src/components/CSVUploadDialog.tsx`**
+**2. New route + page: `src/pages/ShareJoinPage.tsx`**
+- Route: `/share/:territoryId`
+- On load: check if user is authenticated (redirect to login if not), then read `role` query param, call a new join function to add themselves as a member.
+- If already a member, redirect to `/` with the territory active.
+- Show a simple "Joining territory..." loading state.
 
-1. Add contact-specific column aliases to detect contact CSVs:
-   - "first name", "fname", "given name" -> contactFirstName
-   - "last name", "lname", "surname", "family name" -> contactLastName  
-   - "title", "job title", "position", "role" -> contactTitle
-   - "email", "email address", "e-mail" -> contactEmail (already partially exists)
-   - "phone", "phone number", "mobile" -> contactPhone
+**3. `useTerritories.ts` — add `joinTerritory` function**
+- New function: `joinTerritory(territoryId: string, role: "editor" | "viewer")`
+- Inserts a row into `territory_members` for the current user with the given role (if not already a member).
+- Switches to that territory after joining.
 
-2. Add a detection step after parsing headers: if contact-specific columns (first name, last name) are present, flag the import as `mode: "contacts"` instead of `mode: "prospects"`
+**4. Database: RLS policy for self-join via link**
+- Currently, `territory_members` INSERT is likely restricted to owners. Need to add an RLS policy (or adjust existing) allowing authenticated users to insert themselves as editor/viewer into a territory. To prevent abuse, we can keep it simple for now — anyone with the link can join. Alternatively, add a `share_links` table with tokens, but that's heavier than needed. Simplest: allow self-insert with role = editor or viewer (not owner).
 
-3. In contact mode, change `mapRow` behavior:
-   - Map "Company" to a lookup key (not to `name` for creating prospects)
-   - Combine First Name + Last Name into a contact name
-   - Map Title, Email, Phone to contact fields
-   - Return a structured contact object instead of a flat prospect partial
+**5. `App.tsx` — add `/share/:territoryId` route**
 
-4. In contact mode, change the matching/preview logic:
-   - Match each row's Company value against existing prospects (exact, then fuzzy)
-   - If matched: action = "update" (will add contact to that prospect)
-   - If no match: action = "review" (user decides; cannot auto-create)
-   - If contact email already exists on that prospect: action = "skip" (duplicate)
+### Summary of visual changes
+- Dropdown options: "Editor" / "Viewer" (no parenthetical titles)
+- Bottom legend: concise permission descriptions without role aliases
+- New "General access" section with copy-link button + role selector
+- New `/share/:territoryId` join page for link-based sharing
 
-5. In contact mode, change `handleConfirm`:
-   - For each "update" row, append the new contact to the matched prospect's existing contacts array
-   - Call `onImport` with updates that only modify the `contacts` field
-   - Never pass new prospect rows
-
-6. Update the preview table columns to show contact-relevant info (Name, Title, Email, Company) instead of prospect fields when in contact mode
-
-7. Update the dialog description to indicate "Contact Import" when in contact mode
-
-**File: `src/hooks/useProspects.ts`**
-- No changes needed -- the existing `update` function already handles syncing contacts when `contacts` is included in the update payload
