@@ -116,8 +116,18 @@ interface SavedView {
     fLocRange: [number, number];
     fOutreach: string[];
     fPriority: string[];
+    fDataFilter?: string[];
   };
 }
+
+const DATA_FILTER_OPTIONS = [
+  "Has Contacts", "No Contacts",
+  "Has Notes", "No Notes",
+  "Has Interactions", "No Interactions",
+  "Has Tasks", "No Tasks",
+  "Has AI Readiness", "No AI Readiness",
+  "Has Website", "No Website",
+];
 function loadViews(): SavedView[] {
   try {
     const raw = localStorage.getItem(VIEWS_KEY);
@@ -390,6 +400,7 @@ export default function TerritoryPlanner() {
   const [fLocRange, setFLocRange] = useState<[number, number]>([0, 0]);
   const [fOutreach, setFOutreach] = useState<string[]>([]);
   const [fPriority, setFPriority] = useState<string[]>([]);
+  const [fDataFilter, setFDataFilter] = useState<string[]>([]);
   const [sK, setSK] = useState<string>("ps");
   const [sD, setSD] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
@@ -514,6 +525,27 @@ export default function TerritoryPlanner() {
     if (fCompetitor.length) r = r.filter((p) => fCompetitor.includes(p.competitor));
     if (fTier.length) r = r.filter((p) => fTier.includes(p.tier));
     if (fPriority.length) r = r.filter((p) => fPriority.includes(p.priority));
+    if (fDataFilter.length) {
+      r = r.filter((p) => {
+        return fDataFilter.every((f) => {
+          switch (f) {
+            case "Has Contacts": return (p.contacts?.length || 0) > 0;
+            case "No Contacts": return !p.contacts?.length;
+            case "Has Notes": return (p.noteLog?.length || 0) > 0 || !!p.notes;
+            case "No Notes": return (!p.noteLog?.length) && !p.notes;
+            case "Has Interactions": return (p.interactions?.length || 0) > 0;
+            case "No Interactions": return !p.interactions?.length;
+            case "Has Tasks": return (p.tasks?.length || 0) > 0;
+            case "No Tasks": return !p.tasks?.length;
+            case "Has AI Readiness": return p.aiReadinessScore != null;
+            case "No AI Readiness": return p.aiReadinessScore == null;
+            case "Has Website": return !!p.website;
+            case "No Website": return !p.website;
+            default: return true;
+          }
+        });
+      });
+    }
     if (locFilterActive) r = r.filter((p) => {
       const lc = p.locationCount || 0;
       return lc >= fLocRange[0] && lc <= fLocRange[1];
@@ -526,9 +558,9 @@ export default function TerritoryPlanner() {
       return sD === "asc" ? (av < bv ? -1 : av > bv ? 1 : 0) : (av > bv ? -1 : av < bv ? 1 : 0);
     });
     return r;
-  }, [enriched, q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fPriority, fLocRange, locFilterActive, sK, sD]);
+  }, [enriched, q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fPriority, fDataFilter, fLocRange, locFilterActive, sK, sD]);
 
-  useMemo(() => setPage(1), [q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fPriority, fLocRange]);
+  useMemo(() => setPage(1), [q, fIndustry, fOutreach, fStatus, fCompetitor, fTier, fPriority, fDataFilter, fLocRange]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -598,10 +630,10 @@ export default function TerritoryPlanner() {
   };
 
   const clr = () => {
-    setQ(""); setFIndustry([]); setFOutreach([]); setFStatus([]); setFCompetitor([]); setFTier([]); setFPriority([]); setFLocRange([0, maxLocs]);
+    setQ(""); setFIndustry([]); setFOutreach([]); setFStatus([]); setFCompetitor([]); setFTier([]); setFPriority([]); setFDataFilter([]); setFLocRange([0, maxLocs]);
   };
 
-  const hasFilters = fIndustry.length || fOutreach.length || fStatus.length || fCompetitor.length || fTier.length || fPriority.length || locFilterActive;
+  const hasFilters = fIndustry.length || fOutreach.length || fStatus.length || fCompetitor.length || fTier.length || fPriority.length || fDataFilter.length || locFilterActive;
 
   const toggleSelect = (id: any) => {
     setSelected((prev) => {
@@ -654,7 +686,7 @@ export default function TerritoryPlanner() {
     const view: SavedView = {
       id: Date.now().toString(),
       name: viewName.trim(),
-      filters: { q, fIndustry, fStatus, fCompetitor, fTier, fLocRange, fOutreach, fPriority },
+      filters: { q, fIndustry, fStatus, fCompetitor, fTier, fLocRange, fOutreach, fPriority, fDataFilter },
     };
     const updated = [...savedViews, view];
     setSavedViews(updated);
@@ -670,6 +702,7 @@ export default function TerritoryPlanner() {
     setFLocRange(v.filters.fLocRange || [0, maxLocs]);
     setFOutreach(v.filters.fOutreach);
     setFPriority(v.filters.fPriority || []);
+    setFDataFilter(v.filters.fDataFilter || []);
     setActiveViewId(v.id);
     toast(`📂 Loaded "${v.name}"`);
   };
@@ -1388,6 +1421,7 @@ export default function TerritoryPlanner() {
             <MultiSelect options={COMPETITORS.filter(Boolean)} selected={fCompetitor} onChange={setFCompetitor} placeholder="Competitor" />
             <MultiSelect options={TIERS.filter(Boolean)} selected={fTier} onChange={setFTier} placeholder="Tier" />
             <MultiSelect options={["Hot", "Warm", "Cold", "Dead"]} selected={fPriority} onChange={setFPriority} placeholder="Priority" />
+            <MultiSelect options={DATA_FILTER_OPTIONS} selected={fDataFilter} onChange={setFDataFilter} placeholder="Has / Missing" />
 
             {/* Location Range Slider */}
             <Popover>

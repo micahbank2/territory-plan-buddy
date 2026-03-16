@@ -1,26 +1,56 @@
 
+## Add Contact Import Support to CSV Upload
 
-## Add "Has/Missing" Data Filter
+### Problem
+The CSV upload system only understands prospect/account-level fields. When you upload a contacts CSV (with First Name, Last Name, Title, Email, Company), the system:
+- Can't map "First Name", "Last Name", or "Title" columns -- warns they'll be omitted
+- Maps "Email" to the account-level contactEmail field instead of a contact record
+- Maps "Company" as a prospect name, potentially creating duplicates or overwriting data
+- Has no way to add contacts to existing prospects
 
-### What it does
-Adds a new filter dropdown next to the existing ones (Industry, Outreach, etc.) that lets you filter prospects by whether they **have** or are **missing** key data like contacts, notes, interactions, tasks, AI readiness, website, etc. For example: "No Contacts", "Has Contacts", "No Notes", "Has AI Readiness".
+### Solution
+Detect when a CSV contains contact-specific columns, switch to a "contact import" mode, and merge contacts into matching existing prospects without touching any other account data.
 
-### Changes
+### How It Will Work
+1. **Auto-detect contact CSVs** -- If the file has columns like "First Name" or "Last Name", treat it as a contact import
+2. **Match by Company name** -- Use the Company column to find the existing prospect (using the same fuzzy matching already in place)
+3. **Add contacts, don't overwrite** -- Append new contacts to the prospect's contacts list; skip duplicates (matched by email)
+4. **Never create new prospects** -- Contact-only rows that don't match an existing company are flagged for review, not auto-created
+5. **Never touch account fields** -- No prospect fields (industry, tier, outreach, etc.) are modified during a contact import
 
-**`src/components/TerritoryPlanner.tsx`**
-1. Add new state: `const [fDataFilter, setFDataFilter] = useState<string[]>([])` for the has/missing filter selections.
-2. Add a new `MultiSelect` in the filter bar (after Priority, before Locations) with options like:
-   - "Has Contacts" / "No Contacts"
-   - "Has Notes" / "No Notes"  
-   - "Has Interactions" / "No Interactions"
-   - "Has Tasks" / "No Tasks"
-   - "Has AI Readiness" / "No AI Readiness"
-   - "Has Website" / "No Website"
-3. In the `filtered` useMemo, apply each selected data filter condition. E.g. "No Contacts" → `p.contacts?.length === 0 || !p.contacts`.
-4. Update `clr()`, `hasFilters`, `SavedView` interface, `handleSaveView`, `loadView`, and the `useMemo` dependency array to include the new filter state.
+### Technical Details
 
-### Technical detail
-- The filter works as OR within a category (e.g. selecting "No Contacts" + "No Notes" shows prospects missing contacts OR missing notes) — consistent with how existing multi-select filters behave.
-- Actually, re-thinking: the "Has X" and "No X" options are mutually exclusive per field but multiple fields can be selected. The simplest approach: treat each selected option as an AND condition — "No Contacts" AND "No Notes" = prospects missing both. This is more useful for the user's stated goal of finding gaps.
-- Uses the existing `MultiSelect` component with a placeholder like "Data" or "Has / Missing".
+**File: `src/components/CSVUploadDialog.tsx`**
 
+1. Add contact-specific column aliases to detect contact CSVs:
+   - "first name", "fname", "given name" -> contactFirstName
+   - "last name", "lname", "surname", "family name" -> contactLastName  
+   - "title", "job title", "position", "role" -> contactTitle
+   - "email", "email address", "e-mail" -> contactEmail (already partially exists)
+   - "phone", "phone number", "mobile" -> contactPhone
+
+2. Add a detection step after parsing headers: if contact-specific columns (first name, last name) are present, flag the import as `mode: "contacts"` instead of `mode: "prospects"`
+
+3. In contact mode, change `mapRow` behavior:
+   - Map "Company" to a lookup key (not to `name` for creating prospects)
+   - Combine First Name + Last Name into a contact name
+   - Map Title, Email, Phone to contact fields
+   - Return a structured contact object instead of a flat prospect partial
+
+4. In contact mode, change the matching/preview logic:
+   - Match each row's Company value against existing prospects (exact, then fuzzy)
+   - If matched: action = "update" (will add contact to that prospect)
+   - If no match: action = "review" (user decides; cannot auto-create)
+   - If contact email already exists on that prospect: action = "skip" (duplicate)
+
+5. In contact mode, change `handleConfirm`:
+   - For each "update" row, append the new contact to the matched prospect's existing contacts array
+   - Call `onImport` with updates that only modify the `contacts` field
+   - Never pass new prospect rows
+
+6. Update the preview table columns to show contact-relevant info (Name, Title, Email, Company) instead of prospect fields when in contact mode
+
+7. Update the dialog description to indicate "Contact Import" when in contact mode
+
+**File: `src/hooks/useProspects.ts`**
+- No changes needed -- the existing `update` function already handles syncing contacts when `contacts` is included in the update payload
