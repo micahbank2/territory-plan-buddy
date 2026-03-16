@@ -633,7 +633,7 @@ export default function TerritoryPlanner() {
     setQ(""); setFIndustry([]); setFOutreach([]); setFStatus([]); setFCompetitor([]); setFTier([]); setFPriority([]); setFDataFilter([]); setFLocRange([0, maxLocs]);
   };
 
-  const hasFilters = fIndustry.length || fOutreach.length || fStatus.length || fCompetitor.length || fTier.length || fPriority.length || locFilterActive;
+  const hasFilters = fIndustry.length || fOutreach.length || fStatus.length || fCompetitor.length || fTier.length || fPriority.length || fDataFilter.length || locFilterActive;
 
   const toggleSelect = (id: any) => {
     setSelected((prev) => {
