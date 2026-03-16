@@ -318,18 +318,21 @@ export type Database = {
           id: string
           name: string
           owner_id: string
+          public_access: string
         }
         Insert: {
           created_at?: string
           id?: string
           name?: string
           owner_id: string
+          public_access?: string
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
           owner_id?: string
+          public_access?: string
         }
         Relationships: []
       }
@@ -372,6 +375,7 @@ export type Database = {
     Functions: {
       ensure_user_territory: { Args: { _user_id: string }; Returns: string }
       find_user_id_by_email: { Args: { _email: string }; Returns: string }
+      is_territory_public: { Args: { _territory_id: string }; Returns: string }
       user_can_access_territory: {
         Args: { _territory_id: string }
         Returns: boolean
