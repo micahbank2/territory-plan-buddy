@@ -116,8 +116,18 @@ interface SavedView {
     fLocRange: [number, number];
     fOutreach: string[];
     fPriority: string[];
+    fDataFilter?: string[];
   };
 }
+
+const DATA_FILTER_OPTIONS = [
+  "Has Contacts", "No Contacts",
+  "Has Notes", "No Notes",
+  "Has Interactions", "No Interactions",
+  "Has Tasks", "No Tasks",
+  "Has AI Readiness", "No AI Readiness",
+  "Has Website", "No Website",
+];
 function loadViews(): SavedView[] {
   try {
     const raw = localStorage.getItem(VIEWS_KEY);
