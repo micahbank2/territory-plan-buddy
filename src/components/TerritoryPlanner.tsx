@@ -390,6 +390,7 @@ export default function TerritoryPlanner() {
   const [fLocRange, setFLocRange] = useState<[number, number]>([0, 0]);
   const [fOutreach, setFOutreach] = useState<string[]>([]);
   const [fPriority, setFPriority] = useState<string[]>([]);
+  const [fDataFilter, setFDataFilter] = useState<string[]>([]);
   const [sK, setSK] = useState<string>("ps");
   const [sD, setSD] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
