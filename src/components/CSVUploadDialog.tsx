@@ -718,7 +718,7 @@ export function CSVUploadDialog({ open, onOpenChange, existingData, onImport }: 
                   ))}
                 </tbody>
               </table>
-            </ScrollArea>
+            </div>
           </>
         )}
 
