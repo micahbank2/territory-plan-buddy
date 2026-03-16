@@ -1421,6 +1421,7 @@ export default function TerritoryPlanner() {
             <MultiSelect options={COMPETITORS.filter(Boolean)} selected={fCompetitor} onChange={setFCompetitor} placeholder="Competitor" />
             <MultiSelect options={TIERS.filter(Boolean)} selected={fTier} onChange={setFTier} placeholder="Tier" />
             <MultiSelect options={["Hot", "Warm", "Cold", "Dead"]} selected={fPriority} onChange={setFPriority} placeholder="Priority" />
+            <MultiSelect options={DATA_FILTER_OPTIONS} selected={fDataFilter} onChange={setFDataFilter} placeholder="Has / Missing" />
 
             {/* Location Range Slider */}
             <Popover>
