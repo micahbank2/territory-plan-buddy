@@ -1,33 +1,56 @@
 
+## Add Contact Import Support to CSV Upload
 
-## Landing Page for Territory Planner
+### Problem
+The CSV upload system only understands prospect/account-level fields. When you upload a contacts CSV (with First Name, Last Name, Title, Email, Company), the system:
+- Can't map "First Name", "Last Name", or "Title" columns -- warns they'll be omitted
+- Maps "Email" to the account-level contactEmail field instead of a contact record
+- Maps "Company" as a prospect name, potentially creating duplicates or overwriting data
+- Has no way to add contacts to existing prospects
 
-### Approach
-Create a new `LandingPage.tsx` that unauthenticated users see instead of being redirected to `/auth`. The page will use existing brand utilities (`.gradient-text`, `.glass-card`, `RetroGrid`, periwinkle primary) and link to `/auth` for sign-up/sign-in.
+### Solution
+Detect when a CSV contains contact-specific columns, switch to a "contact import" mode, and merge contacts into matching existing prospects without touching any other account data.
 
-### Route Change
-- **`App.tsx`**: Add a `/landing` route pointing to `LandingPage`, and change the `/auth` page to include a link back. Optionally make `/` show the landing page for unauthenticated users instead of redirecting to `/auth`.
+### How It Will Work
+1. **Auto-detect contact CSVs** -- If the file has columns like "First Name" or "Last Name", treat it as a contact import
+2. **Match by Company name** -- Use the Company column to find the existing prospect (using the same fuzzy matching already in place)
+3. **Add contacts, don't overwrite** -- Append new contacts to the prospect's contacts list; skip duplicates (matched by email)
+4. **Never create new prospects** -- Contact-only rows that don't match an existing company are flagged for review, not auto-created
+5. **Never touch account fields** -- No prospect fields (industry, tier, outreach, etc.) are modified during a contact import
 
-### Page Structure (`src/pages/LandingPage.tsx`)
+### Technical Details
 
-1. **Nav bar** -- Yext logo left, "Sign In" button right
-2. **Hero section** -- Large `.gradient-text` headline ("AI-Powered Territory Planning"), subtitle, two CTAs: "Get Started" (primary, links to `/auth?signup=true`) and "See How It Works" (outline, scrolls down)
-3. **Feature cards grid** (2x2 on desktop, stacked mobile) using `.glass-card`:
-   - **AI Search Readiness** -- Brain icon, "Grade every prospect's visibility in AI search engines like ChatGPT and Google AI Overviews"
-   - **Smart Import & Enrichment** -- Upload icon, "Paste from LinkedIn Sales Nav or upload a CSV. Auto-dedupe, auto-enrich industry and contacts"
-   - **Secure Auth & Google OAuth** -- Shield icon, "Enterprise-grade auth with Google single sign-on. Your data stays private with row-level security"
-   - **Share Anywhere** -- Share icon, "Google Docs-style sharing. Anyone with the link can view -- no login required"
-4. **Secondary features strip** -- Smaller cards for Prospect Scoring, Signals & Triggers, Territory Views
-5. **CTA banner** -- "Ready to plan smarter?" with sign-up button
-6. **Footer** -- minimal, "Built with Lovable"
+**File: `src/components/CSVUploadDialog.tsx`**
 
-### Styling
-- `RetroGrid` behind the hero (reuse from auth page)
-- `fade-in-up` animation on feature cards with staggered delays
-- Fully responsive -- single column on mobile
-- High-contrast text per the readability-first memory
+1. Add contact-specific column aliases to detect contact CSVs:
+   - "first name", "fname", "given name" -> contactFirstName
+   - "last name", "lname", "surname", "family name" -> contactLastName  
+   - "title", "job title", "position", "role" -> contactTitle
+   - "email", "email address", "e-mail" -> contactEmail (already partially exists)
+   - "phone", "phone number", "mobile" -> contactPhone
 
-### Files
-- **New**: `src/pages/LandingPage.tsx`
-- **Edit**: `src/App.tsx` -- add route, show landing for unauthenticated `/` visits
+2. Add a detection step after parsing headers: if contact-specific columns (first name, last name) are present, flag the import as `mode: "contacts"` instead of `mode: "prospects"`
 
+3. In contact mode, change `mapRow` behavior:
+   - Map "Company" to a lookup key (not to `name` for creating prospects)
+   - Combine First Name + Last Name into a contact name
+   - Map Title, Email, Phone to contact fields
+   - Return a structured contact object instead of a flat prospect partial
+
+4. In contact mode, change the matching/preview logic:
+   - Match each row's Company value against existing prospects (exact, then fuzzy)
+   - If matched: action = "update" (will add contact to that prospect)
+   - If no match: action = "review" (user decides; cannot auto-create)
+   - If contact email already exists on that prospect: action = "skip" (duplicate)
+
+5. In contact mode, change `handleConfirm`:
+   - For each "update" row, append the new contact to the matched prospect's existing contacts array
+   - Call `onImport` with updates that only modify the `contacts` field
+   - Never pass new prospect rows
+
+6. Update the preview table columns to show contact-relevant info (Name, Title, Email, Company) instead of prospect fields when in contact mode
+
+7. Update the dialog description to indicate "Contact Import" when in contact mode
+
+**File: `src/hooks/useProspects.ts`**
+- No changes needed -- the existing `update` function already handles syncing contacts when `contacts` is included in the update payload

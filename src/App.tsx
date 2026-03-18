@@ -13,6 +13,7 @@ import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ShareJoinPage from "./pages/ShareJoinPage";
+import LandingPage from "./pages/LandingPage";
 
 const queryClient = new QueryClient();
 
@@ -23,11 +24,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function LandingOrDashboard() {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+  if (!user) return <LandingPage />;
+  return <Index />;
+}
+
 const AppRoutes = () => (
   <Routes>
     <Route path="/auth" element={<AuthPage />} />
     <Route path="/reset-password" element={<ResetPasswordPage />} />
-    <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+    <Route path="/" element={<LandingOrDashboard />} />
     <Route path="/prospect/:id" element={<ProtectedRoute><ProspectPage /></ProtectedRoute>} />
     <Route path="/insights" element={<ProtectedRoute><InsightsPage /></ProtectedRoute>} />
     <Route path="/signals" element={<Navigate to="/insights" replace />} />
