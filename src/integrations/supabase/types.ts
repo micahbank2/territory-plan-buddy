@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      opportunities: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          notes: string
+          point_of_contact: string
+          potential_value: number | null
+          source: string
+          stage: string
+          territory_id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string
+          point_of_contact?: string
+          potential_value?: number | null
+          source?: string
+          stage?: string
+          territory_id: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string
+          point_of_contact?: string
+          potential_value?: number | null
+          source?: string
+          stage?: string
+          territory_id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_territory_id_fkey"
+            columns: ["territory_id"]
+            isOneToOne: false
+            referencedRelation: "territories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prospect_contacts: {
         Row: {
           email: string
