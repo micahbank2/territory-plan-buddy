@@ -12,6 +12,7 @@ import SignalsPage from "./pages/SignalsPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import OpportunitiesPage from "./pages/OpportunitiesPage";
 import ShareJoinPage from "./pages/ShareJoinPage";
 import LandingPage from "./pages/LandingPage";
 
