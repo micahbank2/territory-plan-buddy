@@ -49,7 +49,7 @@ export default function OpportunitiesPage() {
   const { user } = useAuth();
   const { activeTerritory } = useTerritories();
   const { opportunities, loading, add, update, remove } = useOpportunities(activeTerritory);
-  const { prospects } = useProspects();
+  const { data: prospects } = useProspects();
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(emptyOpp);
