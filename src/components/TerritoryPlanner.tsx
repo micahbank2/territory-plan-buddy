@@ -1123,6 +1123,9 @@ export default function TerritoryPlanner() {
                     <DropdownMenuItem onClick={() => navigate("/insights")}>
                       <BarChart3 className="w-4 h-4 mr-2" /> Insights
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/opportunities")}>
+                      <DollarSign className="w-4 h-4 mr-2" /> Deals
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={exportCSV}>
                       <Download className="w-4 h-4 mr-2" /> Export CSV
                     </DropdownMenuItem>
