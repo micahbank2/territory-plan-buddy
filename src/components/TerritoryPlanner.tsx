@@ -73,6 +73,7 @@ import {
   ChevronRight as ChevronRightIcon,
   Users,
   Share2,
+  DollarSign,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -962,6 +963,9 @@ export default function TerritoryPlanner() {
                   <CommandItem onSelect={() => { setCmdOpen(false); navigate("/insights"); }}>
                     <BarChart3 className="w-4 h-4 mr-2" /> Open Insights
                   </CommandItem>
+                  <CommandItem onSelect={() => { setCmdOpen(false); navigate("/opportunities"); }}>
+                    <DollarSign className="w-4 h-4 mr-2" /> Open Deals
+                  </CommandItem>
                   <CommandItem onSelect={() => { setCmdOpen(false); setViewMode(viewMode === "table" ? "kanban" : "table"); }}>
                     <LayoutGrid className="w-4 h-4 mr-2" /> Toggle {viewMode === "table" ? "Kanban" : "Table"} View
                   </CommandItem>
@@ -1033,6 +1037,9 @@ export default function TerritoryPlanner() {
               <div className="hidden md:flex items-center gap-1.5">
                 <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <BarChart3 className="w-3.5 h-3.5" /> Insights
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => navigate("/opportunities")} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
+                  <DollarSign className="w-3.5 h-3.5" /> Deals
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => setShowEnrich(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <Sparkles className="w-3.5 h-3.5" /> Enrich
@@ -1118,6 +1125,9 @@ export default function TerritoryPlanner() {
                   <DropdownMenuContent align="end" className="w-48 bg-popover border-border z-50">
                     <DropdownMenuItem onClick={() => navigate("/insights")}>
                       <BarChart3 className="w-4 h-4 mr-2" /> Insights
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/opportunities")}>
+                      <DollarSign className="w-4 h-4 mr-2" /> Deals
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={exportCSV}>
                       <Download className="w-4 h-4 mr-2" /> Export CSV
