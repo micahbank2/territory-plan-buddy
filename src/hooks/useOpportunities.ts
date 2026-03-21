@@ -11,15 +11,19 @@ export interface Opportunity {
   type: string;
   potential_value: number;
   point_of_contact: string;
-  source: string;
   stage: string;
   notes: string;
+  products: string;
+  close_date: string;
+  prospect_id: string | null;
   created_at: string;
 }
 
-export const OPP_TYPES = ["One-time", "Recurring", "Trial", "Exclusive"] as const;
-export const OPP_SOURCES = ["Outreach", "Referral", "Inbound", "Event", "Partner"] as const;
-export const OPP_STAGES = ["Open", "Qualified", "Proposal", "Negotiation", "Closed Won", "Closed Lost"] as const;
+export const OPP_TYPES = ["Net New", "Renewal", "Order Form"] as const;
+export const OPP_STAGES = [
+  "Develop", "Discovery", "Business Alignment", "Validate",
+  "Propose", "Negotiate", "Won", "Closed Won", "Closed Lost", "Dead"
+] as const;
 
 export function useOpportunities(territoryId: string | null) {
   const { user } = useAuth();
