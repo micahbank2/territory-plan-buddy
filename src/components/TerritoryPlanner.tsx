@@ -963,6 +963,9 @@ export default function TerritoryPlanner() {
                   <CommandItem onSelect={() => { setCmdOpen(false); navigate("/insights"); }}>
                     <BarChart3 className="w-4 h-4 mr-2" /> Open Insights
                   </CommandItem>
+                  <CommandItem onSelect={() => { setCmdOpen(false); navigate("/opportunities"); }}>
+                    <DollarSign className="w-4 h-4 mr-2" /> Open Deals
+                  </CommandItem>
                   <CommandItem onSelect={() => { setCmdOpen(false); setViewMode(viewMode === "table" ? "kanban" : "table"); }}>
                     <LayoutGrid className="w-4 h-4 mr-2" /> Toggle {viewMode === "table" ? "Kanban" : "Table"} View
                   </CommandItem>
