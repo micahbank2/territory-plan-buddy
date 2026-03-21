@@ -1034,6 +1034,9 @@ export default function TerritoryPlanner() {
                 <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <BarChart3 className="w-3.5 h-3.5" /> Insights
                 </Button>
+                <Button variant="outline" size="sm" onClick={() => navigate("/opportunities")} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
+                  <DollarSign className="w-3.5 h-3.5" /> Deals
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => setShowEnrich(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
                   <Sparkles className="w-3.5 h-3.5" /> Enrich
                 </Button>

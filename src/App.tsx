@@ -39,6 +39,7 @@ const AppRoutes = () => (
     <Route path="/" element={<LandingOrDashboard />} />
     <Route path="/prospect/:id" element={<ProtectedRoute><ProspectPage /></ProtectedRoute>} />
     <Route path="/insights" element={<ProtectedRoute><InsightsPage /></ProtectedRoute>} />
+    <Route path="/opportunities" element={<ProtectedRoute><OpportunitiesPage /></ProtectedRoute>} />
     <Route path="/signals" element={<Navigate to="/insights" replace />} />
     <Route path="/share/:territoryId" element={<ShareJoinPage />} />
     <Route path="*" element={<NotFound />} />
