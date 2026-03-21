@@ -16,45 +16,58 @@ export type Database = {
     Tables: {
       opportunities: {
         Row: {
+          close_date: string
           created_at: string
           id: string
           name: string
           notes: string
           point_of_contact: string
           potential_value: number | null
-          source: string
+          products: string
+          prospect_id: string | null
           stage: string
           territory_id: string
           type: string
           user_id: string
         }
         Insert: {
+          close_date?: string
           created_at?: string
           id?: string
           name: string
           notes?: string
           point_of_contact?: string
           potential_value?: number | null
-          source?: string
+          products?: string
+          prospect_id?: string | null
           stage?: string
           territory_id: string
           type?: string
           user_id: string
         }
         Update: {
+          close_date?: string
           created_at?: string
           id?: string
           name?: string
           notes?: string
           point_of_contact?: string
           potential_value?: number | null
-          source?: string
+          products?: string
+          prospect_id?: string | null
           stage?: string
           territory_id?: string
           type?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "opportunities_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "opportunities_territory_id_fkey"
             columns: ["territory_id"]
