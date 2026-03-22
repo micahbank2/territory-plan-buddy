@@ -254,9 +254,6 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     setOutreachOpen(true);
     setOutreachDraft("");
     try {
-      const sortedInteractions = [...(prospect.interactions || [])].sort((a, b) => b.date.localeCompare(a.date));
-      const recentInteraction = sortedInteractions[0] || null;
-
       const { data: result, error: fnError } = await supabase.functions.invoke("draft-outreach", {
         body: {
           name: prospect.name,
@@ -264,8 +261,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
           locationCount: prospect.locationCount,
           competitor: prospect.competitor,
           tier: prospect.tier,
-          contacts: (prospect.contacts || []).map(c => ({ name: c.name, role: c.role, title: c.title })),
-          recentInteraction,
+          contacts: prospect.contacts,
+          recentInteraction: prospect.interactions?.slice(-1)[0],
         },
       });
 
