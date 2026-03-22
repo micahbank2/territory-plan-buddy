@@ -28,7 +28,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ProspectSheetProps {
   prospectId: any;
@@ -254,24 +253,73 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     setOutreachOpen(true);
     setOutreachDraft("");
     try {
+      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+      if (!apiKey) throw new Error("VITE_ANTHROPIC_API_KEY is not set in environment");
+
       const sortedInteractions = [...(prospect.interactions || [])].sort((a, b) => b.date.localeCompare(a.date));
       const recentInteraction = sortedInteractions[0] || null;
 
-      const { data: result, error: fnError } = await supabase.functions.invoke("draft-outreach", {
-        body: {
-          name: prospect.name,
-          industry: prospect.industry,
-          locationCount: prospect.locationCount,
-          competitor: prospect.competitor,
-          tier: prospect.tier,
-          contacts: (prospect.contacts || []).map(c => ({ name: c.name, role: c.role, title: c.title })),
-          recentInteraction,
+      const contactSummary = (prospect.contacts || [])
+        .map(c => `${c.name}${c.title ? ` (${c.title})` : ""}${c.role && c.role !== "Unknown" ? ` — ${c.role}` : ""}`)
+        .join("; ") || "No contacts on file";
+
+      const interactionSummary = recentInteraction
+        ? `Most recent interaction: ${recentInteraction.type} on ${recentInteraction.date}${recentInteraction.notes ? ` — "${recentInteraction.notes}"` : ""}`
+        : "No prior interactions logged";
+
+      const userPrompt = `You are a Senior AE at Yext writing a cold outreach email to a multi-location brand prospect. Write a short, personalized first-touch cold email.
+
+PROSPECT CONTEXT:
+- Company: ${prospect.name}
+- Industry: ${prospect.industry || "unknown"}
+- Location count: ${prospect.locationCount ?? "unknown"}
+- Current competitor/solution: ${prospect.competitor || "none known"}
+- Tier: ${prospect.tier || "untiered"}
+- Known contacts: ${contactSummary}
+- ${interactionSummary}
+
+RULES:
+1. Lead with a specific, relevant insight about their business or industry — NOT a generic opener like "I hope this finds you well" or "I noticed your company..."
+2. Connect the insight to how Yext helps multi-location brands with AI search visibility, listings accuracy, reviews management, or local SEO at scale
+3. Keep it under 150 words
+4. End with a low-friction CTA (e.g. "Worth a 15-min look?" or "Open to a quick call this week?")
+5. If a competitor is known, subtly position against them without naming them negatively
+6. Use a conversational, confident tone — not salesy or formal
+7. Write ONLY the email body (no subject line, no signature block)
+8. If contacts are known, optionally reference the right person to loop in
+
+Return ONLY the email text, no markdown formatting, no extra commentary.`;
+
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
         },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [
+            {
+              role: "user",
+              content: userPrompt,
+            },
+          ],
+          system: "You are an elite B2B sales development writer. Write concise, insight-led cold emails that feel personal and relevant. No fluff.",
+        }),
       });
 
-      if (fnError) throw fnError;
-      if (result.error) throw new Error(result.error);
-      setOutreachDraft(result.draft);
+      if (!response.ok) {
+        const errBody = await response.text();
+        throw new Error(`API error ${response.status}: ${errBody}`);
+      }
+
+      const data = await response.json();
+      const draft = data.content?.[0]?.text || "";
+      if (!draft) throw new Error("Empty response from API");
+      setOutreachDraft(draft.trim());
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to generate draft";
       toast.error(msg);
