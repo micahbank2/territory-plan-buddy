@@ -9,6 +9,7 @@ import { OpportunitySheet } from "@/components/OpportunitySheet";
 import { AccountCombobox } from "@/components/AccountCombobox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -383,8 +384,8 @@ export default function OpportunitiesPage() {
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Notes / Next Steps</label>
-              <textarea
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[80px] resize-y"
+              <Textarea
+                className="resize-y"
                 placeholder="Add notes..."
                 value={form.notes}
                 onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
