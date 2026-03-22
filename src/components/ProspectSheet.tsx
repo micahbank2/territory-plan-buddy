@@ -100,7 +100,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
   // Outreach draft state
   const [outreachDraft, setOutreachDraft] = useState("");
   const [outreachLoading, setOutreachLoading] = useState(false);
-  const [outreachOpen, setOutreachOpen] = useState(false);
+  const [showDraftDialog, setShowDraftDialog] = useState(false);
 
   // Sync local state when prospect changes
   useEffect(() => {
@@ -251,7 +251,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
 
   const generateOutreach = async () => {
     setOutreachLoading(true);
-    setOutreachOpen(true);
+    setShowDraftDialog(true);
     setOutreachDraft("");
     try {
       const { data: result, error: fnError } = await supabase.functions.invoke("draft-outreach", {
@@ -274,7 +274,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
       const msg = err instanceof Error ? err.message : "Failed to generate draft";
       toast.error(msg);
       setOutreachDraft("");
-      setOutreachOpen(false);
+      setShowDraftDialog(false);
     } finally {
       setOutreachLoading(false);
     }
@@ -357,10 +357,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
               className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1">
               Open full page <ArrowRight className="w-3 h-3" />
             </button>
-            <Button onClick={generateOutreach} disabled={outreachLoading} size="sm" variant="outline" className="h-7 text-xs gap-1.5">
-              {outreachLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-              Draft Outreach
-            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={generateOutreach}><Sparkles className="w-3 h-3" />Draft Outreach</Button>
           </div>
         </div>
 
@@ -683,7 +680,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
         </div>
 
       {/* Outreach Draft Dialog */}
-      <Dialog open={outreachOpen} onOpenChange={setOutreachOpen}>
+      <Dialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
         <DialogContent className="sm:max-w-[520px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
