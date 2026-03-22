@@ -985,191 +985,202 @@ export default function TerritoryPlanner() {
         </div>
       )}
 
-      {/* ===== YEXT HEADER ===== */}
-      <div className="yext-gradient border-b border-primary/10 relative overflow-hidden">
-        
-        <div className="px-4 sm:px-8 py-4 sm:py-6 relative z-10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-              <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-8 sm:h-10 w-auto object-contain shrink-0" />
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl sm:text-4xl font-black tracking-tight truncate gradient-text">Territory Planner</h1>
-                  <span className="hidden sm:inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">{data.length}</span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-0.5 hidden sm:block flex items-center gap-2">
-                  {territories.length > 1 ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="flex items-center gap-1 hover:text-foreground transition-colors">
-                          <Users className="w-3 h-3" />
-                          <span className="truncate max-w-[200px]">{activeTerrObj?.name || "My Territory"}</span>
-                          <ChevronDown className="w-3 h-3" />
-                          {isReadOnly && <span className="text-[9px] bg-muted rounded px-1 ml-1">VIEW ONLY</span>}
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-56 bg-popover border-border z-50">
-                        {territories.map((t) => (
-                          <DropdownMenuItem
-                            key={t.id}
-                            onClick={() => switchTerritory(t.id)}
-                            className={t.id === activeTerritory ? "bg-primary/10" : ""}
-                          >
-                            <Users className="w-3.5 h-3.5 mr-2" />
-                            <span className="truncate">{t.name}</span>
-                            {t.owner_id === user?.id && <span className="ml-auto text-[9px] text-muted-foreground">owner</span>}
-                          </DropdownMenuItem>
-                        ))}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => setShowNewTerritory(true)}>
-                          <Plus className="w-3.5 h-3.5 mr-2" /> New Territory
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : (
-                    <span>{activeTerrObj?.name || "Manage, prioritize, and close your territory"}</span>
-                  )}
-                </p>
-              </div>
-            </div>
+      {/* ===== NAVBAR ===== */}
+      <nav className="h-16 bg-white dark:bg-gray-950 px-4 sm:px-8 flex items-center gap-4" style={{ borderBottom: '1px solid #e5e7eb' }}>
+        {/* Left: Logo + title */}
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0 shrink-0">
+          <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-8 sm:h-9 w-auto object-contain shrink-0" />
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              {/* Desktop buttons */}
-              <div className="hidden md:flex items-center gap-1.5">
-                <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
-                  <BarChart3 className="w-3.5 h-3.5" /> Insights
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate("/opportunities")} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
-                  <DollarSign className="w-3.5 h-3.5" /> Deals
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setShowEnrich(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
-                  <Sparkles className="w-3.5 h-3.5" /> Enrich
-                </Button>
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight truncate gradient-text leading-tight">Territory Planner</h1>
+              <span className="hidden sm:inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400">{data.length}</span>
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
+              {territories.length > 1 ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent">
-                      <SlidersHorizontal className="w-3.5 h-3.5" /> Actions <ChevronDown className="w-3 h-3 opacity-60" />
-                    </Button>
+                    <button className="flex items-center gap-1 hover:text-foreground transition-colors">
+                      <Users className="w-3 h-3" />
+                      <span className="truncate max-w-[200px]">{activeTerrObj?.name || "My Territory"}</span>
+                      <ChevronDown className="w-3 h-3" />
+                      {isReadOnly && <span className="text-[9px] bg-gray-100 dark:bg-gray-800 rounded px-1 ml-1">VIEW ONLY</span>}
+                    </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 bg-popover border-border z-50">
-                    <DropdownMenuItem onClick={exportCSV}>
-                      <Download className="w-4 h-4 mr-2" /> Export CSV
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setShowUpload(true)}>
-                      <Upload className="w-4 h-4 mr-2" /> Upload CSV
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setShowPasteImport(true)}>
-                      <ClipboardPaste className="w-4 h-4 mr-2" /> Paste Import
-                    </DropdownMenuItem>
+                  <DropdownMenuContent align="start" className="w-56 bg-popover border-border z-50">
+                    {territories.map((t) => (
+                      <DropdownMenuItem
+                        key={t.id}
+                        onClick={() => switchTerritory(t.id)}
+                        className={t.id === activeTerritory ? "bg-primary/10" : ""}
+                      >
+                        <Users className="w-3.5 h-3.5 mr-2" />
+                        <span className="truncate">{t.name}</span>
+                        {t.owner_id === user?.id && <span className="ml-auto text-[9px] text-muted-foreground">owner</span>}
+                      </DropdownMenuItem>
+                    ))}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setShowShare(true)}>
-                      <Share2 className="w-4 h-4 mr-2" /> Share Territory
+                    <DropdownMenuItem onClick={() => setShowNewTerritory(true)}>
+                      <Plus className="w-3.5 h-3.5 mr-2" /> New Territory
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </div>
-              <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5 bg-primary hover:bg-primary/90 glow-blue font-semibold">
-                <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Add Prospect</span><span className="sm:hidden">Add</span>
-              </Button>
-              {selected.size >= 2 && selected.size <= 3 && (
-                <Button variant="outline" size="sm" onClick={() => setShowCompare(true)} className="gap-1.5 border-primary/20 text-foreground hover:bg-primary/10 bg-transparent hidden sm:inline-flex">
-                  <GitCompare className="w-3.5 h-3.5" /> Compare ({selected.size})
-                </Button>
+              ) : (
+                <span>{activeTerrObj?.name || "My Territory"}</span>
               )}
-              <div className="hidden md:flex items-center border border-primary/20 rounded-lg overflow-hidden ml-1">
-                <button onClick={() => setViewMode("table")} className={cn("p-2 transition-all", viewMode === "table" ? "bg-primary text-primary-foreground" : "hover:bg-primary/10 text-foreground/60")}>
-                  <List className="w-4 h-4" />
-                </button>
-                <button onClick={() => setViewMode("kanban")} className={cn("p-2 transition-all", viewMode === "kanban" ? "bg-primary text-primary-foreground" : "hover:bg-primary/10 text-foreground/60")}>
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
-              </div>
-              <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="p-2 rounded-lg text-foreground/60 hover:text-foreground/80 hover:bg-primary/10 transition-all hidden md:block"
-                title="Toggle theme"
-              >
-                {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
-              <button
-                onClick={() => { setResetInput(""); setResetDialogOpen(true); }}
-                className="p-2 rounded-lg text-foreground/40 hover:text-foreground/80 hover:bg-primary/10 transition-all hidden md:block"
-                title="Reset data"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setShowArchive(true)}
-                className="p-2 rounded-lg text-foreground/40 hover:text-foreground/80 hover:bg-primary/10 transition-all hidden md:block relative"
-                title="Archive"
-              >
-                <Archive className="w-4 h-4" />
-                {archived.length > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">{archived.length}</span>
-                )}
-              </button>
-              <button
-                onClick={signOut}
-                className="p-2 rounded-lg text-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-all hidden md:block"
-                title="Sign out"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-              {/* Mobile menu */}
-              <div className="md:hidden">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="p-2 border-primary/20 bg-transparent">
-                      <Menu className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 bg-popover border-border z-50">
-                    <DropdownMenuItem onClick={() => navigate("/insights")}>
-                      <BarChart3 className="w-4 h-4 mr-2" /> Insights
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/opportunities")}>
-                      <DollarSign className="w-4 h-4 mr-2" /> Deals
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={exportCSV}>
-                      <Download className="w-4 h-4 mr-2" /> Export CSV
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setShowUpload(true)}>
-                      <Upload className="w-4 h-4 mr-2" /> Upload CSV
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setShowPasteImport(true)}>
-                      <ClipboardPaste className="w-4 h-4 mr-2" /> Paste Import
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setShowEnrich(true)}>
-                      <Sparkles className="w-4 h-4 mr-2" /> Enrich
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setShowShare(true)}>
-                      <Share2 className="w-4 h-4 mr-2" /> Share Territory
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setViewMode(viewMode === "table" ? "kanban" : "table")}>
-                      {viewMode === "table" ? <LayoutGrid className="w-4 h-4 mr-2" /> : <List className="w-4 h-4 mr-2" />}
-                      {viewMode === "table" ? "Kanban View" : "Table View"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-                      {theme === "dark" ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
-                      {theme === "dark" ? "Light Mode" : "Dark Mode"}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setShowArchive(true)}>
-                      <Archive className="w-4 h-4 mr-2" /> Archive {archived.length > 0 && `(${archived.length})`}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => { setResetInput(""); setResetDialogOpen(true); }} className="text-destructive">
-                      <RotateCcw className="w-4 h-4 mr-2" /> Reset Data
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={signOut} className="text-destructive">
-                      <LogOut className="w-4 h-4 mr-2" /> Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
             </div>
           </div>
         </div>
-      </div>
+
+        {/* Center: Segmented control (desktop) */}
+        <div className="hidden md:flex items-center ml-auto">
+          <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1 gap-1">
+            <button
+              onClick={() => navigate("/insights")}
+              className="inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+            >
+              <BarChart3 className="w-4 h-4" />
+              Insights
+            </button>
+            <button
+              onClick={() => navigate("/opportunities")}
+              className="inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+            >
+              <DollarSign className="w-4 h-4" />
+              Deals
+            </button>
+            <button
+              onClick={() => setShowEnrich(true)}
+              className="inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+            >
+              <Sparkles className="w-4 h-4" />
+              Enrich
+            </button>
+          </div>
+        </div>
+
+        {/* Right section */}
+        <div className="flex items-center gap-3 shrink-0 md:ml-4">
+          {/* Actions dropdown (desktop) */}
+          <div className="hidden md:block">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="inline-flex items-center gap-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <SlidersHorizontal className="w-4 h-4 text-gray-500" />
+                  Actions
+                  <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[220px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg z-50 p-1">
+                <DropdownMenuItem onClick={exportCSV} className="gap-3 px-4 py-2 rounded-md text-sm cursor-pointer">
+                  <Download className="w-4 h-4 text-gray-400 shrink-0" /> Export CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowUpload(true)} className="gap-3 px-4 py-2 rounded-md text-sm cursor-pointer">
+                  <Upload className="w-4 h-4 text-gray-400 shrink-0" /> Upload CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowPasteImport(true)} className="gap-3 px-4 py-2 rounded-md text-sm cursor-pointer">
+                  <ClipboardPaste className="w-4 h-4 text-gray-400 shrink-0" /> Paste Import
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-1" />
+                <DropdownMenuItem onClick={() => setShowShare(true)} className="gap-3 px-4 py-2 rounded-md text-sm cursor-pointer">
+                  <Share2 className="w-4 h-4 text-gray-400 shrink-0" /> Share Territory
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {selected.size >= 2 && selected.size <= 3 && (
+            <Button variant="outline" size="sm" onClick={() => setShowCompare(true)} className="gap-1.5 hidden sm:inline-flex">
+              <GitCompare className="w-3.5 h-3.5" /> Compare ({selected.size})
+            </Button>
+          )}
+
+          {/* Icon buttons (desktop) */}
+          <div className="hidden md:flex items-center gap-1">
+            <div className="inline-flex items-center rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <button title="Table view" onClick={() => setViewMode("table")} className={cn("h-8 w-8 flex items-center justify-center transition-colors", viewMode === "table" ? "bg-primary text-white" : "bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500")}>
+                <List className="h-4 w-4" />
+              </button>
+              <button title="Kanban view" onClick={() => setViewMode("kanban")} className={cn("h-8 w-8 flex items-center justify-center transition-colors", viewMode === "kanban" ? "bg-primary text-white" : "bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500")}>
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+            </div>
+            <button title={theme === "dark" ? "Light mode" : "Dark mode"} onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="h-8 w-8 flex items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+            <button title="Reset data" onClick={() => { setResetInput(""); setResetDialogOpen(true); }} className="h-8 w-8 flex items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              <RotateCcw className="h-4 w-4" />
+            </button>
+            <button title="Archive" onClick={() => setShowArchive(true)} className="h-8 w-8 flex items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative">
+              <Archive className="h-4 w-4" />
+              {archived.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">{archived.length}</span>
+              )}
+            </button>
+            <button title="Sign out" onClick={signOut} className="h-8 w-8 flex items-center justify-center rounded-md text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Add Prospect CTA */}
+          <Button onClick={() => setShowAdd(true)} className="gap-2 bg-primary hover:bg-primary/90 font-semibold px-5 ml-2">
+            <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Add Prospect</span><span className="sm:hidden">Add</span>
+          </Button>
+
+          {/* Mobile menu */}
+          <div className="md:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="h-9 w-9 flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <Menu className="w-4 h-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[220px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg z-50 p-1">
+                <DropdownMenuItem onClick={() => navigate("/insights")} className="gap-3 px-4 py-2 rounded-md text-sm">
+                  <BarChart3 className="w-4 h-4 text-gray-400" /> Insights
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/opportunities")} className="gap-3 px-4 py-2 rounded-md text-sm">
+                  <DollarSign className="w-4 h-4 text-gray-400" /> Deals
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowEnrich(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
+                  <Sparkles className="w-4 h-4 text-gray-400" /> Enrich
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-1" />
+                <DropdownMenuItem onClick={exportCSV} className="gap-3 px-4 py-2 rounded-md text-sm">
+                  <Download className="w-4 h-4 text-gray-400" /> Export CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowUpload(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
+                  <Upload className="w-4 h-4 text-gray-400" /> Upload CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowPasteImport(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
+                  <ClipboardPaste className="w-4 h-4 text-gray-400" /> Paste Import
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowShare(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
+                  <Share2 className="w-4 h-4 text-gray-400" /> Share Territory
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-1" />
+                <DropdownMenuItem onClick={() => setViewMode(viewMode === "table" ? "kanban" : "table")} className="gap-3 px-4 py-2 rounded-md text-sm">
+                  {viewMode === "table" ? <LayoutGrid className="w-4 h-4 text-gray-400" /> : <List className="w-4 h-4 text-gray-400" />}
+                  {viewMode === "table" ? "Kanban View" : "Table View"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="gap-3 px-4 py-2 rounded-md text-sm">
+                  {theme === "dark" ? <Sun className="w-4 h-4 text-gray-400" /> : <Moon className="w-4 h-4 text-gray-400" />}
+                  {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-1" />
+                <DropdownMenuItem onClick={() => setShowArchive(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
+                  <Archive className="w-4 h-4 text-gray-400" /> Archive {archived.length > 0 && `(${archived.length})`}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setResetInput(""); setResetDialogOpen(true); }} className="text-red-600 gap-3 px-4 py-2 rounded-md text-sm">
+                  <RotateCcw className="w-4 h-4" /> Reset Data
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={signOut} className="text-red-600 gap-3 px-4 py-2 rounded-md text-sm">
+                  <LogOut className="w-4 h-4" /> Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </nav>
 
       <div className="px-4 sm:px-8 pt-6 pb-2">
         {/* Pipeline Summary Bar */}

@@ -4,14 +4,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTerritories } from "@/hooks/useTerritories";
 import { useOpportunities, OPP_TYPES, OPP_STAGES, type Opportunity } from "@/hooks/useOpportunities";
 import { useProspects } from "@/hooks/useProspects";
+import { getLogoUrl } from "@/data/prospects";
+import { OpportunitySheet } from "@/components/OpportunitySheet";
+import { AccountCombobox } from "@/components/AccountCombobox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Plus, Search, Trash2, MoreHorizontal, DollarSign } from "lucide-react";
+import { ArrowLeft, Plus, Search, DollarSign, ArrowUp, ArrowDown, ArrowUpDown, Building2 } from "lucide-react";
 
 const typeColors: Record<string, string> = {
   "Net New": "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
@@ -42,37 +44,124 @@ const emptyOpp = {
   products: "",
   close_date: "",
   prospect_id: null as string | null,
+  website: "",
 };
+
+type SortField = "potential_value" | "close_date" | null;
+type SortDir = "asc" | "desc";
+
+function DealLogo({ website, customLogo, size = 20 }: { website?: string; customLogo?: string; size?: number }) {
+  const [err, setErr] = useState(false);
+  const url = getLogoUrl(website, size >= 32 ? 64 : 32);
+  if (customLogo) return <img src={customLogo} alt="" className="rounded-md bg-muted object-contain shrink-0" style={{ width: size, height: size }} />;
+  if (!website || err || !url) return <div className="rounded-md bg-muted flex items-center justify-center shrink-0" style={{ width: size, height: size }}><Building2 className="text-muted-foreground" style={{ width: size * 0.5, height: size * 0.5 }} /></div>;
+  return <img src={url} alt="" className="rounded-md bg-muted object-contain shrink-0" style={{ width: size, height: size }} onError={() => setErr(true)} />;
+}
+
+function SortIcon({ field, sortField, sortDir }: { field: SortField; sortField: SortField; sortDir: SortDir }) {
+  if (sortField !== field) return <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />;
+  return sortDir === "asc"
+    ? <ArrowUp className="w-3.5 h-3.5" />
+    : <ArrowDown className="w-3.5 h-3.5" />;
+}
 
 export default function OpportunitiesPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { activeTerritory } = useTerritories();
   const { opportunities, loading, add, update, remove } = useOpportunities(activeTerritory);
-  const { data: prospects } = useProspects();
+  const { data: prospects, add: addProspect } = useProspects();
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(emptyOpp);
+  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [selectedOppId, setSelectedOppId] = useState<string | null>(null);
 
   const prospectMap = useMemo(() => {
-    const m = new Map<string, { name: string; logo: string | null }>();
-    prospects.forEach(p => m.set(p.id, { name: p.name, logo: (p as any).customLogo || null }));
+    const m = new Map<string, { name: string; website: string; customLogo?: string }>();
+    prospects.forEach(p => m.set(p.id, { name: p.name, website: (p as any).website || "", customLogo: (p as any).customLogo }));
     return m;
   }, [prospects]);
 
+  const accountOptions = useMemo(
+    () => prospects.map(p => ({ id: p.id, name: p.name })),
+    [prospects]
+  );
+
+  const handleCreateAccountForForm = async (name: string) => {
+    const newId = await addProspect({ name });
+    if (newId) setForm(f => ({ ...f, prospect_id: newId }));
+  };
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir(d => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("desc");
+    }
+  };
+
+  const getLogoWebsite = (opp: Opportunity) => {
+    if (opp.prospect_id) {
+      const p = prospectMap.get(opp.prospect_id);
+      if (p?.website) return p.website;
+    }
+    return opp.website || "";
+  };
+
+  const getLogoCustom = (opp: Opportunity) => {
+    if (opp.prospect_id) {
+      const p = prospectMap.get(opp.prospect_id);
+      return p?.customLogo;
+    }
+    return undefined;
+  };
+
+  const getAccountLabel = (opp: Opportunity) => {
+    if (opp.prospect_id) {
+      const p = prospectMap.get(opp.prospect_id);
+      if (p) return p.name;
+    }
+    if (opp.website) return opp.website;
+    return "";
+  };
+
   const filtered = useMemo(() => {
-    if (!search) return opportunities;
-    const q = search.toLowerCase();
-    return opportunities.filter(o => {
-      const acct = o.prospect_id ? prospectMap.get(o.prospect_id)?.name || "" : "";
-      return (
-        o.name.toLowerCase().includes(q) ||
-        acct.toLowerCase().includes(q) ||
-        o.point_of_contact.toLowerCase().includes(q) ||
-        o.products.toLowerCase().includes(q)
-      );
-    });
-  }, [opportunities, search, prospectMap]);
+    let result = opportunities;
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(o => {
+        const acctLabel = getAccountLabel(o).toLowerCase();
+        return (
+          o.name.toLowerCase().includes(q) ||
+          o.products.toLowerCase().includes(q) ||
+          o.stage.toLowerCase().includes(q) ||
+          o.point_of_contact.toLowerCase().includes(q) ||
+          o.notes.toLowerCase().includes(q) ||
+          (o.website || "").toLowerCase().includes(q) ||
+          acctLabel.includes(q)
+        );
+      });
+    }
+    if (sortField) {
+      result = [...result].sort((a, b) => {
+        if (sortField === "potential_value") {
+          const diff = (a.potential_value || 0) - (b.potential_value || 0);
+          return sortDir === "asc" ? diff : -diff;
+        }
+        if (sortField === "close_date") {
+          const da = a.close_date || "";
+          const db = b.close_date || "";
+          const cmp = da.localeCompare(db);
+          return sortDir === "asc" ? cmp : -cmp;
+        }
+        return 0;
+      });
+    }
+    return result;
+  }, [opportunities, search, sortField, sortDir, prospectMap]);
 
   const totalACV = useMemo(() => filtered.reduce((s, o) => s + (o.potential_value || 0), 0), [filtered]);
 
@@ -81,17 +170,6 @@ export default function OpportunitiesPage() {
     await add(form);
     setForm(emptyOpp);
     setShowAdd(false);
-  };
-
-  const handleInlineChange = (id: string, field: keyof Opportunity, value: string | number | null) => {
-    update(id, { [field]: value } as any);
-  };
-
-  const getAccountDisplay = (prospectId: string | null) => {
-    if (!prospectId) return null;
-    const p = prospectMap.get(prospectId);
-    if (!p) return null;
-    return p;
   };
 
   if (!user) return null;
@@ -143,104 +221,85 @@ export default function OpportunitiesPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/40">
-                    <TableHead className="font-semibold text-foreground min-w-[180px]">Account</TableHead>
-                    <TableHead className="font-semibold text-foreground min-w-[180px]">Deal</TableHead>
-                    <TableHead className="font-semibold text-foreground">Type</TableHead>
-                    <TableHead className="font-semibold text-foreground text-right">ACV</TableHead>
+                    <TableHead className="font-semibold text-foreground min-w-[220px]">Name</TableHead>
+                    <TableHead className="font-semibold text-foreground">Deal Type</TableHead>
                     <TableHead className="font-semibold text-foreground">Products</TableHead>
-                    <TableHead className="font-semibold text-foreground">Point of Contact</TableHead>
-                    <TableHead className="font-semibold text-foreground">Close Date</TableHead>
+                    <TableHead
+                      className="font-semibold text-foreground text-right cursor-pointer select-none hover:text-primary"
+                      onClick={() => toggleSort("potential_value")}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        ACV
+                        <SortIcon field="potential_value" sortField={sortField} sortDir={sortDir} />
+                      </span>
+                    </TableHead>
                     <TableHead className="font-semibold text-foreground">Stage</TableHead>
-                    <TableHead className="w-10" />
+                    <TableHead
+                      className="font-semibold text-foreground cursor-pointer select-none hover:text-primary"
+                      onClick={() => toggleSort("close_date")}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        Close Date
+                        <SortIcon field="close_date" sortField={sortField} sortDir={sortDir} />
+                      </span>
+                    </TableHead>
+                    <TableHead className="font-semibold text-foreground min-w-[180px]">Notes / Next Steps</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.map(opp => {
-                    const account = getAccountDisplay(opp.prospect_id);
+                    const acctLabel = getAccountLabel(opp);
                     return (
-                      <TableRow key={opp.id} className="group">
-                        {/* Account */}
+                      <TableRow
+                        key={opp.id}
+                        className="group cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => setSelectedOppId(opp.id)}
+                      >
+                        {/* Name with logo + account sub-line */}
                         <TableCell>
-                          {account ? (
-                            <div className="flex items-center gap-2">
-                              {account.logo ? (
-                                <img src={account.logo} alt="" className="w-5 h-5 rounded object-contain" />
-                              ) : (
-                                <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
-                                  {account.name.charAt(0)}
-                                </div>
+                          <div className="flex items-center gap-2.5">
+                            <DealLogo
+                              website={getLogoWebsite(opp)}
+                              customLogo={getLogoCustom(opp)}
+                              size={28}
+                            />
+                            <div className="min-w-0">
+                              <span className="font-medium text-foreground truncate block">{opp.name}</span>
+                              {acctLabel && (
+                                <span className="text-xs text-muted-foreground truncate block">{acctLabel}</span>
                               )}
-                              <span className="text-sm font-medium text-foreground truncate max-w-[140px]">{account.name}</span>
                             </div>
-                          ) : (
-                            <Select
-                              value={opp.prospect_id || ""}
-                              onValueChange={v => handleInlineChange(opp.id, "prospect_id", v || null)}
-                            >
-                              <SelectTrigger className="h-7 w-[140px] border-dashed text-xs text-muted-foreground">
-                                <span>Link account…</span>
-                              </SelectTrigger>
-                              <SelectContent>
-                                {prospects.map(p => (
-                                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
+                          </div>
                         </TableCell>
-                        {/* Deal name */}
-                        <TableCell className="font-medium text-foreground">{opp.name}</TableCell>
-                        {/* Type */}
+                        {/* Deal Type */}
                         <TableCell>
-                          <Select value={opp.type} onValueChange={v => handleInlineChange(opp.id, "type", v)}>
-                            <SelectTrigger className="h-7 w-[110px] border-none bg-transparent p-0 shadow-none hover:bg-muted/50">
-                              <Badge className={`${typeColors[opp.type] || "bg-muted text-foreground"} border-0 font-medium text-xs`}>
-                                {opp.type}
-                              </Badge>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {OPP_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        {/* ACV */}
-                        <TableCell className="text-right font-mono text-foreground">
-                          ${(opp.potential_value || 0).toLocaleString()}
+                          <Badge className={`${typeColors[opp.type] || "bg-muted text-foreground"} border-0 font-medium text-xs`}>
+                            {opp.type}
+                          </Badge>
                         </TableCell>
                         {/* Products */}
                         <TableCell className="text-foreground text-sm max-w-[160px] truncate">
                           {opp.products || "—"}
                         </TableCell>
-                        {/* Point of Contact */}
-                        <TableCell className="text-foreground">{opp.point_of_contact || "—"}</TableCell>
+                        {/* ACV */}
+                        <TableCell className="text-right font-mono text-foreground">
+                          ${(opp.potential_value || 0).toLocaleString()}
+                        </TableCell>
+                        {/* Stage */}
+                        <TableCell>
+                          <span className={`text-sm ${stageColors[opp.stage] || "text-foreground"}`}>{opp.stage}</span>
+                        </TableCell>
                         {/* Close Date */}
                         <TableCell className="text-foreground text-sm">
                           {opp.close_date || "—"}
                         </TableCell>
-                        {/* Stage */}
-                        <TableCell>
-                          <Select value={opp.stage} onValueChange={v => handleInlineChange(opp.id, "stage", v)}>
-                            <SelectTrigger className="h-7 w-[150px] border-none bg-transparent p-0 shadow-none hover:bg-muted/50">
-                              <span className={`text-sm ${stageColors[opp.stage] || "text-foreground"}`}>{opp.stage}</span>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {OPP_STAGES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="text-destructive" onClick={() => remove(opp.id)}>
-                                <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                        {/* Notes / Next Steps - truncated to 2 lines */}
+                        <TableCell className="max-w-[250px]">
+                          {opp.notes ? (
+                            <p className="text-sm text-foreground/80 line-clamp-2">{opp.notes}</p>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">—</span>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
@@ -257,6 +316,18 @@ export default function OpportunitiesPage() {
         )}
       </div>
 
+      {/* Opportunity Detail Sheet */}
+      <OpportunitySheet
+        opportunityId={selectedOppId}
+        onClose={() => setSelectedOppId(null)}
+        opportunities={opportunities}
+        update={update}
+        remove={remove}
+        prospectMap={prospectMap}
+        accountOptions={accountOptions}
+        onCreateAccount={addProspect}
+      />
+
       {/* Add Dialog */}
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent className="sm:max-w-lg">
@@ -264,21 +335,25 @@ export default function OpportunitiesPage() {
             <DialogTitle>Add Opportunity</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <Input placeholder="Deal name *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+            <Input placeholder="Name *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Account</label>
-              <Select value={form.prospect_id || ""} onValueChange={v => setForm(f => ({ ...f, prospect_id: v || null }))}>
-                <SelectTrigger><SelectValue placeholder="Link to an account (optional)" /></SelectTrigger>
-                <SelectContent>
-                  {prospects.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Account (optional)</label>
+              <AccountCombobox
+                accounts={accountOptions}
+                value={form.prospect_id}
+                onChange={v => setForm(f => ({ ...f, prospect_id: v }))}
+                onCreateNew={handleCreateAccountForForm}
+                placeholder="Link to an account..."
+                triggerClassName="w-full"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Website / Domain (optional)</label>
+              <Input placeholder="e.g. shakeshack.com" value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Type</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Deal Type</label>
                 <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{OPP_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
@@ -288,6 +363,10 @@ export default function OpportunitiesPage() {
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">ACV ($)</label>
                 <Input type="number" value={form.potential_value || ""} onChange={e => setForm(f => ({ ...f, potential_value: parseInt(e.target.value) || 0 }))} placeholder="0" />
               </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Products</label>
+              <Input placeholder="e.g. Listings, Pages, Reviews" value={form.products} onChange={e => setForm(f => ({ ...f, products: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -303,10 +382,14 @@ export default function OpportunitiesPage() {
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Products</label>
-              <Input placeholder="e.g. Listings, Pages, Reviews" value={form.products} onChange={e => setForm(f => ({ ...f, products: e.target.value }))} />
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Notes / Next Steps</label>
+              <textarea
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[80px] resize-y"
+                placeholder="Add notes..."
+                value={form.notes}
+                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+              />
             </div>
-            <Input placeholder="Point of contact" value={form.point_of_contact} onChange={e => setForm(f => ({ ...f, point_of_contact: e.target.value }))} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>

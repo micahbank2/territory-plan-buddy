@@ -16,6 +16,7 @@ export interface Opportunity {
   products: string;
   close_date: string;
   prospect_id: string | null;
+  website: string;
   created_at: string;
 }
 
