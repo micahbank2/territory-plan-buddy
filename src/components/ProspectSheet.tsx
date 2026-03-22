@@ -93,6 +93,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
   // Task manager state
   const [newTaskText, setNewTaskText] = useState("");
   const [newTaskDate, setNewTaskDate] = useState("");
+  const [showFollowUp, setShowFollowUp] = useState(false);
 
   // Sync local state when prospect changes
   useEffect(() => {
@@ -206,6 +207,31 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     update(prospect.id, { interactions: [...(prospect.interactions || []), interaction] });
     setInteractionNotes("");
     toast.success("📝 Activity logged!");
+  };
+
+  const logActivity = () => {
+    if (!interactionNotes.trim() && !showFollowUp) {
+      toast.error("Add notes or a follow-up task");
+      return;
+    }
+    const updates: Partial<Prospect> = {};
+    // Log the interaction
+    const interaction: InteractionLog = {
+      id: Date.now().toString(), type: interactionType,
+      date: new Date().toISOString().split("T")[0], notes: interactionNotes || `${interactionType} logged`,
+    };
+    updates.interactions = [...(prospect.interactions || []), interaction];
+    // Optionally create follow-up task
+    if (showFollowUp && newTaskText.trim()) {
+      const task: Task = { id: (Date.now() + 1).toString(), text: newTaskText.trim(), dueDate: newTaskDate };
+      updates.tasks = [...(prospect.tasks || []), task];
+    }
+    update(prospect.id, updates);
+    setInteractionNotes("");
+    setNewTaskText("");
+    setNewTaskDate("");
+    setShowFollowUp(false);
+    toast.success(showFollowUp && newTaskText.trim() ? "📝 Activity logged + task created!" : "📝 Activity logged!");
   };
 
   const addNote = () => {
@@ -358,41 +384,58 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
             </div>
           </div>
 
-          {/* Tasks */}
+          {/* Log Activity — unified widget */}
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "50ms" }}>
             <div className="flex items-center gap-2">
               <Target className="w-4 h-4 text-primary" />
-              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Tasks</h3>
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Log Activity</h3>
             </div>
-            {/* Add task form */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground uppercase">Action</label>
-                <input value={newTaskText} onChange={e => setNewTaskText(e.target.value)} placeholder="e.g. Send follow-up" className={inputClass}
-                  onKeyDown={e => e.key === "Enter" && addTask()} />
+            <div className="p-3 border border-border rounded-lg bg-muted/30 space-y-3">
+              <div className="flex gap-2">
+                <select value={interactionType} onChange={e => setInteractionType(e.target.value)} className={cn(selectClass, "w-36 text-xs")}>
+                  {INTERACTION_TYPES.filter(t => t !== "Task Completed").map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <input value={interactionNotes} onChange={e => setInteractionNotes(e.target.value)} placeholder="What happened?" className={cn(inputClass, "flex-1 text-xs")} onKeyDown={e => e.key === "Enter" && !showFollowUp && logActivity()} />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground uppercase">Due Date</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className={cn(inputClass, "flex items-center gap-2 text-left", !newTaskDate && "text-muted-foreground")}>
-                      <CalendarIcon className="w-4 h-4 shrink-0" />
-                      {newTaskDate ? format(new Date(newTaskDate), "PPP") : "Pick a date"}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-[60]" align="start">
-                    <Calendar mode="single" selected={newTaskDate ? new Date(newTaskDate) : undefined}
-                      onSelect={date => setNewTaskDate(date ? date.toISOString().split("T")[0] : "")} initialFocus className="p-3 pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-            {newTaskText.trim() && (
-              <button onClick={addTask}
-                className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 font-medium">
-                <Plus className="w-3 h-3" /> Add Task
+              {/* Follow-up toggle */}
+              <button
+                type="button"
+                onClick={() => setShowFollowUp(!showFollowUp)}
+                className={cn("text-xs font-medium inline-flex items-center gap-1 transition-colors",
+                  showFollowUp ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {showFollowUp ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                {showFollowUp ? "Follow-up task added" : "Add follow-up task"}
               </button>
-            )}
+              {showFollowUp && (
+                <div className="grid grid-cols-2 gap-3 animate-fade-in-up">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Follow-up</label>
+                    <input value={newTaskText} onChange={e => setNewTaskText(e.target.value)} placeholder="e.g. Send proposal" className={cn(inputClass, "text-xs")} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Due Date</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className={cn(inputClass, "flex items-center gap-2 text-left text-xs", !newTaskDate && "text-muted-foreground")}>
+                          <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
+                          {newTaskDate ? format(new Date(newTaskDate), "PPP") : "Pick a date"}
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-[60]" align="start">
+                        <Calendar mode="single" selected={newTaskDate ? new Date(newTaskDate) : undefined}
+                          onSelect={date => setNewTaskDate(date ? date.toISOString().split("T")[0] : "")} initialFocus className="p-3 pointer-events-auto" />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              )}
+              <Button onClick={logActivity} size="sm" className="w-full text-xs font-semibold">
+                Log Activity{showFollowUp && newTaskText.trim() ? " + Create Task" : ""}
+              </Button>
+            </div>
+
             {/* Open tasks list */}
             {(prospect.tasks || []).length > 0 && (
               <div className="space-y-1.5 pt-2 border-t border-border">
@@ -555,13 +598,6 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
           {/* Activity Timeline */}
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
             <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Activity Timeline</h3>
-            <div className="flex gap-2">
-              <select value={interactionType} onChange={e => setInteractionType(e.target.value)} className={cn(selectClass, "w-32 text-xs")}>
-                {INTERACTION_TYPES.filter(t => t !== "Task Completed").map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <input value={interactionNotes} onChange={e => setInteractionNotes(e.target.value)} placeholder="What happened?" className={cn(inputClass, "flex-1 text-xs")} onKeyDown={e => e.key === "Enter" && logInteraction()} />
-              <Button onClick={logInteraction} size="sm" className="text-xs">Log</Button>
-            </div>
             {(prospect.interactions || []).length > 0 && (
               <div className="relative mt-2">
                 <div className="absolute left-[13px] top-0 bottom-0 w-px bg-primary/20" />
