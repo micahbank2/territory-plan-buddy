@@ -20,12 +20,15 @@ import { cn, normalizeUrl } from "@/lib/utils";
 import {
   ExternalLink, Plus, X, Mail, Phone, Building2, MessageSquare, PhoneCall,
   Linkedin, Clock, CalendarIcon, Target, ArrowRight, Check, CheckCircle, Trash2,
+  Sparkles, Copy, Loader2, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProspectSheetProps {
   prospectId: any;
@@ -94,6 +97,10 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
   const [newTaskText, setNewTaskText] = useState("");
   const [newTaskDate, setNewTaskDate] = useState("");
   const [showFollowUp, setShowFollowUp] = useState(false);
+  // Outreach draft state
+  const [outreachDraft, setOutreachDraft] = useState("");
+  const [outreachLoading, setOutreachLoading] = useState(false);
+  const [outreachOpen, setOutreachOpen] = useState(false);
 
   // Sync local state when prospect changes
   useEffect(() => {
@@ -242,6 +249,46 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     toast.success("📌 Note saved!");
   };
 
+  const generateOutreach = async () => {
+    setOutreachLoading(true);
+    setOutreachOpen(true);
+    setOutreachDraft("");
+    try {
+      const sortedInteractions = [...(prospect.interactions || [])].sort((a, b) => b.date.localeCompare(a.date));
+      const recentInteraction = sortedInteractions[0] || null;
+
+      const { data: result, error: fnError } = await supabase.functions.invoke("draft-outreach", {
+        body: {
+          name: prospect.name,
+          industry: prospect.industry,
+          locationCount: prospect.locationCount,
+          competitor: prospect.competitor,
+          tier: prospect.tier,
+          contacts: (prospect.contacts || []).map(c => ({ name: c.name, role: c.role, title: c.title })),
+          recentInteraction,
+        },
+      });
+
+      if (fnError) throw fnError;
+      if (result.error) throw new Error(result.error);
+      setOutreachDraft(result.draft);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to generate draft";
+      toast.error(msg);
+      setOutreachDraft("");
+      setOutreachOpen(false);
+    } finally {
+      setOutreachLoading(false);
+    }
+  };
+
+  const copyOutreach = () => {
+    if (outreachDraft) {
+      navigator.clipboard.writeText(outreachDraft);
+      toast.success("Email draft copied to clipboard!");
+    }
+  };
+
   const inputClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 placeholder:text-muted-foreground transition-all";
   const selectClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 appearance-none cursor-pointer transition-all";
 
@@ -307,10 +354,16 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
               </Tooltip>
             </TooltipProvider>
           </div>
+          <div className="flex items-center gap-3 mt-2">
             <button onClick={() => { onClose(); navigate(`/prospect/${prospect.id}`); }}
-            className="text-xs font-medium text-primary hover:underline mt-2 inline-flex items-center gap-1">
-            Open full page <ArrowRight className="w-3 h-3" />
-          </button>
+              className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1">
+              Open full page <ArrowRight className="w-3 h-3" />
+            </button>
+            <Button onClick={generateOutreach} disabled={outreachLoading} size="sm" variant="outline" className="h-7 text-xs gap-1.5">
+              {outreachLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+              Draft Outreach
+            </Button>
+          </div>
         </div>
 
         {/* Content */}
@@ -630,6 +683,38 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
             </div>
           )}
         </div>
+
+      {/* Outreach Draft Dialog */}
+      <Dialog open={outreachOpen} onOpenChange={setOutreachOpen}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              Draft Outreach — {prospect.name}
+            </DialogTitle>
+          </DialogHeader>
+          {outreachLoading ? (
+            <div className="flex items-center justify-center gap-2 py-8">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Generating draft...</span>
+            </div>
+          ) : outreachDraft ? (
+            <div className="space-y-4">
+              <div className="bg-muted/50 border border-border rounded-lg p-4 max-h-[400px] overflow-y-auto">
+                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{outreachDraft}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button onClick={copyOutreach} size="sm" className="gap-1.5">
+                  <Copy className="w-3.5 h-3.5" /> Copy to Clipboard
+                </Button>
+                <Button onClick={generateOutreach} size="sm" variant="outline" className="gap-1.5">
+                  <RefreshCw className="w-3.5 h-3.5" /> Regenerate
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
       </div>
   );
 
