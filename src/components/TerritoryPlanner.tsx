@@ -74,6 +74,7 @@ import {
   Users,
   Share2,
   DollarSign,
+  CalendarDays,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -960,6 +961,9 @@ export default function TerritoryPlanner() {
                   <CommandItem onSelect={() => { setCmdOpen(false); setShowEnrich(true); }}>
                     <Sparkles className="w-4 h-4 mr-2" /> Enrich Prospects
                   </CommandItem>
+                  <CommandItem onSelect={() => { setCmdOpen(false); navigate("/today"); }}>
+                    <CalendarDays className="w-4 h-4 mr-2" /> Open Today
+                  </CommandItem>
                   <CommandItem onSelect={() => { setCmdOpen(false); navigate("/insights"); }}>
                     <BarChart3 className="w-4 h-4 mr-2" /> Open Insights
                   </CommandItem>
@@ -1034,6 +1038,13 @@ export default function TerritoryPlanner() {
         {/* Center: Segmented control (desktop) */}
         <div className="hidden md:flex items-center ml-auto">
           <div className="flex items-center bg-muted rounded-lg p-1 gap-1">
+            <button
+              onClick={() => navigate("/today")}
+              className="inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all hover:bg-accent text-muted-foreground"
+            >
+              <CalendarDays className="w-4 h-4" />
+              Today
+            </button>
             <button
               onClick={() => navigate("/insights")}
               className="inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all hover:bg-accent text-muted-foreground"
@@ -1135,6 +1146,9 @@ export default function TerritoryPlanner() {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-[220px] z-50 p-1">
+                <DropdownMenuItem onClick={() => navigate("/today")} className="gap-3 px-4 py-2 rounded-md text-sm">
+                  <CalendarDays className="w-4 h-4 text-muted-foreground" /> Today
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/insights")} className="gap-3 px-4 py-2 rounded-md text-sm">
                   <BarChart3 className="w-4 h-4 text-muted-foreground" /> Insights
                 </DropdownMenuItem>
