@@ -14,8 +14,18 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Search, DollarSign, ArrowUp, ArrowDown, ArrowUpDown, Building2 } from "lucide-react";
+import { ArrowLeft, Plus, Search, DollarSign, ArrowUp, ArrowDown, ArrowUpDown, Building2, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const STAGE_WEIGHTS: Record<string, number> = {
+  "Develop": 0.10,
+  "Discovery": 0.20,
+  "Validate": 0.50,
+  "Propose": 0.70,
+  "Negotiate": 0.85,
+  "Closed Won": 1.0,
+  "Won": 1.0,
+};
 
 const typeColors: Record<string, string> = {
   "Net New": "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
@@ -79,6 +89,12 @@ export default function OpportunitiesPage() {
   const [sortField, setSortField] = useState<SortField>(null);
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [selectedOppId, setSelectedOppId] = useState<string | null>(null);
+  const [quota, setQuota] = useState(() => {
+    const saved = localStorage.getItem("opp_quota");
+    return saved ? parseInt(saved) : 0;
+  });
+  const [editingQuota, setEditingQuota] = useState(false);
+  const [quotaInput, setQuotaInput] = useState("");
 
   const prospectMap = useMemo(() => {
     const m = new Map<string, { name: string; website: string; customLogo?: string }>();
@@ -167,6 +183,15 @@ export default function OpportunitiesPage() {
 
   const totalACV = useMemo(() => filtered.reduce((s, o) => s + (o.potential_value || 0), 0), [filtered]);
 
+  const weightedACV = useMemo(() => {
+    return Math.round(opportunities.reduce((s, o) => {
+      const weight = STAGE_WEIGHTS[o.stage] ?? 0;
+      return s + (o.potential_value || 0) * weight;
+    }, 0));
+  }, [opportunities]);
+
+  const pipelineCoverage = quota > 0 ? Math.round((weightedACV / quota) * 100) : 0;
+
   const handleAdd = async () => {
     if (!form.name.trim()) return;
     await add(form);
@@ -204,6 +229,76 @@ export default function OpportunitiesPage() {
           </div>
         </div>
       </div>
+
+      {/* Forecast Bar */}
+      {!loading && opportunities.length > 0 && (
+        <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-5 pb-0">
+          <div className="rounded-lg border border-border bg-muted/30 p-4">
+            <div className="flex items-center gap-6 flex-wrap">
+              <div>
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Raw Pipeline</div>
+                <div className="text-xl font-black font-mono text-foreground">${totalACV.toLocaleString()}</div>
+              </div>
+              <div className="w-px h-10 bg-border hidden sm:block" />
+              <div>
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Weighted Forecast</div>
+                <div className="text-xl font-black font-mono text-primary">${weightedACV.toLocaleString()}</div>
+              </div>
+              <div className="w-px h-10 bg-border hidden sm:block" />
+              <div className="flex items-center gap-2">
+                <div>
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quota</div>
+                  {editingQuota ? (
+                    <div className="flex items-center gap-1">
+                      <span className="text-lg font-black font-mono text-foreground">$</span>
+                      <input
+                        autoFocus
+                        type="number"
+                        value={quotaInput}
+                        onChange={e => setQuotaInput(e.target.value)}
+                        onBlur={() => {
+                          const val = parseInt(quotaInput) || 0;
+                          setQuota(val);
+                          localStorage.setItem("opp_quota", String(val));
+                          setEditingQuota(false);
+                        }}
+                        onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                        className="w-28 text-lg font-black font-mono bg-transparent border-b border-primary focus:outline-none"
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setQuotaInput(String(quota)); setEditingQuota(true); }}
+                      className="text-xl font-black font-mono text-foreground hover:text-primary transition-colors"
+                    >
+                      {quota > 0 ? `$${quota.toLocaleString()}` : "Set quota"}
+                    </button>
+                  )}
+                </div>
+              </div>
+              {quota > 0 && (
+                <>
+                  <div className="w-px h-10 bg-border hidden sm:block" />
+                  <div className="flex-1 min-w-[120px]">
+                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                      Pipeline Coverage
+                      <span className={cn("ml-2 font-black", pipelineCoverage >= 100 ? "text-emerald-600" : pipelineCoverage >= 60 ? "text-amber-600" : "text-red-600")}>
+                        {pipelineCoverage}%
+                      </span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={cn("h-full rounded-full transition-all duration-500", pipelineCoverage >= 100 ? "bg-emerald-500" : pipelineCoverage >= 60 ? "bg-amber-500" : "bg-red-500")}
+                        style={{ width: `${Math.min(pipelineCoverage, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6">

@@ -75,6 +75,7 @@ import {
   Share2,
   DollarSign,
   CalendarDays,
+  TrendingUp,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -970,6 +971,9 @@ export default function TerritoryPlanner() {
                   <CommandItem onSelect={() => { setCmdOpen(false); navigate("/opportunities"); }}>
                     <DollarSign className="w-4 h-4 mr-2" /> Open Deals
                   </CommandItem>
+                  <CommandItem onSelect={() => { setCmdOpen(false); navigate("/my-numbers"); }}>
+                    <TrendingUp className="w-4 h-4 mr-2" /> Open My Numbers
+                  </CommandItem>
                   <CommandItem onSelect={() => { setCmdOpen(false); setViewMode(viewMode === "table" ? "kanban" : "table"); }}>
                     <LayoutGrid className="w-4 h-4 mr-2" /> Toggle {viewMode === "table" ? "Kanban" : "Table"} View
                   </CommandItem>
@@ -1058,6 +1062,13 @@ export default function TerritoryPlanner() {
             >
               <DollarSign className="w-4 h-4" />
               Deals
+            </button>
+            <button
+              onClick={() => navigate("/my-numbers")}
+              className="inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all hover:bg-accent text-muted-foreground"
+            >
+              <TrendingUp className="w-4 h-4" />
+              Numbers
             </button>
             <button
               onClick={() => setShowEnrich(true)}
@@ -1186,6 +1197,9 @@ export default function TerritoryPlanner() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/opportunities")} className="gap-3 px-4 py-2 rounded-md text-sm">
                   <DollarSign className="w-4 h-4 text-muted-foreground" /> Deals
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/my-numbers")} className="gap-3 px-4 py-2 rounded-md text-sm">
+                  <TrendingUp className="w-4 h-4 text-muted-foreground" /> My Numbers
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowEnrich(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
                   <Sparkles className="w-4 h-4 text-muted-foreground" /> Enrich

@@ -20,7 +20,7 @@ import { cn, normalizeUrl } from "@/lib/utils";
 import {
   ExternalLink, Plus, X, Mail, Phone, Building2, MessageSquare, PhoneCall,
   Linkedin, Clock, CalendarIcon, Target, ArrowRight, Check, CheckCircle, Trash2,
-  Sparkles, Copy, Loader2, RefreshCw,
+  Sparkles, Copy, Loader2, RefreshCw, FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -101,6 +101,10 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
   const [outreachDraft, setOutreachDraft] = useState("");
   const [outreachLoading, setOutreachLoading] = useState(false);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
+  // Meeting prep state
+  const [meetingPrepBrief, setMeetingPrepBrief] = useState("");
+  const [meetingPrepLoading, setMeetingPrepLoading] = useState(false);
+  const [showMeetingPrepDialog, setShowMeetingPrepDialog] = useState(false);
 
   // Sync local state when prospect changes
   useEffect(() => {
@@ -304,6 +308,49 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     }
   };
 
+  const generateMeetingPrep = async () => {
+    setMeetingPrepLoading(true);
+    setShowMeetingPrepDialog(true);
+    setMeetingPrepBrief("");
+    try {
+      const { data: result, error: fnError } = await supabase.functions.invoke("meeting-prep", {
+        body: {
+          name: prospect.name,
+          website: prospect.website,
+          industry: prospect.industry,
+          locationCount: prospect.locationCount,
+          competitor: prospect.competitor,
+          tier: prospect.tier,
+          priority: prospect.priority,
+          contacts: prospect.contacts,
+          interactions: prospect.interactions,
+          tasks: prospect.tasks,
+          notes: prospect.noteLog,
+          score,
+        },
+      });
+
+      if (fnError) throw fnError;
+      if (result.error) throw new Error(result.error);
+      if (!result.brief) throw new Error("Empty response from API");
+      setMeetingPrepBrief(result.brief);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to generate meeting prep";
+      toast.error(msg);
+      setMeetingPrepBrief("");
+      setShowMeetingPrepDialog(false);
+    } finally {
+      setMeetingPrepLoading(false);
+    }
+  };
+
+  const copyMeetingPrep = () => {
+    if (meetingPrepBrief) {
+      navigator.clipboard.writeText(meetingPrepBrief);
+      toast.success("Meeting prep copied to clipboard!");
+    }
+  };
+
   const inputClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 placeholder:text-muted-foreground transition-all";
   const selectClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 appearance-none cursor-pointer transition-all";
 
@@ -381,6 +428,9 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
             </button>
             <button onClick={generateOutreach} className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 ml-4">
               <Sparkles className="w-3 h-3" /> Draft Outreach
+            </button>
+            <button onClick={generateMeetingPrep} className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 ml-3">
+              <FileText className="w-3 h-3" /> Meeting Prep
             </button>
           </div>
         </div>
@@ -727,6 +777,38 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                   <Copy className="w-3.5 h-3.5" /> Copy to Clipboard
                 </Button>
                 <Button onClick={generateOutreach} size="sm" variant="outline" className="gap-1.5">
+                  <RefreshCw className="w-3.5 h-3.5" /> Regenerate
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* Meeting Prep Dialog */}
+      <Dialog open={showMeetingPrepDialog} onOpenChange={setShowMeetingPrepDialog}>
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary" />
+              Meeting Prep — {prospect.name}
+            </DialogTitle>
+          </DialogHeader>
+          {meetingPrepLoading ? (
+            <div className="flex items-center justify-center gap-2 py-8">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Generating meeting prep...</span>
+            </div>
+          ) : meetingPrepBrief ? (
+            <div className="space-y-4 flex-1 min-h-0">
+              <div className="bg-muted/50 border border-border rounded-lg p-4 overflow-y-auto max-h-[55vh]">
+                <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap prose prose-sm dark:prose-invert max-w-none">{meetingPrepBrief}</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button onClick={copyMeetingPrep} size="sm" className="gap-1.5">
+                  <Copy className="w-3.5 h-3.5" /> Copy to Clipboard
+                </Button>
+                <Button onClick={generateMeetingPrep} size="sm" variant="outline" className="gap-1.5">
                   <RefreshCw className="w-3.5 h-3.5" /> Regenerate
                 </Button>
               </div>

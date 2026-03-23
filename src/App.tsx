@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import OpportunitiesPage from "./pages/OpportunitiesPage";
 import TodayPage from "./pages/TodayPage";
+import MyNumbersPage from "./pages/MyNumbersPage";
 import ShareJoinPage from "./pages/ShareJoinPage";
 import LandingPage from "./pages/LandingPage";
 
@@ -42,6 +43,7 @@ const AppRoutes = () => (
     <Route path="/insights" element={<ProtectedRoute><InsightsPage /></ProtectedRoute>} />
     <Route path="/opportunities" element={<ProtectedRoute><OpportunitiesPage /></ProtectedRoute>} />
     <Route path="/today" element={<ProtectedRoute><TodayPage /></ProtectedRoute>} />
+    <Route path="/my-numbers" element={<ProtectedRoute><MyNumbersPage /></ProtectedRoute>} />
     <Route path="/signals" element={<Navigate to="/insights" replace />} />
     <Route path="/share/:territoryId" element={<ShareJoinPage />} />
     <Route path="*" element={<NotFound />} />
