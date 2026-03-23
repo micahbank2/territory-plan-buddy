@@ -119,13 +119,13 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     }
   }, [prospect?.id, prospect?.locationCount, prospect?.competitor, prospect?.name]);
 
-  if (!prospect) return null;
-
-  const score = scoreProspect(prospect);
+  const score = prospect ? scoreProspect(prospect) : 0;
   const scoreInfo = getScoreLabel(score);
 
   // "Why act" summary: chain applicable nudges
   const whyActParts: string[] = useMemo(() => {
+    if (!prospect) return [];
+
     const parts: string[] = [];
     if (score >= 60) {
       const hasDecisionMaker = (prospect.contacts || []).some(c => c.role === "Decision Maker");
@@ -139,7 +139,9 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     const comp = prospect.competitor || "";
     if (comp === "SOCi" || comp === "Birdeye") parts.push(`On ${comp}`);
     return parts;
-  }, [score, prospect.contacts, prospect.interactions, prospect.competitor]);
+  }, [score, prospect]);
+
+  if (!prospect) return null;
 
   const handleUpdate = (field: string, value: any) => {
     update(prospect.id, { [field]: value });
