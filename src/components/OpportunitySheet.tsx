@@ -118,9 +118,9 @@ export function OpportunitySheet({
   };
 
   const commitNotes = () => {
-    if (localNotes !== opp.notes) {
+    if (localNotes !== (opp.notes || "")) {
       update(opp.id, { notes: localNotes } as any);
-      toast.success("Updated!");
+      toast.success("Notes saved!");
     }
   };
 
@@ -232,7 +232,7 @@ export function OpportunitySheet({
               <label className="text-xs font-semibold text-muted-foreground uppercase">Close Date</label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className={cn(inputClass, "flex items-center gap-2 text-left", !opp.close_date && "text-muted-foreground")}>
+                  <button className={cn(inputClass, "flex items-center gap-2 text-left", !opp.close_date && "text-muted-foreground", opp.close_date && opp.close_date < new Date().toISOString().split("T")[0] && "text-red-600 dark:text-red-400 font-medium")}>
                     <CalendarIcon className="w-4 h-4 shrink-0" />
                     {opp.close_date ? format(new Date(opp.close_date), "PPP") : "Pick a date"}
                   </button>
@@ -282,6 +282,11 @@ export function OpportunitySheet({
             placeholder="Add notes, next steps, key details..."
             rows={6}
           />
+          {localNotes !== (opp.notes || "") && (
+            <Button size="sm" onClick={commitNotes} className="gap-1.5">
+              Save Notes
+            </Button>
+          )}
         </div>
 
         {/* Danger Zone */}

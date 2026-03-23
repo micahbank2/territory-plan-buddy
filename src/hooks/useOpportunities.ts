@@ -48,20 +48,26 @@ export function useOpportunities(territoryId: string | null) {
 
   const add = useCallback(async (opp: Partial<Opportunity>) => {
     if (!territoryId || !user) return;
+    // Sanitize: PostgreSQL rejects "" for date columns — must be null or valid date
+    const sanitized = { ...opp } as any;
+    if (!sanitized.close_date) sanitized.close_date = null;
+    if (sanitized.prospect_id === null || sanitized.prospect_id === "") sanitized.prospect_id = null;
     const { error } = await supabase.from("opportunities").insert({
-      ...opp,
+      ...sanitized,
       territory_id: territoryId,
       user_id: user.id,
     } as any);
-    if (error) { toast.error("Failed to create opportunity"); return; }
+    if (error) { toast.error("Failed to create opportunity"); console.error("Insert error:", error); return; }
     toast.success("Opportunity created");
     await load();
   }, [territoryId, user, load]);
 
   const update = useCallback(async (id: string, updates: Partial<Opportunity>) => {
-    const { error } = await supabase.from("opportunities").update(updates as any).eq("id", id);
-    if (error) { toast.error("Failed to update"); return; }
-    setOpportunities(prev => prev.map(o => o.id === id ? { ...o, ...updates } : o));
+    const sanitized = { ...updates } as any;
+    if ("close_date" in sanitized && !sanitized.close_date) sanitized.close_date = null;
+    const { error } = await supabase.from("opportunities").update(sanitized).eq("id", id);
+    if (error) { toast.error("Failed to update"); console.error("Update error:", error); return; }
+    setOpportunities(prev => prev.map(o => o.id === id ? { ...o, ...sanitized } : o));
   }, []);
 
   const remove = useCallback(async (id: string) => {
