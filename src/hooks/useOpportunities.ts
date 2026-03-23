@@ -35,10 +35,10 @@ function sanitizeForDb(obj: Record<string, any>): Record<string, any> {
   const clean: Record<string, any> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (!DB_FIELDS.has(key)) continue;
-    // PostgreSQL date columns reject "" — must be null or valid date
-    if (key === "close_date" && !value) { clean[key] = null; continue; }
-    // Nullable UUID — keep null, strip empty string
-    if (key === "prospect_id" && !value) { clean[key] = null; continue; }
+    // close_date: Supabase types say `string` not `string | null` — OMIT if empty
+    if (key === "close_date" && !value) continue;
+    // prospect_id: nullable UUID — OMIT if empty/null
+    if (key === "prospect_id" && !value) continue;
     clean[key] = value;
   }
   return clean;

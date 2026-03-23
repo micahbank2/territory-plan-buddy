@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Search, DollarSign, ArrowUp, ArrowDown, ArrowUpDown, Building2, Target } from "lucide-react";
+import { ArrowLeft, Plus, Search, DollarSign, ArrowUp, ArrowDown, ArrowUpDown, Building2, Target, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const STAGE_WEIGHTS: Record<string, number> = {
@@ -65,7 +65,7 @@ function DealLogo({ website, customLogo, size = 20 }: { website?: string; custom
   const [err, setErr] = useState(false);
   const url = getLogoUrl(website, size >= 32 ? 64 : 32);
   if (customLogo) return <img src={customLogo} alt="" className="rounded-md bg-muted object-contain shrink-0" style={{ width: size, height: size }} />;
-  if (!website || err || !url) return <div className="rounded-md bg-muted flex items-center justify-center shrink-0" style={{ width: size, height: size }}><Building2 className="text-muted-foreground" style={{ width: size * 0.5, height: size * 0.5 }} /></div>;
+  if (!website || err || !url) return <div className="rounded-md bg-primary/10 flex items-center justify-center shrink-0" style={{ width: size, height: size }}><DollarSign className="text-primary" style={{ width: size * 0.5, height: size * 0.5 }} /></div>;
   return <img src={url} alt="" className="rounded-md bg-muted object-contain shrink-0" style={{ width: size, height: size }} onError={() => setErr(true)} />;
 }
 
@@ -152,6 +152,7 @@ export default function OpportunitiesPage() {
         const acctLabel = getAccountLabel(o).toLowerCase();
         return (
           o.name.toLowerCase().includes(q) ||
+          o.type.toLowerCase().includes(q) ||
           o.products.toLowerCase().includes(q) ||
           o.stage.toLowerCase().includes(q) ||
           o.point_of_contact.toLowerCase().includes(q) ||
@@ -217,8 +218,13 @@ export default function OpportunitiesPage() {
                 placeholder="Search deals..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="pl-8 w-56 h-9 text-sm"
+                className="pl-8 pr-8 w-56 h-9 text-sm"
               />
+              {search && (
+                <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
             <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5">
               <Plus className="w-3.5 h-3.5" /> Add Deal

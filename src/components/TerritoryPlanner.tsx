@@ -1116,63 +1116,61 @@ export default function TerritoryPlanner() {
             </Button>
           )}
 
-          {/* Icon buttons (desktop) */}
+          {/* Icon buttons (desktop) — Tooltips use app-level TooltipProvider from App.tsx */}
           <div className="hidden md:flex items-center gap-1">
-            <TooltipProvider delayDuration={200}>
-              <div className="inline-flex items-center rounded-md border border-border overflow-hidden">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button onClick={() => setViewMode("table")} className={cn("h-8 w-8 flex items-center justify-center transition-colors", viewMode === "table" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-gray-100 dark:hover:bg-muted text-muted-foreground")}>
-                      <List className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom"><p>Table view</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button onClick={() => setViewMode("kanban")} className={cn("h-8 w-8 flex items-center justify-center transition-colors", viewMode === "kanban" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-gray-100 dark:hover:bg-muted text-muted-foreground")}>
-                      <LayoutGrid className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom"><p>Kanban view</p></TooltipContent>
-                </Tooltip>
-              </div>
-              <Tooltip>
+            <div className="inline-flex items-center rounded-md border border-border overflow-hidden">
+              <Tooltip delayDuration={150}>
                 <TooltipTrigger asChild>
-                  <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-gray-100 dark:hover:bg-muted transition-colors">
-                    {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  <button onClick={() => setViewMode("table")} className={cn("h-8 w-8 flex items-center justify-center transition-colors", viewMode === "table" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-gray-100 dark:hover:bg-muted text-muted-foreground")}>
+                    <List className="h-4 w-4" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom"><p>{theme === "dark" ? "Light mode" : "Dark mode"}</p></TooltipContent>
+                <TooltipContent side="bottom" sideOffset={8}><p>Table view</p></TooltipContent>
               </Tooltip>
-              <Tooltip>
+              <Tooltip delayDuration={150}>
                 <TooltipTrigger asChild>
-                  <button onClick={() => { setResetInput(""); setResetDialogOpen(true); }} className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-gray-100 dark:hover:bg-muted transition-colors">
-                    <RotateCcw className="h-4 w-4" />
+                  <button onClick={() => setViewMode("kanban")} className={cn("h-8 w-8 flex items-center justify-center transition-colors", viewMode === "kanban" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-gray-100 dark:hover:bg-muted text-muted-foreground")}>
+                    <LayoutGrid className="h-4 w-4" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom"><p>Reset data</p></TooltipContent>
+                <TooltipContent side="bottom" sideOffset={8}><p>Kanban view</p></TooltipContent>
               </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button onClick={() => setShowArchive(true)} className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-gray-100 dark:hover:bg-muted transition-colors relative">
-                    <Archive className="h-4 w-4" />
-                    {archived.length > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">{archived.length}</span>
-                    )}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom"><p>Archive</p></TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button onClick={signOut} className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-gray-100 dark:hover:bg-muted transition-colors">
-                    <LogOut className="h-4 w-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom"><p>Sign out</p></TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            </div>
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-gray-100 dark:hover:bg-muted transition-colors">
+                  {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8}><p>{theme === "dark" ? "Light mode" : "Dark mode"}</p></TooltipContent>
+            </Tooltip>
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <button onClick={() => { setResetInput(""); setResetDialogOpen(true); }} className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-gray-100 dark:hover:bg-muted transition-colors">
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8}><p>Reset data</p></TooltipContent>
+            </Tooltip>
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <button onClick={() => setShowArchive(true)} className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-gray-100 dark:hover:bg-muted transition-colors relative">
+                  <Archive className="h-4 w-4" />
+                  {archived.length > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">{archived.length}</span>
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8}><p>Archive</p></TooltipContent>
+            </Tooltip>
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <button onClick={signOut} className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-gray-100 dark:hover:bg-muted transition-colors">
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8}><p>Sign out</p></TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Add Prospect CTA */}

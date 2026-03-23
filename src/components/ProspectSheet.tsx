@@ -131,8 +131,11 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
       const hasDecisionMaker = (prospect.contacts || []).some(c => c.role === "Decision Maker");
       if (!hasDecisionMaker) parts.push("Missing Decision Maker");
     }
-    const lastInteraction = (prospect.interactions || []).slice().sort((a, b) => b.date.localeCompare(a.date))[0];
-    if (lastInteraction) {
+    const interactions = prospect.interactions || [];
+    if (interactions.length === 0) {
+      parts.push("Never contacted");
+    } else {
+      const lastInteraction = interactions.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
       const daysSince = Math.floor((Date.now() - new Date(lastInteraction.date).getTime()) / 86400000);
       if (daysSince > 30) parts.push(`${daysSince} days since last touch`);
     }
@@ -327,6 +330,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
           priority: prospect.priority,
           contacts: prospect.contacts,
           interactions: prospect.interactions,
+          recentInteraction: prospect.interactions?.slice(-1)[0],
           tasks: prospect.tasks,
           notes: prospect.noteLog,
           score,
@@ -334,9 +338,12 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
       });
 
       if (fnError) throw fnError;
-      if (result.error) throw new Error(result.error);
-      if (!result.brief) throw new Error("Empty response from API");
-      setMeetingPrepBrief(result.brief);
+      if (result?.error) throw new Error(result.error);
+      // Handle both response keys: deployed function may return { brief } or { draft }
+      const text = result?.brief || result?.draft;
+      console.log("[MeetingPrep] response keys:", Object.keys(result || {}));
+      if (!text) throw new Error("Empty response from API");
+      setMeetingPrepBrief(text);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to generate meeting prep";
       toast.error(msg);
