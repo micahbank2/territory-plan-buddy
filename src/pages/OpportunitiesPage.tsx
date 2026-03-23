@@ -141,7 +141,7 @@ export default function OpportunitiesPage() {
       const p = prospectMap.get(opp.prospect_id);
       if (p) return p.name;
     }
-    if (opp.website) return opp.website;
+    return "";
     return "";
   };
 
