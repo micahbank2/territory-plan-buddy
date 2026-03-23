@@ -280,7 +280,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     setShowDraftDialog(true);
     setOutreachDraft("");
     try {
-      const { data: result, error: fnError } = await supabase.functions.invoke("chat", {
+      const { data: result, error: fnError } = await supabase.functions.invoke("draft-outreach", {
         body: {
           name: prospect.name,
           industry: prospect.industry,
@@ -293,8 +293,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
       });
 
       if (fnError) throw fnError;
-      if (result.error) throw new Error(result.error);
-      if (!result.draft) throw new Error("Empty response from API");
+      if (result?.error) throw new Error(result.error);
+      if (!result?.draft) throw new Error("Empty response from API");
       setOutreachDraft(result.draft);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to generate draft";
@@ -318,8 +318,9 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     setShowMeetingPrepDialog(true);
     setMeetingPrepBrief("");
     try {
-      const { data: result, error: fnError } = await supabase.functions.invoke("meeting-prep", {
+      const { data: result, error: fnError } = await supabase.functions.invoke("draft-outreach", {
         body: {
+          mode: "meeting-prep",
           name: prospect.name,
           website: prospect.website,
           industry: prospect.industry,
