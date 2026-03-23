@@ -158,7 +158,6 @@ export default function OpportunitiesPage() {
           o.point_of_contact.toLowerCase().includes(q) ||
           o.notes.toLowerCase().includes(q) ||
           acctLabel.includes(q)
-          acctLabel.includes(q)
         );
       });
     }
