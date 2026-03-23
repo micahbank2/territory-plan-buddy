@@ -318,9 +318,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     setShowMeetingPrepDialog(true);
     setMeetingPrepBrief("");
     try {
-      const { data: result, error: fnError } = await supabase.functions.invoke("chat", {
+      const { data: result, error: fnError } = await supabase.functions.invoke("meeting-prep", {
         body: {
-          mode: "meeting-prep",
           name: prospect.name,
           website: prospect.website,
           industry: prospect.industry,
@@ -330,7 +329,6 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
           priority: prospect.priority,
           contacts: prospect.contacts,
           interactions: prospect.interactions,
-          recentInteraction: prospect.interactions?.slice(-1)[0],
           tasks: prospect.tasks,
           notes: prospect.noteLog,
           score,
@@ -339,11 +337,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
 
       if (fnError) throw fnError;
       if (result?.error) throw new Error(result.error);
-      // Handle both response keys: deployed function may return { brief } or { draft }
-      const text = result?.brief || result?.draft;
-      console.log("[MeetingPrep] response keys:", Object.keys(result || {}));
-      if (!text) throw new Error("Empty response from API");
-      setMeetingPrepBrief(text);
+      if (!result?.brief) throw new Error("Empty response from API");
+      setMeetingPrepBrief(result.brief);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to generate meeting prep";
       toast.error(msg);
