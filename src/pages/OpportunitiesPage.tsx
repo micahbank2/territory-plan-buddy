@@ -125,7 +125,7 @@ export default function OpportunitiesPage() {
       const p = prospectMap.get(opp.prospect_id);
       if (p?.website) return p.website;
     }
-    return opp.website || "";
+    return "";
   };
 
   const getLogoCustom = (opp: Opportunity) => {
