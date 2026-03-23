@@ -157,7 +157,7 @@ export default function OpportunitiesPage() {
           o.stage.toLowerCase().includes(q) ||
           o.point_of_contact.toLowerCase().includes(q) ||
           o.notes.toLowerCase().includes(q) ||
-          (o.website || "").toLowerCase().includes(q) ||
+          acctLabel.includes(q)
           acctLabel.includes(q)
         );
       });
