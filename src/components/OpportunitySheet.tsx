@@ -86,9 +86,8 @@ export function OpportunitySheet({
       setLocalNotes(opp.notes || "");
       setLocalACV(opp.potential_value ? String(opp.potential_value) : "");
       setLocalPOC(opp.point_of_contact || "");
-      setLocalWebsite(opp.website || "");
     }
-  }, [opp?.id, opp?.name, opp?.products, opp?.notes, opp?.potential_value, opp?.point_of_contact, opp?.website]);
+  }, [opp?.id, opp?.name, opp?.products, opp?.notes, opp?.potential_value, opp?.point_of_contact]);
 
   if (!opp) return null;
 
