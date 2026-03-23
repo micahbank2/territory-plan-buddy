@@ -120,6 +120,23 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
   const score = scoreProspect(prospect);
   const scoreInfo = getScoreLabel(score);
 
+  // "Why act" summary: chain applicable nudges
+  const whyActParts: string[] = useMemo(() => {
+    const parts: string[] = [];
+    if (score >= 60) {
+      const hasDecisionMaker = (prospect.contacts || []).some(c => c.role === "Decision Maker");
+      if (!hasDecisionMaker) parts.push("Missing Decision Maker");
+    }
+    const lastInteraction = (prospect.interactions || []).slice().sort((a, b) => b.date.localeCompare(a.date))[0];
+    if (lastInteraction) {
+      const daysSince = Math.floor((Date.now() - new Date(lastInteraction.date).getTime()) / 86400000);
+      if (daysSince > 30) parts.push(`${daysSince} days since last touch`);
+    }
+    const comp = prospect.competitor || "";
+    if (comp === "SOCi" || comp === "Birdeye") parts.push(`On ${comp}`);
+    return parts;
+  }, [score, prospect.contacts, prospect.interactions, prospect.competitor]);
+
   const handleUpdate = (field: string, value: any) => {
     update(prospect.id, { [field]: value });
     toast.success("✅ Updated!");
@@ -333,6 +350,11 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                   <div className="text-center px-3 cursor-help">
                     <div className="text-2xl font-black animate-count-up" style={{ color: scoreInfo.color }}>{score}</div>
                     <div className="text-xs font-bold" style={{ color: scoreInfo.color }}>{scoreInfo.label}</div>
+                    {whyActParts.length > 0 && (
+                      <div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium mt-0.5 max-w-[180px] leading-tight">
+                        {whyActParts.join(" · ")}
+                      </div>
+                    )}
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" align="end" collisionPadding={16} className="text-xs max-w-[220px] p-3 z-[100]">
