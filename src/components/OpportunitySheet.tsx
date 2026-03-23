@@ -76,7 +76,7 @@ export function OpportunitySheet({
   const [localNotes, setLocalNotes] = useState("");
   const [localACV, setLocalACV] = useState("");
   const [localPOC, setLocalPOC] = useState("");
-  const [localWebsite, setLocalWebsite] = useState("");
+  
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
