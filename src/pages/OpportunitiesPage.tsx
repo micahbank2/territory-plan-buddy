@@ -56,7 +56,6 @@ const emptyOpp = {
   products: "",
   close_date: "",
   prospect_id: null as string | null,
-  website: "",
 };
 
 type SortField = "potential_value" | "close_date" | null;
