@@ -193,16 +193,6 @@ export function OpportunitySheet({
               triggerClassName="w-full"
             />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground uppercase">Website / Domain</label>
-            <input
-              value={localWebsite}
-              onChange={e => setLocalWebsite(e.target.value)}
-              onBlur={() => commitField("website", localWebsite, opp.website)}
-              className={inputClass}
-              placeholder="e.g. shakeshack.com"
-            />
-          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-xs font-semibold text-muted-foreground uppercase">Deal Type</label>

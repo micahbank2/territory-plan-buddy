@@ -443,10 +443,6 @@ export default function OpportunitiesPage() {
                 triggerClassName="w-full"
               />
             </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Website / Domain (optional)</label>
-              <Input placeholder="e.g. shakeshack.com" value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} />
-            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Deal Type</label>
