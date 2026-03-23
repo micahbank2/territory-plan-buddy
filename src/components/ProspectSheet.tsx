@@ -254,7 +254,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     setShowDraftDialog(true);
     setOutreachDraft("");
     try {
-      const { data: result, error: fnError } = await supabase.functions.invoke("draft-outreach", {
+      const { data: result, error: fnError } = await supabase.functions.invoke("chat", {
         body: {
           name: prospect.name,
           industry: prospect.industry,
