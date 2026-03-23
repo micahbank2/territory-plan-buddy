@@ -12,8 +12,6 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    console.log("[draft-outreach] incoming request — mode:", body.mode, "name:", body.name);
-
     const {
       mode, name, industry, locationCount, competitor, tier, contacts,
       recentInteraction, priority, interactions, tasks, notes, score, website,
@@ -53,7 +51,7 @@ serve(async (req) => {
         .join("\n") || "No notes";
 
       systemPrompt = "You are an elite B2B enterprise sales strategist. Generate concise, actionable meeting prep briefs that help AEs walk into meetings prepared and confident.";
-      maxTokens = 1000;
+      maxTokens = 2000;
       responseKey = "brief";
 
       userPrompt = `You are helping a Senior AE at Yext prepare for a meeting with a multi-location brand prospect. Generate a one-page meeting prep brief.
@@ -156,7 +154,6 @@ Return ONLY the email text, no markdown formatting, no extra commentary.`;
 
     const data = await response.json();
     const text = data.content?.[0]?.text || "";
-    console.log("[draft-outreach] responseKey:", responseKey, "text length:", text.length, "stop_reason:", data.stop_reason);
 
     return new Response(JSON.stringify({ [responseKey]: text.trim() }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
