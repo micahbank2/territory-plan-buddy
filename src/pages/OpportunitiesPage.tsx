@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, Search, DollarSign, ArrowUp, ArrowDown, ArrowUpDown, Building2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const typeColors: Record<string, string> = {
   "Net New": "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
@@ -291,7 +292,7 @@ export default function OpportunitiesPage() {
                           <span className={`text-sm ${stageColors[opp.stage] || "text-foreground"}`}>{opp.stage}</span>
                         </TableCell>
                         {/* Close Date */}
-                        <TableCell className="text-foreground text-sm">
+                        <TableCell className={cn("text-sm", opp.close_date && opp.close_date < new Date().toISOString().split("T")[0] ? "text-red-600 dark:text-red-400 font-medium" : "text-foreground")}>
                           {opp.close_date || "—"}
                         </TableCell>
                         {/* Notes / Next Steps - truncated to 2 lines */}

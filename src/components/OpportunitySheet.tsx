@@ -165,7 +165,7 @@ export function OpportunitySheet({
             <div className="flex items-center gap-2 mt-0.5">
               <span className={`text-sm font-semibold ${stageColors[opp.stage] || "text-foreground"}`}>{opp.stage}</span>
               {opp.close_date && (
-                <span className="text-xs text-muted-foreground">
+                <span className={cn("text-xs", opp.close_date < new Date().toISOString().split("T")[0] ? "text-red-600 dark:text-red-400 font-medium" : "text-muted-foreground")}>
                   Close: {opp.close_date}
                 </span>
               )}
