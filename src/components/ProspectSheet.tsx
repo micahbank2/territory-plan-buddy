@@ -357,7 +357,9 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
               className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1">
               Open full page <ArrowRight className="w-3 h-3" />
             </button>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={generateOutreach}><Sparkles className="w-3 h-3" />Draft Outreach</Button>
+            <button onClick={generateOutreach} className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 ml-4">
+              <Sparkles className="w-3 h-3" /> Draft Outreach
+            </button>
           </div>
         </div>
 
