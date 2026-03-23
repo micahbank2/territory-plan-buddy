@@ -25,6 +25,25 @@ export const OPP_STAGES = [
   "Propose", "Negotiate", "Won", "Closed Won", "Closed Lost", "Dead"
 ] as const;
 
+// Fields that exist in the DB — strip everything else before insert/update
+const DB_FIELDS = new Set([
+  "name", "type", "potential_value", "point_of_contact", "stage",
+  "notes", "products", "close_date", "prospect_id", "territory_id", "user_id",
+]);
+
+function sanitizeForDb(obj: Record<string, any>): Record<string, any> {
+  const clean: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (!DB_FIELDS.has(key)) continue;
+    // PostgreSQL date columns reject "" — must be null or valid date
+    if (key === "close_date" && !value) { clean[key] = null; continue; }
+    // Nullable UUID — keep null, strip empty string
+    if (key === "prospect_id" && !value) { clean[key] = null; continue; }
+    clean[key] = value;
+  }
+  return clean;
+}
+
 export function useOpportunities(territoryId: string | null) {
   const { user } = useAuth();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
@@ -47,26 +66,31 @@ export function useOpportunities(territoryId: string | null) {
 
   const add = useCallback(async (opp: Partial<Opportunity>) => {
     if (!territoryId || !user) return;
-    // Sanitize: PostgreSQL rejects "" for date columns — must be null or valid date
-    const sanitized = { ...opp } as any;
-    if (!sanitized.close_date) sanitized.close_date = null;
-    if (sanitized.prospect_id === null || sanitized.prospect_id === "") sanitized.prospect_id = null;
-    const { error } = await supabase.from("opportunities").insert({
-      ...sanitized,
+    const payload = sanitizeForDb({
+      ...opp,
       territory_id: territoryId,
       user_id: user.id,
-    } as any);
-    if (error) { toast.error("Failed to create opportunity"); console.error("Insert error:", error); return; }
+    });
+    console.log("[useOpportunities] inserting:", payload);
+    const { error } = await supabase.from("opportunities").insert(payload as any);
+    if (error) {
+      console.error("[useOpportunities] insert error:", error);
+      toast.error(`Failed to create: ${error.message}`);
+      return;
+    }
     toast.success("Opportunity created");
     await load();
   }, [territoryId, user, load]);
 
   const update = useCallback(async (id: string, updates: Partial<Opportunity>) => {
-    const sanitized = { ...updates } as any;
-    if ("close_date" in sanitized && !sanitized.close_date) sanitized.close_date = null;
-    const { error } = await supabase.from("opportunities").update(sanitized).eq("id", id);
-    if (error) { toast.error("Failed to update"); console.error("Update error:", error); return; }
-    setOpportunities(prev => prev.map(o => o.id === id ? { ...o, ...sanitized } : o));
+    const payload = sanitizeForDb(updates);
+    const { error } = await supabase.from("opportunities").update(payload as any).eq("id", id);
+    if (error) {
+      console.error("[useOpportunities] update error:", error);
+      toast.error(`Failed to update: ${error.message}`);
+      return;
+    }
+    setOpportunities(prev => prev.map(o => o.id === id ? { ...o, ...updates } : o));
   }, []);
 
   const remove = useCallback(async (id: string) => {

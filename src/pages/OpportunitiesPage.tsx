@@ -142,7 +142,6 @@ export default function OpportunitiesPage() {
       if (p) return p.name;
     }
     return "";
-    return "";
   };
 
   const filtered = useMemo(() => {

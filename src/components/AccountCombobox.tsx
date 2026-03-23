@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -60,17 +60,31 @@ export function AccountCombobox({
           <span className="truncate">
             {selected ? selected.name : placeholder}
           </span>
-          <ChevronsUpDown className="ml-1 h-3.5 w-3.5 shrink-0 opacity-50" />
+          <div className="flex items-center gap-1 ml-1 shrink-0">
+            {selected && (
+              <span
+                role="button"
+                className="opacity-50 hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange(null);
+                }}
+              >
+                <X className="h-3 w-3" />
+              </span>
+            )}
+            <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
+          </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[220px] p-0" align="start">
+      <PopoverContent className="w-[260px] p-0" align="start">
         <Command shouldFilter={true}>
           <CommandInput
-            placeholder="Search accounts..."
+            placeholder="Search or type a name..."
             value={search}
             onValueChange={setSearch}
           />
-          <CommandList>
+          <CommandList className="max-h-[240px] overflow-y-auto">
             <CommandEmpty className="py-3 text-center text-sm text-muted-foreground">
               No accounts found.
             </CommandEmpty>
@@ -96,7 +110,7 @@ export function AccountCombobox({
               ))}
             </CommandGroup>
             {onCreateNew && search.trim() && !exactMatch && (
-              <CommandGroup>
+              <CommandGroup heading="New">
                 <CommandItem
                   value={`__create__${search.trim()}`}
                   onSelect={() => {
@@ -107,7 +121,7 @@ export function AccountCombobox({
                   className="text-primary"
                 >
                   <Plus className="mr-2 h-3.5 w-3.5" />
-                  Create "{search.trim()}"
+                  Add "{search.trim()}" as account
                 </CommandItem>
               </CommandGroup>
             )}

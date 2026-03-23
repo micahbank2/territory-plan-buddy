@@ -315,8 +315,9 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     setShowMeetingPrepDialog(true);
     setMeetingPrepBrief("");
     try {
-      const { data: result, error: fnError } = await supabase.functions.invoke("meeting-prep", {
+      const { data: result, error: fnError } = await supabase.functions.invoke("chat", {
         body: {
+          mode: "meeting-prep",
           name: prospect.name,
           website: prospect.website,
           industry: prospect.industry,
