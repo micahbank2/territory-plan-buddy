@@ -415,6 +415,36 @@ Keep it concise and actionable. Use bullet points. No fluff.`;
     }
   };
 
+  const exportMeetingPrepPdf = () => {
+    if (!meetingPrepBrief) return;
+    const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("Pop-up blocked — please allow pop-ups for PDF export.");
+      return;
+    }
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>Meeting Prep — ${prospect.name}</title>
+<style>
+  @media print { body { margin: 0; } @page { margin: 0.75in; } }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; max-width: 700px; margin: 0 auto; padding: 40px 24px; line-height: 1.6; }
+  .header { border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 24px; }
+  .header h1 { font-size: 20px; font-weight: 700; margin: 0 0 4px 0; color: #111; }
+  .header .meta { font-size: 13px; color: #666; }
+  .content { font-size: 14px; white-space: pre-wrap; }
+  .content strong { color: #111; }
+  .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #999; }
+</style></head><body>
+<div class="header">
+  <h1>Meeting Prep — ${prospect.name}</h1>
+  <div class="meta">${today} · Prepared by Territory Plan Buddy</div>
+</div>
+<div class="content">${meetingPrepBrief.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}</div>
+<div class="footer">Generated for Yext · ${prospect.industry || ""} · ${prospect.locationCount ? prospect.locationCount + " locations" : ""}</div>
+</body></html>`);
+    printWindow.document.close();
+    setTimeout(() => { printWindow.print(); }, 300);
+  };
+
   const inputClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 placeholder:text-muted-foreground transition-all";
   const selectClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 appearance-none cursor-pointer transition-all";
 
@@ -868,9 +898,12 @@ Keep it concise and actionable. Use bullet points. No fluff.`;
               <div className="bg-muted/50 border border-border rounded-lg p-4 overflow-y-auto max-h-[55vh]">
                 <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap prose prose-sm dark:prose-invert max-w-none">{meetingPrepBrief}</div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button onClick={copyMeetingPrep} size="sm" className="gap-1.5">
                   <Copy className="w-3.5 h-3.5" /> Copy to Clipboard
+                </Button>
+                <Button onClick={exportMeetingPrepPdf} size="sm" variant="outline" className="gap-1.5">
+                  <FileText className="w-3.5 h-3.5" /> Export PDF
                 </Button>
                 <Button onClick={generateMeetingPrep} size="sm" variant="outline" className="gap-1.5">
                   <RefreshCw className="w-3.5 h-3.5" /> Regenerate

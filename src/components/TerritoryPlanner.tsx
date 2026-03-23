@@ -25,6 +25,7 @@ import { ProspectSheet } from "@/components/ProspectSheet";
 import { CSVUploadDialog } from "@/components/CSVUploadDialog";
 import { ShareTerritoryDialog } from "@/components/ShareTerritoryDialog";
 import { BulkEditDialog } from "@/components/BulkEditDialog";
+import { BulkOutreachQueue } from "@/components/BulkOutreachQueue";
 import { PasteImportDialog } from "@/components/PasteImportDialog";
 import { EnrichmentQueue } from "@/components/EnrichmentQueue";
 import { AIReadinessBadge } from "@/components/AIReadinessCard";
@@ -417,6 +418,7 @@ export default function TerritoryPlanner() {
   const [bulkPriority, setBulkPriority] = useState("");
   const [bulkCompetitor, setBulkCompetitor] = useState("");
   const [showBulkEdit, setShowBulkEdit] = useState(false);
+  const [showBulkOutreach, setShowBulkOutreach] = useState(false);
   const [bulkConfirm, setBulkConfirm] = useState<{ label: string; action: () => void } | null>(null);
 
   // Quick Add
@@ -1604,6 +1606,9 @@ export default function TerritoryPlanner() {
             <Button size="sm" variant="outline" onClick={() => setShowBulkEdit(true)} className="text-xs h-7 gap-1">
               <SlidersHorizontal className="w-3 h-3" /> Bulk Edit
             </Button>
+            <Button size="sm" variant="outline" onClick={() => setShowBulkOutreach(true)} className="text-xs h-7 gap-1">
+              <Sparkles className="w-3 h-3" /> Generate Outreach ({selected.size})
+            </Button>
             <Button size="sm" variant="destructive" onClick={() => setShowBulkDelete(true)} className="text-xs h-7 gap-1 ml-auto delete-glow">
               <Trash2 className="w-3 h-3" /> Delete
             </Button>
@@ -1929,6 +1934,13 @@ export default function TerritoryPlanner() {
         onOpenChange={setShowBulkEdit}
         selectedCount={selected.size}
         onApply={handleBulkEditApply}
+      />
+
+      {/* --- Bulk Outreach Queue --- */}
+      <BulkOutreachQueue
+        open={showBulkOutreach}
+        onOpenChange={setShowBulkOutreach}
+        prospects={data.filter(p => selected.has(p.id))}
       />
 
       {/* --- Bulk Confirm --- */}
