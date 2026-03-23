@@ -336,10 +336,13 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
         },
       });
 
+      console.log("[MeetingPrep] raw invoke response — error:", fnError, "data:", JSON.stringify(result));
       if (fnError) throw fnError;
       if (result?.error) throw new Error(result.error);
-      if (!result?.brief) throw new Error("Empty response from API");
-      setMeetingPrepBrief(result.brief);
+      // Accept either key — deployed function may return brief (new) or draft (old)
+      const text = result?.brief || result?.draft;
+      if (!text) throw new Error(`Empty response. Keys received: ${JSON.stringify(Object.keys(result || {}))}`);
+      setMeetingPrepBrief(text);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to generate meeting prep";
       toast.error(msg);
