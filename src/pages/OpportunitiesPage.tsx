@@ -56,7 +56,6 @@ const emptyOpp = {
   products: "",
   close_date: "",
   prospect_id: null as string | null,
-  website: "",
 };
 
 type SortField = "potential_value" | "close_date" | null;
@@ -126,7 +125,7 @@ export default function OpportunitiesPage() {
       const p = prospectMap.get(opp.prospect_id);
       if (p?.website) return p.website;
     }
-    return opp.website || "";
+    return "";
   };
 
   const getLogoCustom = (opp: Opportunity) => {
@@ -142,7 +141,7 @@ export default function OpportunitiesPage() {
       const p = prospectMap.get(opp.prospect_id);
       if (p) return p.name;
     }
-    if (opp.website) return opp.website;
+    return "";
     return "";
   };
 
@@ -158,7 +157,6 @@ export default function OpportunitiesPage() {
           o.stage.toLowerCase().includes(q) ||
           o.point_of_contact.toLowerCase().includes(q) ||
           o.notes.toLowerCase().includes(q) ||
-          (o.website || "").toLowerCase().includes(q) ||
           acctLabel.includes(q)
         );
       });
@@ -443,10 +441,6 @@ export default function OpportunitiesPage() {
                 placeholder="Link to an account..."
                 triggerClassName="w-full"
               />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Website / Domain (optional)</label>
-              <Input placeholder="e.g. shakeshack.com" value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

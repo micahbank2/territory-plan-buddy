@@ -76,7 +76,7 @@ export function OpportunitySheet({
   const [localNotes, setLocalNotes] = useState("");
   const [localACV, setLocalACV] = useState("");
   const [localPOC, setLocalPOC] = useState("");
-  const [localWebsite, setLocalWebsite] = useState("");
+  
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
@@ -86,15 +86,14 @@ export function OpportunitySheet({
       setLocalNotes(opp.notes || "");
       setLocalACV(opp.potential_value ? String(opp.potential_value) : "");
       setLocalPOC(opp.point_of_contact || "");
-      setLocalWebsite(opp.website || "");
     }
-  }, [opp?.id, opp?.name, opp?.products, opp?.notes, opp?.potential_value, opp?.point_of_contact, opp?.website]);
+  }, [opp?.id, opp?.name, opp?.products, opp?.notes, opp?.potential_value, opp?.point_of_contact]);
 
   if (!opp) return null;
 
-  const logoWebsite = prospect?.website || opp.website || "";
+  const logoWebsite = prospect?.website || "";
   const logoCustom = prospect?.customLogo;
-  const accountLabel = prospect?.name || opp.website || "";
+  const accountLabel = prospect?.name || "";
 
   const handleUpdate = (field: string, value: any) => {
     update(opp.id, { [field]: value } as any);
@@ -192,16 +191,6 @@ export function OpportunitySheet({
               onCreateNew={onCreateAccount ? handleCreateAccountInDrawer : undefined}
               placeholder="Link to an account..."
               triggerClassName="w-full"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground uppercase">Website / Domain</label>
-            <input
-              value={localWebsite}
-              onChange={e => setLocalWebsite(e.target.value)}
-              onBlur={() => commitField("website", localWebsite, opp.website)}
-              className={inputClass}
-              placeholder="e.g. shakeshack.com"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
