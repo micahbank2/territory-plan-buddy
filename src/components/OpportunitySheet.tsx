@@ -91,9 +91,9 @@ export function OpportunitySheet({
 
   if (!opp) return null;
 
-  const logoWebsite = prospect?.website || opp.website || "";
+  const logoWebsite = prospect?.website || "";
   const logoCustom = prospect?.customLogo;
-  const accountLabel = prospect?.name || opp.website || "";
+  const accountLabel = prospect?.name || "";
 
   const handleUpdate = (field: string, value: any) => {
     update(opp.id, { [field]: value } as any);
