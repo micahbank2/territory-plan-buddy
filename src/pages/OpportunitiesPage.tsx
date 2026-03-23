@@ -14,7 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Search, DollarSign, ArrowUp, ArrowDown, ArrowUpDown, Building2, Target, X } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { OpportunityKanban } from "@/components/OpportunityKanban";
+import { ArrowLeft, Plus, Search, DollarSign, ArrowUp, ArrowDown, ArrowUpDown, Building2, Target, X, List, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const STAGE_WEIGHTS: Record<string, number> = {
@@ -82,6 +84,7 @@ export default function OpportunitiesPage() {
   const { activeTerritory } = useTerritories();
   const { opportunities, loading, add, update, remove } = useOpportunities(activeTerritory);
   const { data: prospects, add: addProspect } = useProspects();
+  const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(emptyOpp);
@@ -212,6 +215,25 @@ export default function OpportunitiesPage() {
             <Badge variant="secondary" className="font-mono text-xs">{filtered.length}</Badge>
           </div>
           <div className="flex items-center gap-2">
+            {/* View toggle */}
+            <div className="hidden md:inline-flex items-center rounded-md border border-border overflow-hidden">
+              <Tooltip delayDuration={150}>
+                <TooltipTrigger asChild>
+                  <button onClick={() => setViewMode("table")} className={cn("h-8 w-8 flex items-center justify-center transition-colors", viewMode === "table" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-gray-100 dark:hover:bg-muted text-muted-foreground")}>
+                    <List className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8}><p>Table view</p></TooltipContent>
+              </Tooltip>
+              <Tooltip delayDuration={150}>
+                <TooltipTrigger asChild>
+                  <button onClick={() => setViewMode("kanban")} className={cn("h-8 w-8 flex items-center justify-center transition-colors", viewMode === "kanban" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-gray-100 dark:hover:bg-muted text-muted-foreground")}>
+                    <LayoutGrid className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8}><p>Kanban view</p></TooltipContent>
+              </Tooltip>
+            </div>
             <div className="relative hidden sm:block">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <Input
@@ -303,7 +325,7 @@ export default function OpportunitiesPage() {
         </div>
       )}
 
-      {/* Table */}
+      {/* Content */}
       <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6">
         {loading ? (
           <div className="flex justify-center py-20">
@@ -315,6 +337,13 @@ export default function OpportunitiesPage() {
             <p className="text-lg font-medium">No opportunities yet</p>
             <p className="text-sm mt-1">Click "Add Deal" to create your first opportunity.</p>
           </div>
+        ) : viewMode === "kanban" ? (
+          <OpportunityKanban
+            opportunities={filtered}
+            prospectMap={prospectMap}
+            onCardClick={(id) => setSelectedOppId(id)}
+            onStageChange={(id, newStage) => update(id, { stage: newStage })}
+          />
         ) : (
           <>
             <div className="rounded-lg border border-border overflow-hidden">
