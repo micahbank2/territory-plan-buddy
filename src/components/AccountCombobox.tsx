@@ -15,6 +15,10 @@ interface AccountComboboxProps {
   value: string | null;
   onChange: (prospectId: string | null) => void;
   onCreateNew?: (name: string) => void;
+  /** When provided, the "Add X as account" option stores free text instead of creating a prospect */
+  onFreeTextSelect?: (name: string) => void;
+  /** Display name for a free-text account (shown when value is null but a custom name is set) */
+  freeTextValue?: string;
   placeholder?: string;
   triggerClassName?: string;
   compact?: boolean;
@@ -25,6 +29,8 @@ export function AccountCombobox({
   value,
   onChange,
   onCreateNew,
+  onFreeTextSelect,
+  freeTextValue,
   placeholder = "Select account...",
   triggerClassName,
   compact = false,
@@ -38,10 +44,30 @@ export function AccountCombobox({
   );
 
   const selected = accounts.find((a) => a.id === value);
+  const displayLabel = selected ? selected.name : freeTextValue || "";
+  const hasValue = !!selected || !!freeTextValue;
 
   const exactMatch = sorted.some(
     (a) => a.name.toLowerCase() === search.trim().toLowerCase()
   );
+
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onChange(null);
+    if (onFreeTextSelect) onFreeTextSelect("");
+  };
+
+  const handleAddFreeText = () => {
+    const name = search.trim();
+    if (onFreeTextSelect) {
+      onChange(null);
+      onFreeTextSelect(name);
+    } else if (onCreateNew) {
+      onCreateNew(name);
+    }
+    setOpen(false);
+    setSearch("");
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -52,23 +78,20 @@ export function AccountCombobox({
           aria-expanded={open}
           className={cn(
             "justify-between font-normal",
-            !selected && "text-muted-foreground",
+            !hasValue && "text-muted-foreground",
             compact && "h-7 border-dashed text-xs",
             triggerClassName
           )}
         >
           <span className="truncate">
-            {selected ? selected.name : placeholder}
+            {displayLabel || placeholder}
           </span>
           <div className="flex items-center gap-1 ml-1 shrink-0">
-            {selected && (
+            {hasValue && (
               <span
                 role="button"
                 className="opacity-50 hover:opacity-100 transition-opacity"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onChange(null);
-                }}
+                onClick={handleClear}
               >
                 <X className="h-3 w-3" />
               </span>
@@ -95,6 +118,7 @@ export function AccountCombobox({
                   value={account.name}
                   onSelect={() => {
                     onChange(account.id === value ? null : account.id);
+                    if (onFreeTextSelect) onFreeTextSelect("");
                     setOpen(false);
                     setSearch("");
                   }}
@@ -109,15 +133,11 @@ export function AccountCombobox({
                 </CommandItem>
               ))}
             </CommandGroup>
-            {onCreateNew && search.trim() && !exactMatch && (
+            {(onCreateNew || onFreeTextSelect) && search.trim() && !exactMatch && (
               <CommandGroup heading="New">
                 <CommandItem
                   value={`__create__${search.trim()}`}
-                  onSelect={() => {
-                    onCreateNew(search.trim());
-                    setOpen(false);
-                    setSearch("");
-                  }}
+                  onSelect={handleAddFreeText}
                   className="text-primary"
                 >
                   <Plus className="mr-2 h-3.5 w-3.5" />

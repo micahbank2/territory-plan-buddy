@@ -30,6 +30,7 @@ interface OpportunitySheetProps {
   remove: (id: string) => void;
   prospectMap?: Map<string, { name: string; website: string; customLogo?: string }>;
   accountOptions?: { id: string; name: string }[];
+  /** @deprecated — free-text account names now stored in opportunity.website */
   onCreateAccount?: (partial: { name: string }) => Promise<string | undefined>;
 }
 
@@ -93,7 +94,7 @@ export function OpportunitySheet({
 
   const logoWebsite = prospect?.website || "";
   const logoCustom = prospect?.customLogo;
-  const accountLabel = prospect?.name || "";
+  const accountLabel = prospect?.name || opp?.website || "";
 
   const handleUpdate = (field: string, value: any) => {
     update(opp.id, { [field]: value } as any);
@@ -123,10 +124,9 @@ export function OpportunitySheet({
     }
   };
 
-  const handleCreateAccountInDrawer = async (name: string) => {
-    if (!onCreateAccount) return;
-    const newId = await onCreateAccount({ name });
-    if (newId) handleUpdate("prospect_id", newId);
+  const handleFreeTextAccountInSheet = (name: string) => {
+    update(opp.id, { website: name, prospect_id: null } as any);
+    toast.success("Account updated!");
   };
 
   const inputClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 placeholder:text-muted-foreground transition-all";
@@ -187,8 +187,12 @@ export function OpportunitySheet({
             <AccountCombobox
               accounts={accountOptions}
               value={opp.prospect_id}
-              onChange={v => handleUpdate("prospect_id", v)}
-              onCreateNew={onCreateAccount ? handleCreateAccountInDrawer : undefined}
+              onChange={v => {
+                handleUpdate("prospect_id", v);
+                if (v) update(opp.id, { website: "" } as any);
+              }}
+              onFreeTextSelect={handleFreeTextAccountInSheet}
+              freeTextValue={opp.website || ""}
               placeholder="Link to an account..."
               triggerClassName="w-full"
             />

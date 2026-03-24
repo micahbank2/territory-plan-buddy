@@ -74,7 +74,7 @@ function KanbanCard({ opp, prospectMap, onClick, isDragOverlay }: {
 
   const prospect = opp.prospect_id ? prospectMap.get(opp.prospect_id) : undefined;
   const website = prospect?.website || "";
-  const accountLabel = prospect?.name || "";
+  const accountLabel = prospect?.name || opp.website || "";
   const today = new Date().toISOString().split("T")[0];
   const isPastDue = opp.close_date && opp.close_date < today;
 
