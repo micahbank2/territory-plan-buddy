@@ -29,7 +29,7 @@ export type Database = {
           territory_id: string
           type: string
           user_id: string
-          website: string
+          website: string | null
         }
         Insert: {
           close_date?: string
@@ -45,7 +45,7 @@ export type Database = {
           territory_id: string
           type?: string
           user_id: string
-          website?: string
+          website?: string | null
         }
         Update: {
           close_date?: string
@@ -61,7 +61,7 @@ export type Database = {
           territory_id?: string
           type?: string
           user_id?: string
-          website?: string
+          website?: string | null
         }
         Relationships: [
           {
@@ -90,7 +90,6 @@ export type Database = {
           prospect_id: string
           relationship_strength: string | null
           role: string | null
-          starred: boolean
           title: string
           user_id: string
         }
@@ -103,7 +102,6 @@ export type Database = {
           prospect_id: string
           relationship_strength?: string | null
           role?: string | null
-          starred?: boolean
           title?: string
           user_id: string
         }
@@ -116,7 +114,6 @@ export type Database = {
           prospect_id?: string
           relationship_strength?: string | null
           role?: string | null
-          starred?: boolean
           title?: string
           user_id?: string
         }
