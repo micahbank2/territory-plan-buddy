@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { OpportunityKanban } from "@/components/OpportunityKanban";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -22,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
-import { ArrowLeft, Plus, Search, DollarSign, ArrowUp, ArrowDown, ArrowUpDown, Building2, Target, X, List, LayoutGrid, Trash2, CalendarIcon } from "lucide-react";
+import { ArrowLeft, Plus, Search, DollarSign, ArrowUp, ArrowDown, ArrowUpDown, X, Trash2, CalendarIcon, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const STAGE_WEIGHTS: Record<string, number> = {
@@ -109,7 +108,8 @@ export default function OpportunitiesPage() {
   const { activeTerritory } = useTerritories();
   const { opportunities, loading, add, update, remove } = useOpportunities(activeTerritory);
   const { data: prospects, add: addProspect } = useProspects();
-  const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
+  const [listExpanded, setListExpanded] = useState(true);
+  const [kanbanExpanded, setKanbanExpanded] = useState(true);
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(emptyOpp);
@@ -294,25 +294,6 @@ export default function OpportunitiesPage() {
             <Badge variant="secondary" className="font-mono text-xs">{filtered.length}</Badge>
           </div>
           <div className="flex items-center gap-2">
-            {/* View toggle */}
-            <div className="hidden md:inline-flex items-center rounded-md border border-border overflow-hidden">
-              <Tooltip delayDuration={150}>
-                <TooltipTrigger asChild>
-                  <button onClick={() => setViewMode("table")} className={cn("h-8 w-8 flex items-center justify-center transition-colors", viewMode === "table" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-gray-100 dark:hover:bg-muted text-muted-foreground")}>
-                    <List className="h-4 w-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8}><p>Table view</p></TooltipContent>
-              </Tooltip>
-              <Tooltip delayDuration={150}>
-                <TooltipTrigger asChild>
-                  <button onClick={() => setViewMode("kanban")} className={cn("h-8 w-8 flex items-center justify-center transition-colors", viewMode === "kanban" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-gray-100 dark:hover:bg-muted text-muted-foreground")}>
-                    <LayoutGrid className="h-4 w-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8}><p>Kanban view</p></TooltipContent>
-              </Tooltip>
-            </div>
             <div className="relative hidden sm:block">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <Input
@@ -405,7 +386,7 @@ export default function OpportunitiesPage() {
       )}
 
       {/* Content */}
-      <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6">
+      <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6 space-y-6">
         {loading ? (
           <div className="flex justify-center py-20">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -416,143 +397,169 @@ export default function OpportunitiesPage() {
             <p className="text-lg font-medium">No opportunities yet</p>
             <p className="text-sm mt-1">Click "Add Deal" to create your first opportunity.</p>
           </div>
-        ) : viewMode === "kanban" ? (
-          <OpportunityKanban
-            opportunities={filtered}
-            prospectMap={prospectMap}
-            onCardClick={(id) => setSelectedOppId(id)}
-            onStageChange={(id, newStage) => update(id, { stage: newStage })}
-          />
         ) : (
           <>
-            {/* Bulk Action Bar */}
-            {selectedIds.size > 0 && (
-              <div className="mb-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5 flex items-center gap-3 animate-fade-in-up">
-                <span className="text-sm font-medium text-foreground">{selectedIds.size} selected</span>
-                <div className="w-px h-5 bg-border" />
-                <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30" onClick={() => setShowBulkDelete(true)}>
-                  <Trash2 className="w-3.5 h-3.5" /> Delete
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => { setBulkStageValue(""); setShowBulkStage(true); }}>
-                  Change Stage
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => { setBulkDateValue(undefined); setShowBulkCloseDate(true); }}>
-                  <CalendarIcon className="w-3.5 h-3.5 mr-1" /> Change Close Date
-                </Button>
-                <div className="flex-1" />
-                <Button variant="ghost" size="sm" onClick={clearSelection} className="text-muted-foreground">
-                  Clear
-                </Button>
-              </div>
-            )}
+            {/* ── List View Section ── */}
+            <div>
+              <button
+                onClick={() => setListExpanded(v => !v)}
+                className="flex items-center gap-2 mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors select-none"
+              >
+                {listExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                List View
+              </button>
+              {listExpanded && (
+                <>
+                  {/* Bulk Action Bar */}
+                  {selectedIds.size > 0 && (
+                    <div className="mb-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5 flex items-center gap-3 animate-fade-in-up">
+                      <span className="text-sm font-medium text-foreground">{selectedIds.size} selected</span>
+                      <div className="w-px h-5 bg-border" />
+                      <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30" onClick={() => setShowBulkDelete(true)}>
+                        <Trash2 className="w-3.5 h-3.5" /> Delete
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => { setBulkStageValue(""); setShowBulkStage(true); }}>
+                        Change Stage
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => { setBulkDateValue(undefined); setShowBulkCloseDate(true); }}>
+                        <CalendarIcon className="w-3.5 h-3.5 mr-1" /> Change Close Date
+                      </Button>
+                      <div className="flex-1" />
+                      <Button variant="ghost" size="sm" onClick={clearSelection} className="text-muted-foreground">
+                        Clear
+                      </Button>
+                    </div>
+                  )}
 
-            <div className="rounded-lg border border-border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/40">
-                    <TableHead className="w-10 px-3">
-                      <Checkbox
-                        checked={filtered.length > 0 && selectedIds.size === filtered.length}
-                        onCheckedChange={toggleSelectAll}
-                      />
-                    </TableHead>
-                    <TableHead className="font-semibold text-foreground min-w-[220px]">Name</TableHead>
-                    <TableHead className="font-semibold text-foreground">Deal Type</TableHead>
-                    <TableHead className="font-semibold text-foreground">Products</TableHead>
-                    <TableHead
-                      className="font-semibold text-foreground text-right cursor-pointer select-none hover:text-primary"
-                      onClick={() => toggleSort("potential_value")}
-                    >
-                      <span className="inline-flex items-center gap-1">
-                        ACV
-                        <SortIcon field="potential_value" sortField={sortField} sortDir={sortDir} />
-                      </span>
-                    </TableHead>
-                    <TableHead className="font-semibold text-foreground">Stage</TableHead>
-                    <TableHead
-                      className="font-semibold text-foreground cursor-pointer select-none hover:text-primary"
-                      onClick={() => toggleSort("close_date")}
-                    >
-                      <span className="inline-flex items-center gap-1">
-                        Close Date
-                        <SortIcon field="close_date" sortField={sortField} sortDir={sortDir} />
-                      </span>
-                    </TableHead>
-                    <TableHead className="font-semibold text-foreground min-w-[180px]">Notes / Next Steps</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map(opp => {
-                    const acctLabel = getAccountLabel(opp);
-                    return (
-                      <TableRow
-                        key={opp.id}
-                        className="group cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => setSelectedOppId(opp.id)}
-                      >
-                        {/* Checkbox */}
-                        <TableCell className="w-10 px-3" onClick={e => e.stopPropagation()}>
-                          <Checkbox
-                            checked={selectedIds.has(opp.id)}
-                            onCheckedChange={() => toggleSelect(opp.id)}
-                          />
-                        </TableCell>
-                        {/* Name with logo + account sub-line */}
-                        <TableCell>
-                          <div className="flex items-center gap-2.5">
-                            <DealLogo
-                              website={getLogoWebsite(opp)}
-                              accountName={acctLabel || opp.name}
-                              size={28}
+                  <div className="rounded-lg border border-border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/40">
+                          <TableHead className="w-10 px-3">
+                            <Checkbox
+                              checked={filtered.length > 0 && selectedIds.size === filtered.length}
+                              onCheckedChange={toggleSelectAll}
                             />
-                            <div className="min-w-0">
-                              <span className="font-medium text-foreground truncate block">{opp.name}</span>
-                              {acctLabel && (
-                                <span className="text-xs text-muted-foreground truncate block">{acctLabel}</span>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        {/* Deal Type */}
-                        <TableCell>
-                          <Badge className={`${typeColors[opp.type] || "bg-muted text-foreground"} border-0 font-medium text-xs`}>
-                            {opp.type}
-                          </Badge>
-                        </TableCell>
-                        {/* Products */}
-                        <TableCell className="text-foreground text-sm max-w-[160px] truncate">
-                          {opp.products || "—"}
-                        </TableCell>
-                        {/* ACV */}
-                        <TableCell className="text-right font-mono text-foreground">
-                          ${(opp.potential_value || 0).toLocaleString()}
-                        </TableCell>
-                        {/* Stage */}
-                        <TableCell>
-                          <span className={`text-sm ${stageColors[opp.stage] || "text-foreground"}`}>{opp.stage}</span>
-                        </TableCell>
-                        {/* Close Date */}
-                        <TableCell className={cn("text-sm", opp.close_date && opp.close_date < new Date().toISOString().split("T")[0] ? "text-red-600 dark:text-red-400 font-medium" : "text-foreground")}>
-                          {opp.close_date || "—"}
-                        </TableCell>
-                        {/* Notes / Next Steps - truncated to 2 lines */}
-                        <TableCell className="max-w-[250px]">
-                          {opp.notes ? (
-                            <p className="text-sm text-foreground/80 line-clamp-2">{opp.notes}</p>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                          </TableHead>
+                          <TableHead className="font-semibold text-foreground min-w-[220px]">Name</TableHead>
+                          <TableHead className="font-semibold text-foreground">Deal Type</TableHead>
+                          <TableHead className="font-semibold text-foreground">Products</TableHead>
+                          <TableHead
+                            className="font-semibold text-foreground text-right cursor-pointer select-none hover:text-primary"
+                            onClick={() => toggleSort("potential_value")}
+                          >
+                            <span className="inline-flex items-center gap-1">
+                              ACV
+                              <SortIcon field="potential_value" sortField={sortField} sortDir={sortDir} />
+                            </span>
+                          </TableHead>
+                          <TableHead className="font-semibold text-foreground">Stage</TableHead>
+                          <TableHead
+                            className="font-semibold text-foreground cursor-pointer select-none hover:text-primary"
+                            onClick={() => toggleSort("close_date")}
+                          >
+                            <span className="inline-flex items-center gap-1">
+                              Close Date
+                              <SortIcon field="close_date" sortField={sortField} sortDir={sortDir} />
+                            </span>
+                          </TableHead>
+                          <TableHead className="font-semibold text-foreground min-w-[180px]">Notes / Next Steps</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filtered.map(opp => {
+                          const acctLabel = getAccountLabel(opp);
+                          return (
+                            <TableRow
+                              key={opp.id}
+                              className="group cursor-pointer hover:bg-muted/50 transition-colors"
+                              onClick={() => setSelectedOppId(opp.id)}
+                            >
+                              {/* Checkbox */}
+                              <TableCell className="w-10 px-3" onClick={e => e.stopPropagation()}>
+                                <Checkbox
+                                  checked={selectedIds.has(opp.id)}
+                                  onCheckedChange={() => toggleSelect(opp.id)}
+                                />
+                              </TableCell>
+                              {/* Name with logo + account sub-line */}
+                              <TableCell>
+                                <div className="flex items-center gap-2.5">
+                                  <DealLogo
+                                    website={getLogoWebsite(opp)}
+                                    accountName={acctLabel || opp.name}
+                                    size={28}
+                                  />
+                                  <div className="min-w-0">
+                                    <span className="font-medium text-foreground truncate block">{opp.name}</span>
+                                    {acctLabel && (
+                                      <span className="text-xs text-muted-foreground truncate block">{acctLabel}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              {/* Deal Type */}
+                              <TableCell>
+                                <Badge className={`${typeColors[opp.type] || "bg-muted text-foreground"} border-0 font-medium text-xs`}>
+                                  {opp.type}
+                                </Badge>
+                              </TableCell>
+                              {/* Products */}
+                              <TableCell className="text-foreground text-sm max-w-[160px] truncate">
+                                {opp.products || "—"}
+                              </TableCell>
+                              {/* ACV */}
+                              <TableCell className="text-right font-mono text-foreground">
+                                ${(opp.potential_value || 0).toLocaleString()}
+                              </TableCell>
+                              {/* Stage */}
+                              <TableCell>
+                                <span className={`text-sm ${stageColors[opp.stage] || "text-foreground"}`}>{opp.stage}</span>
+                              </TableCell>
+                              {/* Close Date */}
+                              <TableCell className={cn("text-sm", opp.close_date && opp.close_date < new Date().toISOString().split("T")[0] ? "text-red-600 dark:text-red-400 font-medium" : "text-foreground")}>
+                                {opp.close_date || "—"}
+                              </TableCell>
+                              {/* Notes / Next Steps - truncated to 2 lines */}
+                              <TableCell className="max-w-[250px]">
+                                {opp.notes ? (
+                                  <p className="text-sm text-foreground/80 line-clamp-2">{opp.notes}</p>
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  {/* Footer summary */}
+                  <div className="flex items-center justify-between mt-3 px-2 text-sm text-muted-foreground">
+                    <span>{filtered.length} deal{filtered.length !== 1 ? "s" : ""}</span>
+                    <span className="font-mono font-medium text-foreground">${totalACV.toLocaleString()} total ACV</span>
+                  </div>
+                </>
+              )}
             </div>
-            {/* Footer summary */}
-            <div className="flex items-center justify-between mt-3 px-2 text-sm text-muted-foreground">
-              <span>{filtered.length} deal{filtered.length !== 1 ? "s" : ""}</span>
-              <span className="font-mono font-medium text-foreground">${totalACV.toLocaleString()} total ACV</span>
+
+            {/* ── Pipeline View Section ── */}
+            <div>
+              <button
+                onClick={() => setKanbanExpanded(v => !v)}
+                className="flex items-center gap-2 mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors select-none"
+              >
+                {kanbanExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                Pipeline View
+              </button>
+              {kanbanExpanded && (
+                <OpportunityKanban
+                  opportunities={filtered}
+                  prospectMap={prospectMap}
+                  onCardClick={(id) => setSelectedOppId(id)}
+                  onStageChange={(id, newStage) => update(id, { stage: newStage })}
+                />
+              )}
             </div>
           </>
         )}
