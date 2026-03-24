@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -49,16 +49,19 @@ interface Props {
 
 // --- Card logo ---
 function CardLogo({ website, accountName, size = 20 }: { website?: string; accountName?: string; size?: number }) {
-  const [err, setErr] = useState(false);
-  const domain = website?.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  const [logoError, setLogoError] = useState(false);
+  const domain = website?.trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "").trim() || "";
   const clearbitUrl = domain ? `https://logo.clearbit.com/${domain}` : "";
   const initial = (accountName || "?")[0].toUpperCase();
-  if (!domain || err) return (
+
+  useEffect(() => { setLogoError(false); }, [domain]);
+
+  if (!domain || logoError) return (
     <div className="rounded bg-primary/10 flex items-center justify-center shrink-0 text-primary font-bold" style={{ width: size, height: size, fontSize: size * 0.45 }}>
       {initial}
     </div>
   );
-  return <img src={clearbitUrl} alt="" className="rounded bg-muted object-contain shrink-0" style={{ width: size, height: size }} onError={() => setErr(true)} />;
+  return <img src={clearbitUrl} alt="" className="rounded bg-muted object-contain shrink-0" style={{ width: size, height: size }} onError={() => setLogoError(true)} />;
 }
 
 // --- Single draggable card ---
