@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
   Sheet, SheetContent,
 } from "@/components/ui/sheet";
@@ -7,8 +7,10 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { OPP_TYPES, OPP_STAGES, type Opportunity } from "@/hooks/useOpportunities";
 import { cn } from "@/lib/utils";
 import {
-  Trash2, CalendarIcon,
+  Trash2, CalendarIcon, Bold, Italic, List, ListOrdered,
 } from "lucide-react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -101,6 +103,14 @@ export function OpportunitySheet({
   const [acctDropdown, setAcctDropdown] = useState(false);
   const acctRef = useRef<HTMLDivElement>(null);
 
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: "",
+    onUpdate: ({ editor: e }) => {
+      setLocalNotes(e.getHTML());
+    },
+  });
+
   useEffect(() => {
     if (opp) {
       setLocalName(opp.name || "");
@@ -111,8 +121,12 @@ export function OpportunitySheet({
       setLocalWebsite(opp.website || "");
       const p = opp.prospect_id && prospectMap ? prospectMap.get(opp.prospect_id) : null;
       setLocalAccount(p?.name || "");
+      // Sync tiptap editor content
+      if (editor && editor.getHTML() !== (opp.notes || "")) {
+        editor.commands.setContent(opp.notes || "");
+      }
     }
-  }, [opp?.id, opp?.name, opp?.products, opp?.notes, opp?.potential_value, opp?.point_of_contact, opp?.prospect_id, opp?.website, prospectMap]);
+  }, [opp?.id, opp?.name, opp?.products, opp?.notes, opp?.potential_value, opp?.point_of_contact, opp?.prospect_id, opp?.website, prospectMap, editor]);
 
   if (!opp) return null;
 
@@ -356,14 +370,51 @@ export function OpportunitySheet({
         {/* Notes / Next Steps */}
         <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "50ms" }}>
           <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Notes / Next Steps</h3>
-          <textarea
-            value={localNotes}
-            onChange={e => setLocalNotes(e.target.value)}
-            onBlur={() => commitField("notes", localNotes, opp.notes || "")}
-            className={cn(inputClass, "min-h-[150px] resize-y overflow-y-auto")}
-            placeholder="Add notes, next steps, key details..."
-            rows={6}
-          />
+          {editor && (
+            <div className="rounded-lg border border-border overflow-hidden focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary/50 transition-all">
+              {/* Toolbar */}
+              <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-border bg-muted/30">
+                <button
+                  type="button"
+                  onClick={() => editor.chain().focus().toggleBold().run()}
+                  className={cn("p-1.5 rounded hover:bg-muted transition-colors", editor.isActive("bold") && "bg-muted text-primary")}
+                  title="Bold"
+                >
+                  <Bold className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => editor.chain().focus().toggleItalic().run()}
+                  className={cn("p-1.5 rounded hover:bg-muted transition-colors", editor.isActive("italic") && "bg-muted text-primary")}
+                  title="Italic"
+                >
+                  <Italic className="w-3.5 h-3.5" />
+                </button>
+                <div className="w-px h-4 bg-border mx-1" />
+                <button
+                  type="button"
+                  onClick={() => editor.chain().focus().toggleBulletList().run()}
+                  className={cn("p-1.5 rounded hover:bg-muted transition-colors", editor.isActive("bulletList") && "bg-muted text-primary")}
+                  title="Bullet list"
+                >
+                  <List className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                  className={cn("p-1.5 rounded hover:bg-muted transition-colors", editor.isActive("orderedList") && "bg-muted text-primary")}
+                  title="Numbered list"
+                >
+                  <ListOrdered className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              {/* Editor */}
+              <EditorContent
+                editor={editor}
+                className="prose prose-sm dark:prose-invert max-w-none px-3 py-2 min-h-[150px] focus:outline-none text-sm [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[130px]"
+              />
+            </div>
+          )}
         </div>
 
         {/* Save Changes */}
