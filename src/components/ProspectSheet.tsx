@@ -98,7 +98,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     setStarOverrides(prev => new Map(prev).set(contactId, newVal));
     const { error } = await supabase
       .from("prospect_contacts")
-      .update({ notes: newVal ? "⭐" : "" } as any)
+      .update({ starred: newVal } as any)
       .eq("id", contactId);
     if (error) {
       // Revert on failure
