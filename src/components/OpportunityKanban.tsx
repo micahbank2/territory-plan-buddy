@@ -50,18 +50,28 @@ interface Props {
 // --- Card logo ---
 function CardLogo({ website, accountName, size = 20 }: { website?: string; accountName?: string; size?: number }) {
   const [logoError, setLogoError] = useState(false);
-  const domain = website?.trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "").trim() || "";
-  const clearbitUrl = domain ? `https://logo.clearbit.com/${domain}` : "";
+  const domain = website?.trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "") ?? "";
   const initial = (accountName || "?")[0].toUpperCase();
 
   useEffect(() => { setLogoError(false); }, [domain]);
 
-  if (!domain || logoError) return (
+  if (domain && !logoError) {
+    return (
+      <img
+        src={`https://logo.clearbit.com/${domain}`}
+        alt={accountName || ""}
+        width={size}
+        height={size}
+        style={{ borderRadius: 8, objectFit: "contain" }}
+        onError={() => setLogoError(true)}
+      />
+    );
+  }
+  return (
     <div className="rounded bg-primary/10 flex items-center justify-center shrink-0 text-primary font-bold" style={{ width: size, height: size, fontSize: size * 0.45 }}>
       {initial}
     </div>
   );
-  return <img src={clearbitUrl} alt="" className="rounded bg-muted object-contain shrink-0" style={{ width: size, height: size }} onError={() => setLogoError(true)} />;
 }
 
 // --- Single draggable card ---

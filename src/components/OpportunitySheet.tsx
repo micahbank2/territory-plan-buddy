@@ -52,21 +52,30 @@ const stageColors: Record<string, string> = {
 
 function SheetLogo({ website, accountName, size = 36 }: { website?: string; accountName?: string; size?: number }) {
   const [logoError, setLogoError] = useState(false);
-  const domain = website?.trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "").trim() || "";
-  const clearbitUrl = domain ? `https://logo.clearbit.com/${domain}` : "";
+  const domain = website?.trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "") ?? "";
   const initial = (accountName || "?")[0].toUpperCase();
 
-  // Reset error flag whenever the website/domain changes so a new domain gets a fresh attempt
   useEffect(() => {
     setLogoError(false);
   }, [domain]);
 
-  if (!domain || logoError) return (
+  if (domain && !logoError) {
+    return (
+      <img
+        src={`https://logo.clearbit.com/${domain}`}
+        alt={accountName || ""}
+        width={size}
+        height={size}
+        style={{ borderRadius: 8, objectFit: "contain" }}
+        onError={() => setLogoError(true)}
+      />
+    );
+  }
+  return (
     <div className="rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold" style={{ width: size, height: size, fontSize: size * 0.45 }}>
       {initial}
     </div>
   );
-  return <img src={clearbitUrl} alt="" className="rounded-lg bg-muted object-contain" style={{ width: size, height: size }} onError={() => setLogoError(true)} />;
 }
 
 export function OpportunitySheet({
