@@ -474,8 +474,8 @@ export function useProspects(territoryId?: string | null) {
       phone: inserted.phone,
       title: inserted.title,
       notes: inserted.notes,
-      role: inserted.role || undefined,
-      relationshipStrength: inserted.relationship_strength || undefined,
+      role: (inserted.role as Contact["role"]) || undefined,
+      relationshipStrength: (inserted.relationship_strength as Contact["relationshipStrength"]) || undefined,
       starred: false,
     };
     setData(prev => prev.map(p =>
