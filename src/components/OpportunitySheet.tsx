@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Sheet, SheetContent,
 } from "@/components/ui/sheet";
@@ -6,7 +6,6 @@ import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { OPP_TYPES, OPP_STAGES, type Opportunity } from "@/hooks/useOpportunities";
 import { getLogoUrl } from "@/data/prospects";
-import { AccountCombobox } from "@/components/AccountCombobox";
 import { cn } from "@/lib/utils";
 import {
   DollarSign, Trash2, CalendarIcon, Building2, ExternalLink,
@@ -78,6 +77,9 @@ export function OpportunitySheet({
   const [localPOC, setLocalPOC] = useState("");
   
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [localAccount, setLocalAccount] = useState("");
+  const [acctDropdown, setAcctDropdown] = useState(false);
+  const acctRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (opp) {
@@ -86,8 +88,10 @@ export function OpportunitySheet({
       setLocalNotes(opp.notes || "");
       setLocalACV(opp.potential_value ? String(opp.potential_value) : "");
       setLocalPOC(opp.point_of_contact || "");
+      const p = opp.prospect_id && prospectMap ? prospectMap.get(opp.prospect_id) : null;
+      setLocalAccount(p?.name || "");
     }
-  }, [opp?.id, opp?.name, opp?.products, opp?.notes, opp?.potential_value, opp?.point_of_contact]);
+  }, [opp?.id, opp?.name, opp?.products, opp?.notes, opp?.potential_value, opp?.point_of_contact, opp?.prospect_id, prospectMap]);
 
   if (!opp) return null;
 
@@ -121,12 +125,6 @@ export function OpportunitySheet({
       update(opp.id, { notes: localNotes } as any);
       toast.success("Notes saved!");
     }
-  };
-
-  const handleCreateAccountInDrawer = async (name: string) => {
-    if (!onCreateAccount) return;
-    const newId = await onCreateAccount({ name });
-    if (newId) handleUpdate("prospect_id", newId);
   };
 
   const inputClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 placeholder:text-muted-foreground transition-all";
@@ -182,16 +180,64 @@ export function OpportunitySheet({
         {/* Deal Details */}
         <div className="space-y-3 animate-fade-in-up">
           <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Deal Details</h3>
-          <div className="space-y-1">
+          <div className="space-y-1" ref={acctRef}>
             <label className="text-xs font-semibold text-muted-foreground uppercase">Account</label>
-            <AccountCombobox
-              accounts={accountOptions}
-              value={opp.prospect_id}
-              onChange={v => handleUpdate("prospect_id", v)}
-              onCreateNew={onCreateAccount ? handleCreateAccountInDrawer : undefined}
-              placeholder="Link to an account..."
-              triggerClassName="w-full"
-            />
+            <div className="relative">
+              <input
+                value={localAccount}
+                onChange={e => {
+                  setLocalAccount(e.target.value);
+                  setAcctDropdown(true);
+                }}
+                onFocus={() => { if (localAccount) setAcctDropdown(true); }}
+                onBlur={async () => {
+                  setTimeout(async () => {
+                    setAcctDropdown(false);
+                    const trimmed = localAccount.trim();
+                    if (!trimmed) {
+                      if (opp.prospect_id) handleUpdate("prospect_id", null);
+                      return;
+                    }
+                    // Check if it matches current linked prospect
+                    const current = opp.prospect_id && prospectMap ? prospectMap.get(opp.prospect_id) : null;
+                    if (current?.name === trimmed) return;
+                    // Check if typed name matches an existing prospect
+                    const match = accountOptions?.find(a => a.name.toLowerCase() === trimmed.toLowerCase());
+                    if (match) {
+                      handleUpdate("prospect_id", match.id);
+                    } else if (onCreateAccount) {
+                      const newId = await onCreateAccount({ name: trimmed });
+                      if (newId) handleUpdate("prospect_id", newId);
+                    }
+                  }, 150);
+                }}
+                placeholder="Type account name..."
+                className={inputClass}
+              />
+              {acctDropdown && localAccount.trim() && (() => {
+                const q = localAccount.toLowerCase();
+                const matches = (accountOptions || []).filter(a => a.name.toLowerCase().includes(q)).slice(0, 8);
+                if (!matches.length) return null;
+                return (
+                  <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md max-h-48 overflow-y-auto">
+                    {matches.map(a => (
+                      <div
+                        key={a.id}
+                        className="px-3 py-2 text-sm cursor-pointer hover:bg-accent truncate"
+                        onMouseDown={e => {
+                          e.preventDefault();
+                          setLocalAccount(a.name);
+                          handleUpdate("prospect_id", a.id);
+                          setAcctDropdown(false);
+                        }}
+                      >
+                        {a.name}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">

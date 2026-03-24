@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTerritories } from "@/hooks/useTerritories";
@@ -6,7 +6,6 @@ import { useOpportunities, OPP_TYPES, OPP_STAGES, type Opportunity } from "@/hoo
 import { useProspects } from "@/hooks/useProspects";
 import { getLogoUrl } from "@/data/prospects";
 import { OpportunitySheet } from "@/components/OpportunitySheet";
-import { AccountCombobox } from "@/components/AccountCombobox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -88,6 +87,9 @@ export default function OpportunitiesPage() {
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(emptyOpp);
+  const [accountInput, setAccountInput] = useState("");
+  const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
   const [sortField, setSortField] = useState<SortField>(null);
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [selectedOppId, setSelectedOppId] = useState<string | null>(null);
@@ -108,11 +110,6 @@ export default function OpportunitiesPage() {
     () => prospects.map(p => ({ id: p.id, name: p.name })),
     [prospects]
   );
-
-  const handleCreateAccountForForm = async (name: string) => {
-    const newId = await addProspect({ name });
-    if (newId) setForm(f => ({ ...f, prospect_id: newId }));
-  };
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -195,8 +192,15 @@ export default function OpportunitiesPage() {
 
   const handleAdd = async () => {
     if (!form.name.trim()) return;
-    await add(form);
+    let finalForm = { ...form };
+    // If user typed an account name but didn't pick from dropdown, create a prospect
+    if (accountInput.trim() && !finalForm.prospect_id) {
+      const newId = await addProspect({ name: accountInput.trim() });
+      if (newId) finalForm.prospect_id = newId;
+    }
+    await add(finalForm);
     setForm(emptyOpp);
+    setAccountInput("");
     setShowAdd(false);
   };
 
@@ -458,23 +462,49 @@ export default function OpportunitiesPage() {
       />
 
       {/* Add Dialog */}
-      <Dialog open={showAdd} onOpenChange={setShowAdd}>
+      <Dialog open={showAdd} onOpenChange={v => { setShowAdd(v); if (!v) { setForm(emptyOpp); setAccountInput(""); } }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Add Opportunity</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <Input placeholder="Name *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-            <div>
+            <div ref={accountRef} className="relative">
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Account (optional)</label>
-              <AccountCombobox
-                accounts={accountOptions}
-                value={form.prospect_id}
-                onChange={v => setForm(f => ({ ...f, prospect_id: v }))}
-                onCreateNew={handleCreateAccountForForm}
-                placeholder="Link to an account..."
-                triggerClassName="w-full"
+              <Input
+                placeholder="Type account name..."
+                value={accountInput}
+                onChange={e => {
+                  setAccountInput(e.target.value);
+                  setForm(f => ({ ...f, prospect_id: null }));
+                  setAccountDropdownOpen(true);
+                }}
+                onFocus={() => { if (accountInput) setAccountDropdownOpen(true); }}
+                onBlur={() => { setTimeout(() => setAccountDropdownOpen(false), 150); }}
               />
+              {accountDropdownOpen && accountInput.trim() && (() => {
+                const q = accountInput.toLowerCase();
+                const matches = accountOptions.filter(a => a.name.toLowerCase().includes(q)).slice(0, 8);
+                if (!matches.length) return null;
+                return (
+                  <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md max-h-48 overflow-y-auto">
+                    {matches.map(a => (
+                      <div
+                        key={a.id}
+                        className="px-3 py-2 text-sm cursor-pointer hover:bg-accent truncate"
+                        onMouseDown={e => {
+                          e.preventDefault();
+                          setAccountInput(a.name);
+                          setForm(f => ({ ...f, prospect_id: a.id }));
+                          setAccountDropdownOpen(false);
+                        }}
+                      >
+                        {a.name}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
