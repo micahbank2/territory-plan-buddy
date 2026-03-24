@@ -140,10 +140,27 @@ export function OpportunitySheet({
     }
   };
 
-  const commitNotes = () => {
-    if (localNotes !== (opp.notes || "")) {
-      update(opp.id, { notes: localNotes } as any);
-      toast.success("Notes saved!");
+  // Dirty tracking across all local-state fields
+  const isDirty =
+    localName.trim() !== (opp.name || "") ||
+    localProducts.trim() !== (opp.products || "") ||
+    localNotes !== (opp.notes || "") ||
+    (parseInt(localACV) || 0) !== (opp.potential_value || 0) ||
+    localPOC.trim() !== (opp.point_of_contact || "") ||
+    localWebsite.trim() !== (opp.website || "");
+
+  const saveAll = () => {
+    const changes: Partial<Opportunity> = {};
+    if (localName.trim() !== (opp.name || "")) changes.name = localName.trim();
+    if (localProducts.trim() !== (opp.products || "")) changes.products = localProducts.trim();
+    if (localNotes !== (opp.notes || "")) changes.notes = localNotes;
+    const acvNum = parseInt(localACV) || 0;
+    if (acvNum !== (opp.potential_value || 0)) changes.potential_value = acvNum;
+    if (localPOC.trim() !== (opp.point_of_contact || "")) changes.point_of_contact = localPOC.trim();
+    if (localWebsite.trim() !== (opp.website || "")) changes.website = localWebsite.trim();
+    if (Object.keys(changes).length > 0) {
+      update(opp.id, changes);
+      toast.success("Changes saved!");
     }
   };
 
@@ -342,17 +359,22 @@ export function OpportunitySheet({
           <textarea
             value={localNotes}
             onChange={e => setLocalNotes(e.target.value)}
-            onBlur={commitNotes}
+            onBlur={() => commitField("notes", localNotes, opp.notes || "")}
             className={cn(inputClass, "min-h-[150px] resize-y overflow-y-auto")}
             placeholder="Add notes, next steps, key details..."
             rows={6}
           />
-          {localNotes !== (opp.notes || "") && (
-            <Button size="sm" onClick={commitNotes} className="gap-1.5">
-              Save Notes
-            </Button>
-          )}
         </div>
+
+        {/* Save Changes */}
+        {isDirty && (
+          <div className="sticky bottom-0 bg-card border-t border-border py-3 -mx-6 px-6 flex items-center gap-3 animate-fade-in-up">
+            <Button size="sm" onClick={saveAll} className="gap-1.5">
+              Save Changes
+            </Button>
+            <span className="text-xs text-muted-foreground">Unsaved changes</span>
+          </div>
+        )}
 
         {/* Danger Zone */}
         <div className="pt-4 border-t border-border animate-fade-in-up" style={{ animationDelay: "100ms" }}>
