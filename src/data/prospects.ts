@@ -86,6 +86,7 @@ export interface Contact {
   notes: string;
   role?: ContactRole;
   relationshipStrength?: RelationshipStrength;
+  starred?: boolean;
 }
 
 export interface InteractionLog {

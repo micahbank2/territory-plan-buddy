@@ -21,7 +21,7 @@ import { cn, normalizeUrl } from "@/lib/utils";
 import {
   ExternalLink, Plus, X, Mail, Phone, Building2, MessageSquare, PhoneCall,
   Linkedin, Clock, CalendarIcon, Target, ArrowRight, Check, CheckCircle, Trash2,
-  Sparkles, Copy, Loader2, RefreshCw, FileText,
+  Sparkles, Copy, Loader2, RefreshCw, FileText, Pencil, Star,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -749,11 +749,8 @@ Keep it concise and actionable. Use bullet points. No fluff.`;
                 </div>
               </div>
             )}
-            {(prospect.contacts || []).map(c => (
+            {[...(prospect.contacts || [])].sort((a, b) => (b.starred ? 1 : 0) - (a.starred ? 1 : 0)).map(c => (
               <div key={c.id} className="p-2.5 border border-border rounded-lg group relative hover:border-primary/20 transition-colors">
-                <button onClick={() => removeContact(c.id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10">
-                  <X className="w-3 h-3 text-destructive" />
-                </button>
                 {editingContactId === c.id ? (
                   <div className="space-y-1.5">
                     <input value={editContact.name || ""} onChange={e => setEditContact({...editContact, name: e.target.value})} placeholder="Name *" className={cn(inputClass, "text-xs py-1.5")} />
@@ -781,16 +778,45 @@ Keep it concise and actionable. Use bullet points. No fluff.`;
                     </div>
                   </div>
                 ) : (
-                  <div onClick={() => startEditContact(c)} className="cursor-pointer">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                     <span className="font-semibold text-sm text-foreground">{c.name}</span>
+                  <div>
+                    {/* Action buttons: star (always visible), edit + delete (hover) */}
+                    <div className="absolute top-2 right-2 flex items-center gap-0.5">
+                      <button
+                        onClick={() => {
+                          const updated = (prospect.contacts || []).map(ct =>
+                            ct.id === c.id ? { ...ct, starred: !ct.starred } : ct
+                          );
+                          update(prospect.id, { contacts: updated });
+                        }}
+                        className="p-0.5 rounded hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                        title={c.starred ? "Unstar" : "Star"}
+                      >
+                        <Star className={cn("w-3.5 h-3.5", c.starred ? "fill-amber-400 text-amber-400" : "text-muted-foreground")} />
+                      </button>
+                      <button
+                        onClick={() => startEditContact(c)}
+                        className="p-0.5 rounded hover:bg-primary/10 opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                        title="Edit contact"
+                      >
+                        <Pencil className="w-3 h-3 text-muted-foreground" />
+                      </button>
+                      <button
+                        onClick={() => removeContact(c.id)}
+                        className="p-0.5 rounded hover:bg-destructive/10 opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                        title="Delete contact"
+                      >
+                        <X className="w-3 h-3 text-destructive" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap pr-20">
+                     <span className="font-semibold text-sm text-foreground select-text">{c.name}</span>
                       <RoleBadge role={c.role} />
                     </div>
-                    {c.title && <div className="text-xs text-muted-foreground mt-0.5">{c.title}</div>}
+                    {c.title && <div className="text-xs text-muted-foreground mt-0.5 select-text">{c.title}</div>}
                      <div className="mt-1"><StrengthDot strength={c.relationshipStrength} /></div>
-                    {c.email && <a href={`mailto:${c.email}`} onClick={e => e.stopPropagation()} className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"><Mail className="w-3 h-3" /> {c.email}</a>}
-                    {c.phone && <div className="text-xs text-foreground/70 flex items-center gap-1 mt-0.5"><Phone className="w-3 h-3" /> {c.phone}</div>}
-                    {c.notes && <div className="text-xs text-foreground/70 mt-1.5 pt-1.5 border-t border-border italic">📝 {c.notes}</div>}
+                    {c.email && <a href={`mailto:${c.email}`} className="text-xs text-primary hover:underline flex items-center gap-1 mt-1 select-text"><Mail className="w-3 h-3" /> {c.email}</a>}
+                    {c.phone && <div className="text-xs text-foreground/70 flex items-center gap-1 mt-0.5 select-text"><Phone className="w-3 h-3" /> {c.phone}</div>}
+                    {c.notes && <div className="text-xs text-foreground/70 mt-1.5 pt-1.5 border-t border-border italic select-text">📝 {c.notes}</div>}
                   </div>
                 )}
               </div>

@@ -30,7 +30,7 @@ function dbToProspect(row: any, contacts: any[], interactions: any[], notes: any
     estimatedRevenue: row.estimated_revenue,
     competitor: row.competitor || "",
     tier: row.tier || "",
-    contacts: contacts.map((c: any) => ({ id: c.id, name: c.name, email: c.email, phone: c.phone, title: c.title, notes: c.notes, role: c.role || undefined, relationshipStrength: c.relationship_strength || undefined })),
+    contacts: contacts.map((c: any) => ({ id: c.id, name: c.name, email: c.email, phone: c.phone, title: c.title, notes: c.notes, role: c.role || undefined, relationshipStrength: c.relationship_strength || undefined, starred: c.starred ?? false })),
     interactions: interactions.map((i: any) => ({ id: i.id, type: i.type, date: i.date, notes: i.notes })),
     createdAt: row.created_at,
     tasks: tasks.map((t: any) => ({ id: t.id, text: t.text, dueDate: t.due_date })),
@@ -163,6 +163,7 @@ export function useProspects(territoryId?: string | null) {
             notes: c.notes,
             role: c.role || null,
             relationship_strength: c.relationshipStrength || null,
+            starred: c.starred ?? false,
           }))
         );
       }
@@ -390,6 +391,7 @@ export function useProspects(territoryId?: string | null) {
               notes: contact.notes || "",
               role: contact.role || null,
               relationship_strength: contact.relationshipStrength || null,
+              starred: contact.starred ?? false,
             }))
           );
         }
