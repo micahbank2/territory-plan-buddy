@@ -160,7 +160,6 @@ src/
 | notes | text | |
 | close_date | date | |
 | prospect_id | uuid | nullable FK to prospects |
-| website | text | fallback if no prospect_id |
 | created_at | timestamptz | |
 
 ### territories

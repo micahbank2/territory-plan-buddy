@@ -54,7 +54,7 @@ export function useOpportunities(territoryId: string | null) {
     setLoading(true);
     const { data, error } = await supabase
       .from("opportunities")
-      .select("*")
+      .select("id,territory_id,user_id,name,type,potential_value,point_of_contact,stage,notes,products,close_date,prospect_id,created_at")
       .eq("territory_id", territoryId)
       .order("created_at", { ascending: false });
     if (error) { toast.error("Failed to load opportunities"); console.error(error); }
