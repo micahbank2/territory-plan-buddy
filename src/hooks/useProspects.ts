@@ -148,26 +148,7 @@ export function useProspects(territoryId?: string | null) {
       }
     }
 
-    // Sync contacts (replace all)
-    if (contacts !== undefined) {
-      await supabase.from("prospect_contacts").delete().eq("prospect_id", id);
-      if (contacts.length > 0) {
-        await supabase.from("prospect_contacts").insert(
-          contacts.map((c: Contact) => ({
-            prospect_id: id,
-            user_id: user.id,
-            name: c.name,
-            email: c.email,
-            phone: c.phone,
-            title: c.title,
-            notes: c.notes,
-            role: c.role || null,
-            relationship_strength: c.relationshipStrength || null,
-            starred: c.starred ?? false,
-          }))
-        );
-      }
-    }
+    // contacts field is intentionally ignored here — use addContact/updateContact/removeContact instead
 
     // Sync interactions
     if (interactions !== undefined) {
@@ -518,6 +499,62 @@ export function useProspects(territoryId?: string | null) {
     );
   }, [user]);
 
+  // --- Direct contact CRUD (single-row operations, no delete-all + re-insert) ---
+
+  const addContact = useCallback(async (prospectId: string, contact: Omit<Contact, "id">) => {
+    if (!user) return;
+    const { data: rows, error } = await supabase.from("prospect_contacts").insert({
+      prospect_id: prospectId,
+      user_id: user.id,
+      name: contact.name,
+      email: contact.email,
+      phone: contact.phone,
+      title: contact.title,
+      notes: contact.notes,
+      role: contact.role || null,
+      relationship_strength: contact.relationshipStrength || null,
+      starred: contact.starred ?? false,
+    }).select("id");
+    if (error) { toast.error("Failed to add contact"); return; }
+    const newId = rows?.[0]?.id;
+    if (newId) {
+      setData(prev => prev.map(p =>
+        p.id === prospectId
+          ? { ...p, contacts: [...(p.contacts || []), { ...contact, id: newId } as Contact] }
+          : p
+      ));
+    }
+  }, [user]);
+
+  const updateContact = useCallback(async (contactId: string, fields: Partial<Contact>) => {
+    if (!user) return;
+    const dbFields: any = {};
+    if ("name" in fields) dbFields.name = fields.name;
+    if ("email" in fields) dbFields.email = fields.email;
+    if ("phone" in fields) dbFields.phone = fields.phone;
+    if ("title" in fields) dbFields.title = fields.title;
+    if ("notes" in fields) dbFields.notes = fields.notes;
+    if ("role" in fields) dbFields.role = fields.role || null;
+    if ("relationshipStrength" in fields) dbFields.relationship_strength = fields.relationshipStrength || null;
+    if ("starred" in fields) dbFields.starred = fields.starred ?? false;
+    const { error } = await supabase.from("prospect_contacts").update(dbFields).eq("id", contactId);
+    if (error) { toast.error("Failed to update contact"); return; }
+    setData(prev => prev.map(p => ({
+      ...p,
+      contacts: (p.contacts || []).map(c => c.id === contactId ? { ...c, ...fields } : c),
+    })));
+  }, [user]);
+
+  const removeContact = useCallback(async (contactId: string) => {
+    if (!user) return;
+    const { error } = await supabase.from("prospect_contacts").delete().eq("id", contactId);
+    if (error) { toast.error("Failed to remove contact"); return; }
+    setData(prev => prev.map(p => ({
+      ...p,
+      contacts: (p.contacts || []).filter(c => c.id !== contactId),
+    })));
+  }, [user]);
+
   return {
     data,
     ok,
@@ -536,5 +573,8 @@ export function useProspects(territoryId?: string | null) {
     seeding,
     deleteNote,
     addNote,
+    addContact,
+    updateContact,
+    removeContact,
   };
 }

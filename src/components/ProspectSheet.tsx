@@ -38,6 +38,9 @@ interface ProspectSheetProps {
   update: (id: any, u: Partial<Prospect>) => void;
   remove: (id: any) => void;
   deleteNote?: (prospectId: any, noteId: string) => void;
+  addContact?: (prospectId: string, contact: Omit<Contact, "id">) => Promise<void>;
+  updateContact?: (contactId: string, fields: Partial<Contact>) => Promise<void>;
+  removeContact?: (contactId: string) => Promise<void>;
   signals?: Signal[];
   addSignal?: (signal: Omit<Signal, "id" | "created_at" | "user_id">) => Promise<Signal | null>;
   removeSignal?: (id: string) => Promise<void>;
@@ -76,7 +79,7 @@ function SheetLogoImg({ website, size = 32, customLogo }: { website?: string; si
   return <img src={url} alt="" className="rounded-lg bg-muted object-contain" style={{ width: size, height: size }} onError={() => setErr(true)} />;
 }
 
-export function ProspectSheet({ prospectId, onClose, data, update, remove, deleteNote, signals = [], addSignal, removeSignal, territoryId }: ProspectSheetProps) {
+export function ProspectSheet({ prospectId, onClose, data, update, remove, deleteNote, addContact: addContactDirect, updateContact: updateContactDirect, removeContact: removeContactDirect, signals = [], addSignal, removeSignal, territoryId }: ProspectSheetProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const prospect = useMemo(() => data.find(p => p.id === prospectId), [data, prospectId]);
@@ -220,20 +223,20 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     ? "Other" : prospect.competitor;
   const showCustomCompetitorInput = competitorSelectValue === "Other" || (prospect.competitor && prospect.competitor.startsWith("Other: "));
 
-  const addContact = () => {
-    if (!newContact.name) return;
-    const contact: Contact = {
-      id: Date.now().toString(), name: newContact.name || "", email: newContact.email || "",
+  const addContact = async () => {
+    if (!newContact.name || !addContactDirect) return;
+    await addContactDirect(prospect.id, {
+      name: newContact.name || "", email: newContact.email || "",
       phone: newContact.phone || "", title: newContact.title || "", notes: newContact.notes || "",
       role: (newContact as any).role || "Unknown", relationshipStrength: (newContact as any).relationshipStrength || "Unknown",
-    };
-    update(prospect.id, { contacts: [...(prospect.contacts || []), contact] });
+    });
     setNewContact({}); setShowAddContact(false);
     toast.success("👤 Contact added!");
   };
 
-  const removeContact = (contactId: string) => {
-    update(prospect.id, { contacts: (prospect.contacts || []).filter(c => c.id !== contactId) });
+  const removeContact = async (contactId: string) => {
+    if (!removeContactDirect) return;
+    await removeContactDirect(contactId);
     toast("👤 Contact removed");
   };
 
@@ -242,12 +245,9 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     setEditContact({ name: c.name, title: c.title, email: c.email, phone: c.phone, notes: c.notes, role: c.role, relationshipStrength: c.relationshipStrength } as any);
   };
 
-  const saveEditContact = () => {
-    if (!editingContactId || !editContact.name) return;
-    const updated = (prospect.contacts || []).map(c =>
-      c.id === editingContactId ? { ...c, ...editContact } : c
-    );
-    update(prospect.id, { contacts: updated });
+  const saveEditContact = async () => {
+    if (!editingContactId || !editContact.name || !updateContactDirect) return;
+    await updateContactDirect(editingContactId, editContact);
     setEditingContactId(null);
     setEditContact({});
     toast.success("✅ Contact updated!");
