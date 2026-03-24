@@ -14,7 +14,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { OpportunityKanban } from "@/components/OpportunityKanban";
-import { ArrowLeft, Plus, Search, DollarSign, ArrowUp, ArrowDown, ArrowUpDown, Building2, Target, X, List, LayoutGrid } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { format } from "date-fns";
+import { ArrowLeft, Plus, Search, DollarSign, ArrowUp, ArrowDown, ArrowUpDown, Building2, Target, X, List, LayoutGrid, Trash2, CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const STAGE_WEIGHTS: Record<string, number> = {
@@ -117,6 +125,62 @@ export default function OpportunitiesPage() {
   });
   const [editingQuota, setEditingQuota] = useState(false);
   const [quotaInput, setQuotaInput] = useState("");
+
+  // Multi-select + bulk actions
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [showBulkStage, setShowBulkStage] = useState(false);
+  const [showBulkCloseDate, setShowBulkCloseDate] = useState(false);
+  const [bulkStageValue, setBulkStageValue] = useState("");
+  const [bulkDateValue, setBulkDateValue] = useState<Date | undefined>(undefined);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map(o => o.id)));
+    }
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkDelete = async () => {
+    for (const id of selectedIds) {
+      await remove(id);
+    }
+    clearSelection();
+    setShowBulkDelete(false);
+  };
+
+  const handleBulkStage = async () => {
+    if (!bulkStageValue) return;
+    for (const id of selectedIds) {
+      await update(id, { stage: bulkStageValue });
+    }
+    clearSelection();
+    setShowBulkStage(false);
+    setBulkStageValue("");
+  };
+
+  const handleBulkCloseDate = async () => {
+    if (!bulkDateValue) return;
+    const dateStr = bulkDateValue.toISOString().split("T")[0];
+    for (const id of selectedIds) {
+      await update(id, { close_date: dateStr });
+    }
+    clearSelection();
+    setShowBulkCloseDate(false);
+    setBulkDateValue(undefined);
+  };
 
   const prospectMap = useMemo(() => {
     const m = new Map<string, { name: string; website: string; customLogo?: string }>();
@@ -361,10 +425,37 @@ export default function OpportunitiesPage() {
           />
         ) : (
           <>
+            {/* Bulk Action Bar */}
+            {selectedIds.size > 0 && (
+              <div className="mb-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5 flex items-center gap-3 animate-fade-in-up">
+                <span className="text-sm font-medium text-foreground">{selectedIds.size} selected</span>
+                <div className="w-px h-5 bg-border" />
+                <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30" onClick={() => setShowBulkDelete(true)}>
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => { setBulkStageValue(""); setShowBulkStage(true); }}>
+                  Change Stage
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => { setBulkDateValue(undefined); setShowBulkCloseDate(true); }}>
+                  <CalendarIcon className="w-3.5 h-3.5 mr-1" /> Change Close Date
+                </Button>
+                <div className="flex-1" />
+                <Button variant="ghost" size="sm" onClick={clearSelection} className="text-muted-foreground">
+                  Clear
+                </Button>
+              </div>
+            )}
+
             <div className="rounded-lg border border-border overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/40">
+                    <TableHead className="w-10 px-3">
+                      <Checkbox
+                        checked={filtered.length > 0 && selectedIds.size === filtered.length}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead className="font-semibold text-foreground min-w-[220px]">Name</TableHead>
                     <TableHead className="font-semibold text-foreground">Deal Type</TableHead>
                     <TableHead className="font-semibold text-foreground">Products</TableHead>
@@ -399,6 +490,13 @@ export default function OpportunitiesPage() {
                         className="group cursor-pointer hover:bg-muted/50 transition-colors"
                         onClick={() => setSelectedOppId(opp.id)}
                       >
+                        {/* Checkbox */}
+                        <TableCell className="w-10 px-3" onClick={e => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedIds.has(opp.id)}
+                            onCheckedChange={() => toggleSelect(opp.id)}
+                          />
+                        </TableCell>
                         {/* Name with logo + account sub-line */}
                         <TableCell>
                           <div className="flex items-center gap-2.5">
@@ -561,6 +659,70 @@ export default function OpportunitiesPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
             <Button onClick={handleAdd} disabled={!form.name.trim()}>Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete Confirm */}
+      <AlertDialog open={showBulkDelete} onOpenChange={setShowBulkDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.size} opportunit{selectedIds.size === 1 ? "y" : "ies"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The selected deals will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleBulkDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Stage Change */}
+      <Dialog open={showBulkStage} onOpenChange={v => { setShowBulkStage(v); if (!v) setBulkStageValue(""); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Change Stage for {selectedIds.size} deal{selectedIds.size !== 1 ? "s" : ""}</DialogTitle>
+          </DialogHeader>
+          <Select value={bulkStageValue} onValueChange={setBulkStageValue}>
+            <SelectTrigger><SelectValue placeholder="Select stage..." /></SelectTrigger>
+            <SelectContent>{OPP_STAGES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkStage(false)}>Cancel</Button>
+            <Button onClick={handleBulkStage} disabled={!bulkStageValue}>Apply</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Close Date Change */}
+      <Dialog open={showBulkCloseDate} onOpenChange={v => { setShowBulkCloseDate(v); if (!v) setBulkDateValue(undefined); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Change Close Date for {selectedIds.size} deal{selectedIds.size !== 1 ? "s" : ""}</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center">
+            <Calendar
+              mode="single"
+              selected={bulkDateValue}
+              onSelect={setBulkDateValue}
+              className="rounded-md border"
+            />
+          </div>
+          {bulkDateValue && (
+            <p className="text-sm text-center text-muted-foreground">
+              Selected: {format(bulkDateValue, "PPP")}
+            </p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkCloseDate(false)}>Cancel</Button>
+            <Button onClick={handleBulkCloseDate} disabled={!bulkDateValue}>Apply</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
