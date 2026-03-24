@@ -16,6 +16,7 @@ export interface Opportunity {
   products: string;
   close_date: string;
   prospect_id: string | null;
+  website: string;
   created_at: string;
 }
 
@@ -28,7 +29,7 @@ export const OPP_STAGES = [
 // Fields that exist in the DB — strip everything else before insert/update
 const DB_FIELDS = new Set([
   "name", "type", "potential_value", "point_of_contact", "stage",
-  "notes", "products", "close_date", "prospect_id", "territory_id", "user_id",
+  "notes", "products", "close_date", "prospect_id", "website", "territory_id", "user_id",
 ]);
 
 function sanitizeForDb(obj: Record<string, any>): Record<string, any> {
@@ -54,7 +55,7 @@ export function useOpportunities(territoryId: string | null) {
     setLoading(true);
     const { data, error } = await supabase
       .from("opportunities")
-      .select("id,territory_id,user_id,name,type,potential_value,point_of_contact,stage,notes,products,close_date,prospect_id,created_at")
+      .select("id,territory_id,user_id,name,type,potential_value,point_of_contact,stage,notes,products,close_date,prospect_id,website,created_at")
       .eq("territory_id", territoryId)
       .order("created_at", { ascending: false });
     if (error) { toast.error("Failed to load opportunities"); console.error(error); }

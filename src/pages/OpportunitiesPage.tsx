@@ -4,7 +4,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTerritories } from "@/hooks/useTerritories";
 import { useOpportunities, OPP_TYPES, OPP_STAGES, type Opportunity } from "@/hooks/useOpportunities";
 import { useProspects } from "@/hooks/useProspects";
-import { getLogoUrl } from "@/data/prospects";
 import { OpportunitySheet } from "@/components/OpportunitySheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,17 +56,23 @@ const emptyOpp = {
   products: "",
   close_date: "",
   prospect_id: null as string | null,
+  website: "",
 };
 
 type SortField = "potential_value" | "close_date" | null;
 type SortDir = "asc" | "desc";
 
-function DealLogo({ website, customLogo, size = 20 }: { website?: string; customLogo?: string; size?: number }) {
+function DealLogo({ website, accountName, size = 20 }: { website?: string; accountName?: string; size?: number }) {
   const [err, setErr] = useState(false);
-  const url = getLogoUrl(website, size >= 32 ? 64 : 32);
-  if (customLogo) return <img src={customLogo} alt="" className="rounded-md bg-muted object-contain shrink-0" style={{ width: size, height: size }} />;
-  if (!website || err || !url) return <div className="rounded-md bg-primary/10 flex items-center justify-center shrink-0" style={{ width: size, height: size }}><DollarSign className="text-primary" style={{ width: size * 0.5, height: size * 0.5 }} /></div>;
-  return <img src={url} alt="" className="rounded-md bg-muted object-contain shrink-0" style={{ width: size, height: size }} onError={() => setErr(true)} />;
+  const domain = website?.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  const clearbitUrl = domain ? `https://logo.clearbit.com/${domain}` : "";
+  const initial = (accountName || "?")[0].toUpperCase();
+  if (!domain || err) return (
+    <div className="rounded-md bg-primary/10 flex items-center justify-center shrink-0 text-primary font-bold" style={{ width: size, height: size, fontSize: size * 0.45 }}>
+      {initial}
+    </div>
+  );
+  return <img src={clearbitUrl} alt="" className="rounded-md bg-muted object-contain shrink-0" style={{ width: size, height: size }} onError={() => setErr(true)} />;
 }
 
 function SortIcon({ field, sortField, sortDir }: { field: SortField; sortField: SortField; sortDir: SortDir }) {
@@ -121,19 +126,12 @@ export default function OpportunitiesPage() {
   };
 
   const getLogoWebsite = (opp: Opportunity) => {
+    if (opp.website) return opp.website;
     if (opp.prospect_id) {
       const p = prospectMap.get(opp.prospect_id);
       if (p?.website) return p.website;
     }
     return "";
-  };
-
-  const getLogoCustom = (opp: Opportunity) => {
-    if (opp.prospect_id) {
-      const p = prospectMap.get(opp.prospect_id);
-      return p?.customLogo;
-    }
-    return undefined;
   };
 
   const getAccountLabel = (opp: Opportunity) => {
@@ -393,7 +391,7 @@ export default function OpportunitiesPage() {
                           <div className="flex items-center gap-2.5">
                             <DealLogo
                               website={getLogoWebsite(opp)}
-                              customLogo={getLogoCustom(opp)}
+                              accountName={acctLabel || opp.name}
                               size={28}
                             />
                             <div className="min-w-0">
@@ -506,6 +504,7 @@ export default function OpportunitiesPage() {
                 );
               })()}
             </div>
+            <Input placeholder="Website (e.g. in-n-out.com)" value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} />
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Deal Type</label>

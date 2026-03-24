@@ -13,9 +13,7 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { useDroppable } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { getLogoUrl } from "@/data/prospects";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Opportunity } from "@/hooks/useOpportunities";
 
@@ -50,12 +48,17 @@ interface Props {
 }
 
 // --- Card logo ---
-function CardLogo({ website, customLogo, size = 20 }: { website?: string; customLogo?: string; size?: number }) {
+function CardLogo({ website, accountName, size = 20 }: { website?: string; accountName?: string; size?: number }) {
   const [err, setErr] = useState(false);
-  const url = getLogoUrl(website, 32);
-  if (customLogo) return <img src={customLogo} alt="" className="rounded bg-muted object-contain shrink-0" style={{ width: size, height: size }} />;
-  if (!website || err || !url) return <div className="rounded bg-primary/10 flex items-center justify-center shrink-0" style={{ width: size, height: size }}><DollarSign className="text-primary" style={{ width: size * 0.5, height: size * 0.5 }} /></div>;
-  return <img src={url} alt="" className="rounded bg-muted object-contain shrink-0" style={{ width: size, height: size }} onError={() => setErr(true)} />;
+  const domain = website?.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  const clearbitUrl = domain ? `https://logo.clearbit.com/${domain}` : "";
+  const initial = (accountName || "?")[0].toUpperCase();
+  if (!domain || err) return (
+    <div className="rounded bg-primary/10 flex items-center justify-center shrink-0 text-primary font-bold" style={{ width: size, height: size, fontSize: size * 0.45 }}>
+      {initial}
+    </div>
+  );
+  return <img src={clearbitUrl} alt="" className="rounded bg-muted object-contain shrink-0" style={{ width: size, height: size }} onError={() => setErr(true)} />;
 }
 
 // --- Single draggable card ---
@@ -73,7 +76,7 @@ function KanbanCard({ opp, prospectMap, onClick, isDragOverlay }: {
   };
 
   const prospect = opp.prospect_id ? prospectMap.get(opp.prospect_id) : undefined;
-  const website = prospect?.website || "";
+  const website = (opp as any).website || prospect?.website || "";
   const accountLabel = prospect?.name || "";
   const today = new Date().toISOString().split("T")[0];
   const isPastDue = opp.close_date && opp.close_date < today;
@@ -98,7 +101,7 @@ function KanbanCard({ opp, prospectMap, onClick, isDragOverlay }: {
     >
       {/* Name + logo */}
       <div className="flex items-start gap-2 mb-2">
-        <CardLogo website={website} customLogo={prospect?.customLogo} size={22} />
+        <CardLogo website={website} accountName={accountLabel || opp.name} size={22} />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-foreground truncate leading-tight">{opp.name}</p>
           {accountLabel && (

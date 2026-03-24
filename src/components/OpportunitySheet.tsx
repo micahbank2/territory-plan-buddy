@@ -5,10 +5,9 @@ import {
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { OPP_TYPES, OPP_STAGES, type Opportunity } from "@/hooks/useOpportunities";
-import { getLogoUrl } from "@/data/prospects";
 import { cn } from "@/lib/utils";
 import {
-  DollarSign, Trash2, CalendarIcon, Building2, ExternalLink,
+  Trash2, CalendarIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -51,12 +50,17 @@ const stageColors: Record<string, string> = {
   "Dead": "text-muted-foreground",
 };
 
-function SheetLogo({ website, customLogo, size = 36 }: { website?: string; customLogo?: string; size?: number }) {
+function SheetLogo({ website, accountName, size = 36 }: { website?: string; accountName?: string; size?: number }) {
   const [err, setErr] = useState(false);
-  const url = getLogoUrl(website, size >= 32 ? 64 : 32);
-  if (customLogo) return <img src={customLogo} alt="" className="rounded-lg bg-muted object-contain" style={{ width: size, height: size }} />;
-  if (!website || err || !url) return <div className="rounded-lg bg-primary/10 flex items-center justify-center" style={{ width: size, height: size }}><DollarSign className="text-primary" style={{ width: size * 0.5, height: size * 0.5 }} /></div>;
-  return <img src={url} alt="" className="rounded-lg bg-muted object-contain" style={{ width: size, height: size }} onError={() => setErr(true)} />;
+  const domain = website?.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  const clearbitUrl = domain ? `https://logo.clearbit.com/${domain}` : "";
+  const initial = (accountName || "?")[0].toUpperCase();
+  if (!domain || err) return (
+    <div className="rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold" style={{ width: size, height: size, fontSize: size * 0.45 }}>
+      {initial}
+    </div>
+  );
+  return <img src={clearbitUrl} alt="" className="rounded-lg bg-muted object-contain" style={{ width: size, height: size }} onError={() => setErr(true)} />;
 }
 
 export function OpportunitySheet({
@@ -95,8 +99,7 @@ export function OpportunitySheet({
 
   if (!opp) return null;
 
-  const logoWebsite = prospect?.website || "";
-  const logoCustom = prospect?.customLogo;
+  const logoWebsite = opp.website || prospect?.website || "";
   const accountLabel = prospect?.name || "";
 
   const handleUpdate = (field: string, value: any) => {
@@ -140,7 +143,7 @@ export function OpportunitySheet({
         <div className="flex items-center gap-3">
           <SheetLogo
             website={logoWebsite}
-            customLogo={logoCustom}
+            accountName={accountLabel || opp.name}
             size={36}
           />
           <div className="flex-1 min-w-0">

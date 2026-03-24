@@ -29,6 +29,7 @@ export type Database = {
           territory_id: string
           type: string
           user_id: string
+          website: string
         }
         Insert: {
           close_date?: string
@@ -44,6 +45,7 @@ export type Database = {
           territory_id: string
           type?: string
           user_id: string
+          website?: string
         }
         Update: {
           close_date?: string
@@ -59,6 +61,7 @@ export type Database = {
           territory_id?: string
           type?: string
           user_id?: string
+          website?: string
         }
         Relationships: [
           {
