@@ -79,6 +79,7 @@ export function OpportunitySheet({
   const [localNotes, setLocalNotes] = useState("");
   const [localACV, setLocalACV] = useState("");
   const [localPOC, setLocalPOC] = useState("");
+  const [localWebsite, setLocalWebsite] = useState("");
   
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [localAccount, setLocalAccount] = useState("");
@@ -92,14 +93,15 @@ export function OpportunitySheet({
       setLocalNotes(opp.notes || "");
       setLocalACV(opp.potential_value ? String(opp.potential_value) : "");
       setLocalPOC(opp.point_of_contact || "");
+      setLocalWebsite(opp.website || "");
       const p = opp.prospect_id && prospectMap ? prospectMap.get(opp.prospect_id) : null;
       setLocalAccount(p?.name || "");
     }
-  }, [opp?.id, opp?.name, opp?.products, opp?.notes, opp?.potential_value, opp?.point_of_contact, opp?.prospect_id, prospectMap]);
+  }, [opp?.id, opp?.name, opp?.products, opp?.notes, opp?.potential_value, opp?.point_of_contact, opp?.prospect_id, opp?.website, prospectMap]);
 
   if (!opp) return null;
 
-  const logoWebsite = opp.website || prospect?.website || "";
+  const logoWebsite = localWebsite || opp.website || prospect?.website || "";
   const accountLabel = prospect?.name || "";
 
   const handleUpdate = (field: string, value: any) => {
@@ -305,6 +307,16 @@ export function OpportunitySheet({
               onBlur={() => commitField("point_of_contact", localPOC, opp.point_of_contact)}
               className={inputClass}
               placeholder="Contact name"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground uppercase">Website</label>
+            <input
+              value={localWebsite}
+              onChange={e => setLocalWebsite(e.target.value)}
+              onBlur={() => commitField("website", localWebsite, opp.website || "")}
+              className={inputClass}
+              placeholder="e.g. in-n-out.com"
             />
           </div>
         </div>
