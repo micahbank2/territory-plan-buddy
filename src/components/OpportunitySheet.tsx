@@ -62,7 +62,7 @@ function SheetLogo({ website, accountName, size = 36 }: { website?: string; acco
   if (domain && !logoError) {
     return (
       <img
-        src={`https://logo.clearbit.com/${domain}`}
+        src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`}
         alt={accountName || ""}
         width={size}
         height={size}

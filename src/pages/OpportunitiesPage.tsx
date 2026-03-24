@@ -72,7 +72,7 @@ function DealLogo({ website, accountName, size = 20 }: { website?: string; accou
   if (domain && !logoError) {
     return (
       <img
-        src={`https://logo.clearbit.com/${domain}`}
+        src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`}
         alt={accountName || ""}
         width={size}
         height={size}
