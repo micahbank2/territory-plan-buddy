@@ -18,7 +18,14 @@ import MyNumbersPage from "./pages/MyNumbersPage";
 import ShareJoinPage from "./pages/ShareJoinPage";
 import LandingPage from "./pages/LandingPage";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    },
+  },
+});
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
