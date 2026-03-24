@@ -18,6 +18,7 @@ import { AIReadinessCard } from "@/components/AIReadinessCard";
 import { SignalsSection } from "@/components/SignalsSection";
 import { type Signal } from "@/hooks/useSignals";
 import { cn, normalizeUrl } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ExternalLink, Plus, X, Mail, Phone, Building2, MessageSquare, PhoneCall,
   Linkedin, Clock, CalendarIcon, Target, ArrowRight, Check, CheckCircle, Trash2,
@@ -86,6 +87,26 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
   const [showAddContact, setShowAddContact] = useState(false);
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const [editContact, setEditContact] = useState<Partial<Contact>>({});
+  const [starOverrides, setStarOverrides] = useState<Map<string, boolean>>(new Map());
+
+  // Direct DB update for star toggle — does NOT use the heavy update() which deletes + re-inserts all contacts
+  const handleToggleStar = async (contactId: string, currentStarred: boolean) => {
+    const newVal = !currentStarred;
+    // Optimistic local update
+    setStarOverrides(prev => new Map(prev).set(contactId, newVal));
+    const { error } = await supabase
+      .from("prospect_contacts")
+      .update({ starred: newVal })
+      .eq("id", contactId);
+    if (error) {
+      // Revert on failure
+      setStarOverrides(prev => { const m = new Map(prev); m.delete(contactId); return m; });
+      toast.error("Failed to update star");
+    }
+  };
+
+  // Reset local star overrides when switching prospects
+  useEffect(() => { setStarOverrides(new Map()); }, [prospectId]);
   const [interactionType, setInteractionType] = useState(INTERACTION_TYPES[0]);
   const [interactionNotes, setInteractionNotes] = useState("");
   const [newNote, setNewNote] = useState("");
@@ -749,7 +770,13 @@ Keep it concise and actionable. Use bullet points. No fluff.`;
                 </div>
               </div>
             )}
-            {[...(prospect.contacts || [])].sort((a, b) => (b.starred ? 1 : 0) - (a.starred ? 1 : 0)).map(c => (
+            {[...(prospect.contacts || [])].sort((a, b) => {
+              const aStarred = starOverrides.has(a.id) ? starOverrides.get(a.id)! : !!a.starred;
+              const bStarred = starOverrides.has(b.id) ? starOverrides.get(b.id)! : !!b.starred;
+              return (bStarred ? 1 : 0) - (aStarred ? 1 : 0);
+            }).map(c => {
+              const isStarred = starOverrides.has(c.id) ? starOverrides.get(c.id)! : !!c.starred;
+              return (
               <div key={c.id} className="p-2.5 border border-border rounded-lg group relative hover:border-primary/20 transition-colors">
                 {editingContactId === c.id ? (
                   <div className="space-y-1.5">
@@ -782,16 +809,11 @@ Keep it concise and actionable. Use bullet points. No fluff.`;
                     {/* Action buttons: star (always visible), edit + delete (hover) */}
                     <div className="absolute top-2 right-2 flex items-center gap-0.5">
                       <button
-                        onClick={() => {
-                          const updated = (prospect.contacts || []).map(ct =>
-                            ct.id === c.id ? { ...ct, starred: !ct.starred } : ct
-                          );
-                          update(prospect.id, { contacts: updated });
-                        }}
+                        onClick={() => handleToggleStar(c.id, isStarred)}
                         className="p-0.5 rounded hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
-                        title={c.starred ? "Unstar" : "Star"}
+                        title={isStarred ? "Unstar" : "Star"}
                       >
-                        <Star className={cn("w-3.5 h-3.5", c.starred ? "fill-amber-400 text-amber-400" : "text-muted-foreground")} />
+                        <Star className={cn("w-3.5 h-3.5", isStarred ? "fill-amber-400 text-amber-400" : "text-muted-foreground")} />
                       </button>
                       <button
                         onClick={() => startEditContact(c)}
@@ -820,7 +842,7 @@ Keep it concise and actionable. Use bullet points. No fluff.`;
                   </div>
                 )}
               </div>
-            ))}
+            ); })}
             {(prospect.contacts || []).length === 0 && !showAddContact && <p className="text-sm text-muted-foreground">No contacts yet.</p>}
           </div>
 
