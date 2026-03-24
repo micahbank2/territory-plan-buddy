@@ -503,27 +503,34 @@ export function useProspects(territoryId?: string | null) {
 
   const addContact = useCallback(async (prospectId: string, contact: Omit<Contact, "id">) => {
     if (!user) return;
-    const { data: rows, error } = await supabase.from("prospect_contacts").insert({
+    const { data: inserted, error } = await supabase.from("prospect_contacts").insert({
       prospect_id: prospectId,
       user_id: user.id,
-      name: contact.name,
-      email: contact.email,
-      phone: contact.phone,
-      title: contact.title,
-      notes: contact.notes,
+      name: contact.name || "",
+      email: contact.email || "",
+      phone: contact.phone || "",
+      title: contact.title || "",
+      notes: contact.notes || "",
       role: contact.role || null,
       relationship_strength: contact.relationshipStrength || null,
-      starred: contact.starred ?? false,
-    }).select("id");
-    if (error) { toast.error("Failed to add contact"); return; }
-    const newId = rows?.[0]?.id;
-    if (newId) {
-      setData(prev => prev.map(p =>
-        p.id === prospectId
-          ? { ...p, contacts: [...(p.contacts || []), { ...contact, id: newId } as Contact] }
-          : p
-      ));
-    }
+    }).select().single();
+    if (error || !inserted) { toast.error("Failed to add contact"); return; }
+    const newContact: Contact = {
+      id: inserted.id,
+      name: inserted.name,
+      email: inserted.email,
+      phone: inserted.phone,
+      title: inserted.title,
+      notes: inserted.notes,
+      role: (inserted.role as Contact["role"]) || undefined,
+      relationshipStrength: (inserted.relationship_strength as Contact["relationshipStrength"]) || undefined,
+      starred: false,
+    };
+    setData(prev => prev.map(p =>
+      p.id === prospectId
+        ? { ...p, contacts: [...(p.contacts || []), newContact] }
+        : p
+    ));
   }, [user]);
 
   const updateContact = useCallback(async (contactId: string, fields: Partial<Contact>) => {
