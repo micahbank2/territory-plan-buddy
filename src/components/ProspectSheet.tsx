@@ -13,6 +13,7 @@ import {
   type Prospect, type Contact, type InteractionLog, type NoteEntry, type Task,
 } from "@/data/prospects";
 import { RoleBadge, StrengthDot } from "@/components/ContactBadges";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { AIReadinessCard } from "@/components/AIReadinessCard";
 import { SignalsSection } from "@/components/SignalsSection";
 import { type Signal } from "@/hooks/useSignals";
@@ -268,8 +269,10 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
   };
 
   const addNote = () => {
-    if (!newNote.trim()) return;
-    const entry: NoteEntry = { id: Date.now().toString(), text: newNote.trim(), timestamp: new Date().toISOString() };
+    // Strip HTML tags to check if there's actual text content
+    const textOnly = newNote.replace(/<[^>]*>/g, "").trim();
+    if (!textOnly) return;
+    const entry: NoteEntry = { id: Date.now().toString(), text: newNote, timestamp: new Date().toISOString() };
     update(prospect.id, { noteLog: [...(prospect.noteLog || []), entry] });
     setNewNote("");
     toast.success("📌 Note saved!");
@@ -685,15 +688,18 @@ Keep it concise and actionable. Use bullet points. No fluff.`;
           </div>
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
             <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Notes</h3>
-            <div className="flex gap-2">
-              <input value={newNote} onChange={e => setNewNote(e.target.value)} placeholder="Add a note..." className={cn(inputClass, "flex-1")} onKeyDown={e => e.key === "Enter" && addNote()} />
-              <Button size="sm" onClick={addNote} disabled={!newNote.trim()}>Add</Button>
-            </div>
+            <RichTextEditor
+              content={newNote}
+              onChange={setNewNote}
+              placeholder="Add a note..."
+              minHeight="60px"
+            />
+            <Button size="sm" onClick={addNote} disabled={!newNote.replace(/<[^>]*>/g, "").trim()}>Add Note</Button>
             {(prospect.noteLog || []).length > 0 && (
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {[...(prospect.noteLog || [])].reverse().map(note => (
                   <div key={note.id} className="group p-2.5 rounded-lg bg-muted/50 border border-border relative">
-                     <p className="text-sm text-foreground pr-6">{note.text}</p>
+                     <div className="text-sm text-foreground pr-6 prose prose-sm dark:prose-invert max-w-none [&_p]:my-0.5" dangerouslySetInnerHTML={{ __html: note.text }} />
                      <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><Clock className="w-3 h-3" />{relativeTime(note.timestamp)}</span>
                     {deleteNote && (
                       <button
