@@ -16,7 +16,6 @@ export interface Opportunity {
   products: string;
   close_date: string;
   prospect_id: string | null;
-  website: string;
   created_at: string;
 }
 
@@ -29,7 +28,7 @@ export const OPP_STAGES = [
 // Fields that exist in the DB — strip everything else before insert/update
 const DB_FIELDS = new Set([
   "name", "type", "potential_value", "point_of_contact", "stage",
-  "notes", "products", "close_date", "prospect_id", "website", "territory_id", "user_id",
+  "notes", "products", "close_date", "prospect_id", "territory_id", "user_id",
 ]);
 
 function sanitizeForDb(obj: Record<string, any>): Record<string, any> {

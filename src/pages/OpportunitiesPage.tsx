@@ -58,7 +58,6 @@ const emptyOpp = {
   products: "",
   close_date: "",
   prospect_id: null as string | null,
-  website: "",
 };
 
 type SortField = "potential_value" | "close_date" | null;
@@ -84,7 +83,7 @@ export default function OpportunitiesPage() {
   const { user } = useAuth();
   const { activeTerritory } = useTerritories();
   const { opportunities, loading, add, update, remove } = useOpportunities(activeTerritory);
-  const { data: prospects } = useProspects();
+  const { data: prospects, add: addProspect } = useProspects();
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
@@ -110,8 +109,9 @@ export default function OpportunitiesPage() {
     [prospects]
   );
 
-  const handleFreeTextAccountForForm = (name: string) => {
-    setForm(f => ({ ...f, website: name, prospect_id: null }));
+  const handleCreateAccountForForm = async (name: string) => {
+    const newId = await addProspect({ name });
+    if (newId) setForm(f => ({ ...f, prospect_id: newId }));
   };
 
   const toggleSort = (field: SortField) => {
@@ -144,7 +144,7 @@ export default function OpportunitiesPage() {
       const p = prospectMap.get(opp.prospect_id);
       if (p) return p.name;
     }
-    return opp.website || "";
+    return "";
   };
 
   const filtered = useMemo(() => {
@@ -454,6 +454,7 @@ export default function OpportunitiesPage() {
         remove={remove}
         prospectMap={prospectMap}
         accountOptions={accountOptions}
+        onCreateAccount={addProspect}
       />
 
       {/* Add Dialog */}
@@ -469,9 +470,8 @@ export default function OpportunitiesPage() {
               <AccountCombobox
                 accounts={accountOptions}
                 value={form.prospect_id}
-                onChange={v => setForm(f => ({ ...f, prospect_id: v, website: "" }))}
-                onFreeTextSelect={handleFreeTextAccountForForm}
-                freeTextValue={form.website}
+                onChange={v => setForm(f => ({ ...f, prospect_id: v }))}
+                onCreateNew={handleCreateAccountForForm}
                 placeholder="Link to an account..."
                 triggerClassName="w-full"
               />
