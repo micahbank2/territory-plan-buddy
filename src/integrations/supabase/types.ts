@@ -90,6 +90,7 @@ export type Database = {
           prospect_id: string
           relationship_strength: string | null
           role: string | null
+          starred: boolean
           title: string
           user_id: string
         }
@@ -102,6 +103,7 @@ export type Database = {
           prospect_id: string
           relationship_strength?: string | null
           role?: string | null
+          starred?: boolean
           title?: string
           user_id: string
         }
@@ -114,6 +116,7 @@ export type Database = {
           prospect_id?: string
           relationship_strength?: string | null
           role?: string | null
+          starred?: boolean
           title?: string
           user_id?: string
         }
