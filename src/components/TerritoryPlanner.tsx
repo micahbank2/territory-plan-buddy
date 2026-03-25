@@ -464,6 +464,7 @@ export default function TerritoryPlanner() {
   const [showUpload, setShowUpload] = useState(false);
   const [showPasteImport, setShowPasteImport] = useState(false);
   const [showEnrich, setShowEnrich] = useState(false);
+  const [showExport, setShowExport] = useState(false);
 
   // Reset confirmation
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
