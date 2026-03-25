@@ -2179,6 +2179,8 @@ export default function TerritoryPlanner() {
         />
       )}
 
+      <ExportDialog open={showExport} onOpenChange={setShowExport} prospects={filtered} />
+
     </div>
   );
 }
