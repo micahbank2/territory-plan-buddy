@@ -679,19 +679,7 @@ export default function TerritoryPlanner() {
   };
 
   // --- CSV Export ---
-  const exportCSV = () => {
-    const headers = ["Name", "Website", "Industry", "Locations", "Status", "Outreach", "Priority", "Tier", "Competitor", "Score", "Last Touched"];
-    const rows = filtered.map((p) => [
-      p.name, p.website, p.industry, p.locationCount ?? "", p.status, p.outreach, p.priority, p.tier, p.competitor, p.ps, p.lastTouched ?? "",
-    ]);
-    const csv = [headers.join(","), ...rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "prospects.csv"; a.click();
-    URL.revokeObjectURL(url);
-    toast.success("📊 CSV downloaded!", { description: "Your data is ready" });
-  };
+  const exportCSV = () => setShowExport(true);
 
   // --- Save View ---
   const handleSaveView = () => {
