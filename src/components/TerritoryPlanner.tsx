@@ -28,6 +28,7 @@ import { BulkEditDialog } from "@/components/BulkEditDialog";
 import { BulkOutreachQueue } from "@/components/BulkOutreachQueue";
 import { ContactPickerDialog } from "@/components/ContactPickerDialog";
 import { PasteImportDialog } from "@/components/PasteImportDialog";
+import { ExportDialog } from "@/components/ExportDialog";
 import { EnrichmentQueue } from "@/components/EnrichmentQueue";
 import { AIReadinessBadge } from "@/components/AIReadinessCard";
 import { SignalIndicator } from "@/components/SignalsSection";
