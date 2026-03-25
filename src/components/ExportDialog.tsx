@@ -162,7 +162,7 @@ export function ExportDialog({ open, onOpenChange, prospects }: ExportDialogProp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px] max-h-[85vh] flex flex-col">
+      <DialogContent className="sm:max-w-[520px] max-h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Download className="w-5 h-5" /> Export Data
