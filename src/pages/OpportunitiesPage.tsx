@@ -137,12 +137,7 @@ export default function OpportunitiesPage() {
   const [sortField, setSortField] = useState<SortField>(null);
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [selectedOppId, setSelectedOppId] = useState<string | null>(null);
-  const [quota, setQuota] = useState(() => {
-    const saved = localStorage.getItem("opp_quota");
-    return saved ? parseInt(saved) : 0;
-  });
-  const [editingQuota, setEditingQuota] = useState(false);
-  const [quotaInput, setQuotaInput] = useState("");
+  // Quota now lives in Quota & Attainment page
 
   // Multi-select + bulk actions
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -282,7 +277,7 @@ export default function OpportunitiesPage() {
     }, 0));
   }, [opportunities]);
 
-  const pipelineCoverage = quota > 0 ? Math.round((weightedACV / quota) * 100) : 0;
+  // Pipeline coverage now in Quota & Attainment page
 
   const handleAdd = async () => {
     if (!form.name.trim()) return;
@@ -309,7 +304,7 @@ export default function OpportunitiesPage() {
             <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0">
               <ArrowLeft className="w-4 h-4" />
             </Button>
-            <h1 className="text-xl font-bold text-foreground">Opportunities</h1>
+            <h1 className="text-xl font-bold text-foreground">Pipeline</h1>
             <Badge variant="secondary" className="font-mono text-xs">{filtered.length}</Badge>
           </div>
           <div className="flex items-center gap-2">
@@ -348,57 +343,6 @@ export default function OpportunitiesPage() {
                 <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Weighted Forecast</div>
                 <div className="text-xl font-black font-mono text-primary">${weightedACV.toLocaleString()}</div>
               </div>
-              <div className="w-px h-10 bg-border hidden sm:block" />
-              <div className="flex items-center gap-2">
-                <div>
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quota</div>
-                  {editingQuota ? (
-                    <div className="flex items-center gap-1">
-                      <span className="text-lg font-black font-mono text-foreground">$</span>
-                      <input
-                        autoFocus
-                        type="number"
-                        value={quotaInput}
-                        onChange={e => setQuotaInput(e.target.value)}
-                        onBlur={() => {
-                          const val = parseInt(quotaInput) || 0;
-                          setQuota(val);
-                          localStorage.setItem("opp_quota", String(val));
-                          setEditingQuota(false);
-                        }}
-                        onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
-                        className="w-28 text-lg font-black font-mono bg-transparent border-b border-primary focus:outline-none"
-                      />
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => { setQuotaInput(String(quota)); setEditingQuota(true); }}
-                      className="text-xl font-black font-mono text-foreground hover:text-primary transition-colors"
-                    >
-                      {quota > 0 ? `$${quota.toLocaleString()}` : "Set quota"}
-                    </button>
-                  )}
-                </div>
-              </div>
-              {quota > 0 && (
-                <>
-                  <div className="w-px h-10 bg-border hidden sm:block" />
-                  <div className="flex-1 min-w-[120px]">
-                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                      Pipeline Coverage
-                      <span className={cn("ml-2 font-black", pipelineCoverage >= 100 ? "text-emerald-600" : pipelineCoverage >= 60 ? "text-amber-600" : "text-red-600")}>
-                        {pipelineCoverage}%
-                      </span>
-                    </div>
-                    <div className="h-2.5 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className={cn("h-full rounded-full transition-all duration-500", pipelineCoverage >= 100 ? "bg-emerald-500" : pipelineCoverage >= 60 ? "bg-amber-500" : "bg-red-500")}
-                        style={{ width: `${Math.min(pipelineCoverage, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
             </div>
           </div>
         </div>

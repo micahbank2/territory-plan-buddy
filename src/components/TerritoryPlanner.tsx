@@ -963,14 +963,11 @@ export default function TerritoryPlanner() {
                   <CommandItem onSelect={() => { setCmdOpen(false); navigate("/today"); }}>
                     <CalendarDays className="w-4 h-4 mr-2" /> Open Today
                   </CommandItem>
-                  <CommandItem onSelect={() => { setCmdOpen(false); navigate("/insights"); }}>
-                    <BarChart3 className="w-4 h-4 mr-2" /> Open Insights
-                  </CommandItem>
                   <CommandItem onSelect={() => { setCmdOpen(false); navigate("/opportunities"); }}>
-                    <DollarSign className="w-4 h-4 mr-2" /> Open Deals
+                    <DollarSign className="w-4 h-4 mr-2" /> Open Pipeline
                   </CommandItem>
                   <CommandItem onSelect={() => { setCmdOpen(false); navigate("/my-numbers"); }}>
-                    <TrendingUp className="w-4 h-4 mr-2" /> Open My Numbers
+                    <Target className="w-4 h-4 mr-2" /> Open Quota & Attainment
                   </CommandItem>
                   <CommandItem onSelect={() => { setCmdOpen(false); setViewMode(viewMode === "table" ? "kanban" : "table"); }}>
                     <LayoutGrid className="w-4 h-4 mr-2" /> Toggle {viewMode === "table" ? "Kanban" : "Table"} View
@@ -1037,40 +1034,33 @@ export default function TerritoryPlanner() {
           </div>
         </div>
 
-        {/* Center: Segmented control (desktop) */}
+        {/* Center: Nav tabs (desktop) */}
         <div className="hidden md:flex items-center ml-auto">
-          <div className="flex items-center bg-muted rounded-lg p-1 gap-1">
+          <div className="flex items-center bg-muted rounded-lg p-1.5 gap-1">
             <button
               onClick={() => navigate("/today")}
-              className="inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all hover:bg-accent text-muted-foreground"
+              className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold transition-all hover:bg-background hover:shadow-sm text-muted-foreground"
             >
               <CalendarDays className="w-4 h-4" />
               Today
             </button>
             <button
-              onClick={() => navigate("/insights")}
-              className="inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all hover:bg-accent text-muted-foreground"
-            >
-              <BarChart3 className="w-4 h-4" />
-              Insights
-            </button>
-            <button
               onClick={() => navigate("/opportunities")}
-              className="inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all hover:bg-accent text-muted-foreground"
+              className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold transition-all hover:bg-background hover:shadow-sm text-muted-foreground"
             >
               <DollarSign className="w-4 h-4" />
-              Deals
+              Pipeline
             </button>
             <button
               onClick={() => navigate("/my-numbers")}
-              className="inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all hover:bg-accent text-muted-foreground"
+              className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold transition-all hover:bg-background hover:shadow-sm text-muted-foreground"
             >
-              <TrendingUp className="w-4 h-4" />
-              Numbers
+              <Target className="w-4 h-4" />
+              Quota & Attainment
             </button>
             <button
               onClick={() => setShowEnrich(true)}
-              className="inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all hover:bg-accent text-muted-foreground"
+              className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold transition-all hover:bg-background hover:shadow-sm text-muted-foreground"
             >
               <Sparkles className="w-4 h-4" />
               Enrich
@@ -1079,42 +1069,14 @@ export default function TerritoryPlanner() {
         </div>
 
         {/* Right section */}
-        <div className="flex items-center gap-3 shrink-0 md:ml-4">
-          {/* Actions dropdown (desktop) */}
-          <div className="hidden md:block">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
-                  <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
-                  Actions
-                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[220px] z-50 p-1">
-                <DropdownMenuItem onClick={exportCSV} className="gap-3 px-4 py-2 rounded-md text-sm cursor-pointer">
-                  <Download className="w-4 h-4 text-muted-foreground shrink-0" /> Export CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowUpload(true)} className="gap-3 px-4 py-2 rounded-md text-sm cursor-pointer">
-                  <Upload className="w-4 h-4 text-muted-foreground shrink-0" /> Upload CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowPasteImport(true)} className="gap-3 px-4 py-2 rounded-md text-sm cursor-pointer">
-                  <ClipboardPaste className="w-4 h-4 text-muted-foreground shrink-0" /> Paste Import
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="my-1" />
-                <DropdownMenuItem onClick={() => setShowShare(true)} className="gap-3 px-4 py-2 rounded-md text-sm cursor-pointer">
-                  <Share2 className="w-4 h-4 text-muted-foreground shrink-0" /> Share Territory
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
+        <div className="flex items-center gap-2 shrink-0 md:ml-4">
           {selected.size >= 2 && selected.size <= 3 && (
             <Button variant="outline" size="sm" onClick={() => setShowCompare(true)} className="gap-1.5 hidden sm:inline-flex">
               <GitCompare className="w-3.5 h-3.5" /> Compare ({selected.size})
             </Button>
           )}
 
-          {/* Icon buttons (desktop) — Tooltips use app-level TooltipProvider from App.tsx */}
+          {/* Icon buttons (desktop) — view toggle, theme, utilities */}
           <div className="hidden md:flex items-center gap-1">
             <div className="inline-flex items-center rounded-md border border-border overflow-hidden">
               <Tooltip delayDuration={150}>
@@ -1171,13 +1133,40 @@ export default function TerritoryPlanner() {
             </Tooltip>
           </div>
 
-          {/* Add Prospect CTA */}
-          <Button variant="outline" onClick={() => setShowContactPicker(true)} className="gap-2 ml-2 hidden sm:inline-flex">
+          {/* Draft Emails button */}
+          <Button variant="outline" onClick={() => setShowContactPicker(true)} className="gap-2 hidden sm:inline-flex">
             <Mail className="w-4 h-4" /> Draft Emails
           </Button>
-          <Button onClick={() => setShowAdd(true)} className="gap-2 bg-primary hover:bg-primary/90 font-semibold px-5 ml-2">
-            <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Add Prospect</span><span className="sm:hidden">Add</span>
+
+          {/* Share Territory button */}
+          <Button variant="outline" onClick={() => setShowShare(true)} className="gap-2 hidden md:inline-flex">
+            <Share2 className="w-4 h-4" /> Share
           </Button>
+
+          {/* + Add Data dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="gap-2 bg-primary hover:bg-primary/90 font-semibold px-5">
+                <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Add Data</span><span className="sm:hidden">Add</span>
+                <ChevronDown className="w-3.5 h-3.5 ml-0.5 opacity-70" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px] z-50 p-1">
+              <DropdownMenuItem onClick={() => setShowAdd(true)} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
+                <Building2 className="w-4 h-4 text-muted-foreground shrink-0" /> Add Account
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {/* TODO: add single contact flow */}} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
+                <Users className="w-4 h-4 text-muted-foreground shrink-0" /> Add Contact
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="my-1" />
+              <DropdownMenuItem onClick={() => setShowUpload(true)} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
+                <Upload className="w-4 h-4 text-muted-foreground shrink-0" /> Upload CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowPasteImport(true)} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
+                <ClipboardPaste className="w-4 h-4 text-muted-foreground shrink-0" /> Paste Import
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Mobile menu */}
           <div className="md:hidden">
@@ -1191,14 +1180,11 @@ export default function TerritoryPlanner() {
                 <DropdownMenuItem onClick={() => navigate("/today")} className="gap-3 px-4 py-2 rounded-md text-sm">
                   <CalendarDays className="w-4 h-4 text-muted-foreground" /> Today
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/insights")} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  <BarChart3 className="w-4 h-4 text-muted-foreground" /> Insights
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/opportunities")} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  <DollarSign className="w-4 h-4 text-muted-foreground" /> Deals
+                  <DollarSign className="w-4 h-4 text-muted-foreground" /> Pipeline
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/my-numbers")} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  <TrendingUp className="w-4 h-4 text-muted-foreground" /> My Numbers
+                  <Target className="w-4 h-4 text-muted-foreground" /> Quota & Attainment
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowEnrich(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
                   <Sparkles className="w-4 h-4 text-muted-foreground" /> Enrich
@@ -1207,8 +1193,8 @@ export default function TerritoryPlanner() {
                   <Mail className="w-4 h-4 text-muted-foreground" /> Draft Emails
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-1" />
-                <DropdownMenuItem onClick={exportCSV} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  <Download className="w-4 h-4 text-muted-foreground" /> Export CSV
+                <DropdownMenuItem onClick={() => setShowAdd(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
+                  <Building2 className="w-4 h-4 text-muted-foreground" /> Add Account
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowUpload(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
                   <Upload className="w-4 h-4 text-muted-foreground" /> Upload CSV
