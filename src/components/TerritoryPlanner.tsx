@@ -386,7 +386,7 @@ export default function TerritoryPlanner() {
     territories, activeTerritory, members, myRole, loading: terrLoading,
     switchTerritory, renameTerritory, inviteMember, removeMember, updateMemberRole, createTerritory,
   } = useTerritories();
-  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete, seedData, seeding, deleteNote, addNote, addContact, updateContact, removeContact } = useProspects(activeTerritory);
+  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archivedData, loadArchivedData, restore, permanentDelete, seedData, seeding, deleteNote, addNote, addContact, updateContact, removeContact } = useProspects(activeTerritory);
   const { signals, addSignal, removeSignal, getProspectSignalRelevance } = useSignals(activeTerritory);
   const { signOut, user } = useAuth();
   const isOwner = user?.email && OWNER_EMAILS.includes(user.email);
@@ -470,6 +470,9 @@ export default function TerritoryPlanner() {
 
   // Archive viewer
   const [showArchive, setShowArchive] = useState(false);
+  useEffect(() => {
+    if (showArchive) loadArchivedData();
+  }, [showArchive, loadArchivedData]);
   // Share territory dialog
   const [showShare, setShowShare] = useState(false);
   // New territory dialog
@@ -1158,8 +1161,8 @@ export default function TerritoryPlanner() {
               <TooltipTrigger asChild>
                 <button onClick={() => setShowArchive(true)} className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-gray-100 dark:hover:bg-muted transition-colors relative">
                   <Archive className="h-4 w-4" />
-                  {archived.length > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">{archived.length}</span>
+                  {archivedData.length > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">{archivedData.length}</span>
                   )}
                 </button>
               </TooltipTrigger>
@@ -1228,7 +1231,7 @@ export default function TerritoryPlanner() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem onClick={() => setShowArchive(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  <Archive className="w-4 h-4 text-muted-foreground" /> Archive {archived.length > 0 && `(${archived.length})`}
+                  <Archive className="w-4 h-4 text-muted-foreground" /> Archive {archivedData.length > 0 && `(${archivedData.length})`}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => { setResetInput(""); setResetDialogOpen(true); }} className="text-destructive gap-3 px-4 py-2 rounded-md text-sm">
                   <RotateCcw className="w-4 h-4" /> Reset Data
@@ -2091,18 +2094,18 @@ export default function TerritoryPlanner() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Archive className="w-4 h-4" /> Archive
-              {archived.length > 0 && <span className="text-xs text-muted-foreground font-normal">({archived.length} items)</span>}
+              {archivedData.length > 0 && <span className="text-xs text-muted-foreground font-normal">({archivedData.length} items)</span>}
             </DialogTitle>
             <DialogDescription>Deleted prospects are stored here. Restore or permanently remove them.</DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
-            {archived.length === 0 ? (
+            {archivedData.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground text-sm">
                 <Archive className="w-8 h-8 mx-auto mb-2 opacity-40" />
                 No archived prospects
               </div>
             ) : (
-              archived.map((p) => (
+              archivedData.map((p) => (
                 <div key={p.id + "-" + p.archivedAt} className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-border hover:bg-accent/50 transition-colors">
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-foreground truncate">{p.name}</div>
