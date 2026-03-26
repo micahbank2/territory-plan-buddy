@@ -1,0 +1,1 @@
+ALTER TABLE public.opportunities ADD COLUMN incremental_acv integer DEFAULT NULL;
