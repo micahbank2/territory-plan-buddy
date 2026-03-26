@@ -82,26 +82,26 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | — | Pending |
-| DATA-02 | — | Pending |
-| DATA-03 | — | Pending |
-| DATA-04 | — | Pending |
-| DATA-05 | — | Pending |
-| DATA-06 | — | Pending |
-| DATA-07 | — | Pending |
-| DATA-08 | — | Pending |
-| SEC-01 | — | Pending |
-| SEC-02 | — | Pending |
-| SEC-03 | — | Pending |
-| UX-01 | — | Pending |
-| UX-02 | — | Pending |
-| UX-03 | — | Pending |
-| UX-04 | — | Pending |
-| PERF-01 | — | Pending |
-| PERF-02 | — | Pending |
-| PERF-03 | — | Pending |
-| PERF-04 | — | Pending |
-| AI-01 | — | Pending |
-| AI-02 | — | Pending |
-| AI-03 | — | Pending |
-| AI-04 | — | Pending |
+| DATA-01 | Phase 1 | Pending |
+| DATA-02 | Phase 1 | Pending |
+| DATA-03 | Phase 1 | Pending |
+| DATA-04 | Phase 1 | Pending |
+| DATA-05 | Phase 1 | Pending |
+| DATA-06 | Phase 1 | Pending |
+| DATA-07 | Phase 1 | Pending |
+| DATA-08 | Phase 1 | Pending |
+| SEC-01 | Phase 1 | Pending |
+| SEC-02 | Phase 1 | Pending |
+| SEC-03 | Phase 1 | Pending |
+| UX-01 | Phase 3 | Pending |
+| UX-02 | Phase 3 | Pending |
+| UX-03 | Phase 3 | Pending |
+| UX-04 | Phase 3 | Pending |
+| PERF-01 | Phase 2 | Pending |
+| PERF-02 | Phase 2 | Pending |
+| PERF-03 | Phase 2 | Pending |
+| PERF-04 | Phase 2 | Pending |
+| AI-01 | Phase 4 | Pending |
+| AI-02 | Phase 4 | Pending |
+| AI-03 | Phase 4 | Pending |
+| AI-04 | Phase 4 | Pending |
