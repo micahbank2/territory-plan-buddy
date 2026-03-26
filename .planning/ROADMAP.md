@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Test scaffolds for all 11 phase requirements
-- [ ] 01-02-PLAN.md — Error rollback + direct sub-collection CRUD (DATA-01–04)
+- [x] 01-02-PLAN.md — Error rollback + direct sub-collection CRUD (DATA-01–04)
 - [ ] 01-03-PLAN.md — XSS sanitization + API key migration to Edge Function (SEC-01–03)
 - [ ] 01-04-PLAN.md — Soft delete + archive view with Restore and Permanently Delete (DATA-05–08)
 

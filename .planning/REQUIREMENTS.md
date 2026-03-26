@@ -9,20 +9,20 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Data Integrity
 
-- [ ] **DATA-01**: User sees an error toast when a Supabase write fails, and the UI reverts to the pre-edit state
-- [ ] **DATA-02**: Updating a prospect's interactions uses direct row-level CRUD (insert new, update changed, delete removed) instead of delete-all + re-insert
-- [ ] **DATA-03**: Updating a prospect's notes uses direct row-level CRUD instead of delete-all + re-insert
-- [ ] **DATA-04**: Updating a prospect's tasks uses direct row-level CRUD instead of delete-all + re-insert
-- [ ] **DATA-05**: User can archive a prospect (soft delete) and it disappears from the main list
-- [ ] **DATA-06**: User can view archived prospects in a separate view
-- [ ] **DATA-07**: User can restore an archived prospect back to the main list
-- [ ] **DATA-08**: User can permanently delete an archived prospect
+- [x] **DATA-01**: User sees an error toast when a Supabase write fails, and the UI reverts to the pre-edit state
+- [x] **DATA-02**: Updating a prospect's interactions uses direct row-level CRUD (insert new, update changed, delete removed) instead of delete-all + re-insert
+- [x] **DATA-03**: Updating a prospect's notes uses direct row-level CRUD instead of delete-all + re-insert
+- [x] **DATA-04**: Updating a prospect's tasks uses direct row-level CRUD instead of delete-all + re-insert
+- [x] **DATA-05**: User can archive a prospect (soft delete) and it disappears from the main list
+- [x] **DATA-06**: User can view archived prospects in a separate view
+- [x] **DATA-07**: User can restore an archived prospect back to the main list
+- [x] **DATA-08**: User can permanently delete an archived prospect
 
 ### Security
 
-- [ ] **SEC-01**: Anthropic API calls route through a Supabase Edge Function, not directly from the browser
-- [ ] **SEC-02**: VITE_ANTHROPIC_API_KEY is removed from client-side environment variables
-- [ ] **SEC-03**: Rich text notes rendered with dangerouslySetInnerHTML are sanitized with DOMPurify before display
+- [x] **SEC-01**: Anthropic API calls route through a Supabase Edge Function, not directly from the browser
+- [x] **SEC-02**: VITE_ANTHROPIC_API_KEY is removed from client-side environment variables
+- [x] **SEC-03**: Rich text notes rendered with dangerouslySetInnerHTML are sanitized with DOMPurify before display
 
 ### UX Polish
 
@@ -82,17 +82,17 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 1 | Pending |
-| DATA-02 | Phase 1 | Pending |
-| DATA-03 | Phase 1 | Pending |
-| DATA-04 | Phase 1 | Pending |
-| DATA-05 | Phase 1 | Pending |
-| DATA-06 | Phase 1 | Pending |
-| DATA-07 | Phase 1 | Pending |
-| DATA-08 | Phase 1 | Pending |
-| SEC-01 | Phase 1 | Pending |
-| SEC-02 | Phase 1 | Pending |
-| SEC-03 | Phase 1 | Pending |
+| DATA-01 | Phase 1 | Complete |
+| DATA-02 | Phase 1 | Complete |
+| DATA-03 | Phase 1 | Complete |
+| DATA-04 | Phase 1 | Complete |
+| DATA-05 | Phase 1 | Complete |
+| DATA-06 | Phase 1 | Complete |
+| DATA-07 | Phase 1 | Complete |
+| DATA-08 | Phase 1 | Complete |
+| SEC-01 | Phase 1 | Complete |
+| SEC-02 | Phase 1 | Complete |
+| SEC-03 | Phase 1 | Complete |
 | UX-01 | Phase 3 | Pending |
 | UX-02 | Phase 3 | Pending |
 | UX-03 | Phase 3 | Pending |
