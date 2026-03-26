@@ -3,33 +3,79 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Trash2, TrendingUp, Hash } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Settings, TrendingUp, DollarSign, Target, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { cn } from "@/lib/utils";
 
+// ─── Types ───────────────────────────────────────────────────────────
+
 interface NumbersEntry {
-  id: string;
   month: string; // YYYY-MM
-  quota: number;
-  closedAcv: number;
+  incrementalQuota: number;
+  incrementalBookings: number;
+  renewedAcv: number;
   pipelineAcv: number;
   meetings: number;
   outreachTouches: number;
 }
 
-const MONTH_OPTIONS = (() => {
-  const months: string[] = [];
-  const now = new Date();
-  for (let i = -6; i <= 6; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
-  }
-  return months;
-})();
+interface AddOns {
+  multiYearDuration: number;
+  multiYearRenewedAcv: number;
+  multiYearIncrementalAcv: number;
+  servicesAmount: number;
+  kongExitAcv: number;
+  kongBlendedAcv: number;
+}
+
+interface CompSettings {
+  annualTI: number;
+  incrementalSplit: number;
+  renewalSplit: number;
+  annualIncrementalQuota: number;
+  u4r: number;
+  retentionTarget: number;
+  renewalAbove100Rate: number;
+}
+
+// ─── Constants ───────────────────────────────────────────────────────
+
+const FY27_MONTHS = [
+  "2026-02", "2026-03", "2026-04", "2026-05", "2026-06",
+  "2026-07", "2026-08", "2026-09", "2026-10", "2026-11",
+  "2026-12", "2027-01",
+];
+
+const DEFAULT_QUOTAS: Record<string, number> = {
+  "2026-02": 30000, "2026-03": 30000, "2026-04": 60000,
+  "2026-05": 38000, "2026-06": 38000, "2026-07": 77000,
+  "2026-08": 40000, "2026-09": 40000, "2026-10": 80000,
+  "2026-11": 48000, "2026-12": 48000, "2027-01": 96000,
+};
+
+const DEFAULT_SETTINGS: CompSettings = {
+  annualTI: 95000,
+  incrementalSplit: 0.65,
+  renewalSplit: 0.35,
+  annualIncrementalQuota: 615000,
+  u4r: 2924263,
+  retentionTarget: 0.86,
+  renewalAbove100Rate: 0.08,
+};
+
+const DEFAULT_ADDONS: AddOns = {
+  multiYearDuration: 0,
+  multiYearRenewedAcv: 0,
+  multiYearIncrementalAcv: 0,
+  servicesAmount: 0,
+  kongExitAcv: 0,
+  kongBlendedAcv: 0,
+};
+
+// ─── Helpers ─────────────────────────────────────────────────────────
 
 function formatMonth(ym: string): string {
   const [y, m] = ym.split("-");
@@ -37,70 +83,331 @@ function formatMonth(ym: string): string {
   return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }
 
+function fmt(n: number): string {
+  return "$" + Math.round(n).toLocaleString();
+}
+
+function pct(n: number): string {
+  return (n * 100).toFixed(1) + "%";
+}
+
+// ─── Commission Calculations ─────────────────────────────────────────
+
+function calcIncrementalForMonth(
+  entries: NumbersEntry[],
+  monthIndex: number,
+  settings: CompSettings,
+) {
+  const tier1Cap = settings.annualIncrementalQuota * 0.5;
+  const tier2Cap = settings.annualIncrementalQuota * 0.75;
+  const incrementalTI = settings.annualTI * settings.incrementalSplit;
+  const icr1 = (incrementalTI * 0.4) / tier1Cap;
+  const icr2 = (incrementalTI * 0.25) / (tier2Cap - tier1Cap);
+  const icr3 = (incrementalTI * 0.35) / (settings.annualIncrementalQuota - tier2Cap);
+
+  // YTD bookings through this month
+  let ytdBookings = 0;
+  let ytdQuota = 0;
+  for (let i = 0; i <= monthIndex; i++) {
+    ytdBookings += entries[i].incrementalBookings;
+    ytdQuota += entries[i].incrementalQuota;
+  }
+
+  // YTD bookings through prior month
+  let priorYtdBookings = 0;
+  for (let i = 0; i < monthIndex; i++) {
+    priorYtdBookings += entries[i].incrementalBookings;
+  }
+
+  // Tier allocation for this month's bookings
+  const thisMonthBookings = entries[monthIndex].incrementalBookings;
+
+  // Calculate cumulative tier allocations
+  const cumT1 = Math.min(ytdBookings, tier1Cap);
+  const cumT2 = Math.max(0, Math.min(ytdBookings, tier2Cap) - tier1Cap);
+  const cumT3 = Math.max(0, ytdBookings - tier2Cap);
+
+  const priorT1 = Math.min(priorYtdBookings, tier1Cap);
+  const priorT2 = Math.max(0, Math.min(priorYtdBookings, tier2Cap) - tier1Cap);
+  const priorT3 = Math.max(0, priorYtdBookings - tier2Cap);
+
+  const monthT1 = cumT1 - priorT1;
+  const monthT2 = cumT2 - priorT2;
+  const monthT3 = cumT3 - priorT3;
+
+  const baseCommission = monthT1 * icr1 + monthT2 * icr2 + monthT3 * icr3;
+
+  // YTD accelerator: +3% on this month's bookings if YTD ahead
+  const ytdAccel = ytdBookings > ytdQuota ? thisMonthBookings * 0.03 : 0;
+
+  return { baseCommission, ytdAccel, monthT1, monthT2, monthT3, ytdBookings, ytdQuota };
+}
+
+function calcAnnualAccel(entries: NumbersEntry[], settings: CompSettings) {
+  const totalBookings = entries.reduce((s, e) => s + e.incrementalBookings, 0);
+  const attainment = totalBookings / settings.annualIncrementalQuota;
+  if (attainment <= 1.0) return 0;
+
+  const aboveQuota = totalBookings - settings.annualIncrementalQuota;
+  let rate = 0;
+  if (attainment > 1.5) rate = 0.12;
+  else if (attainment > 1.25) rate = 0.10;
+  else rate = 0.08;
+
+  return aboveQuota * rate;
+}
+
+function calcRenewalForMonth(
+  entries: NumbersEntry[],
+  monthIndex: number,
+  settings: CompSettings,
+) {
+  const renewalTI = settings.annualTI * settings.renewalSplit;
+  const goalRenewed = settings.u4r * settings.retentionTarget;
+
+  // Cumulative renewed through this month and prior
+  let cumRenewed = 0;
+  for (let i = 0; i <= monthIndex; i++) cumRenewed += entries[i].renewedAcv;
+  let priorCumRenewed = 0;
+  for (let i = 0; i < monthIndex; i++) priorCumRenewed += entries[i].renewedAcv;
+
+  const retentionPct = cumRenewed / settings.u4r;
+  const attainment = goalRenewed > 0 ? cumRenewed / goalRenewed : 0;
+  const priorAttainment = goalRenewed > 0 ? priorCumRenewed / goalRenewed : 0;
+
+  const payoutPct = renewalPayoutPct(attainment);
+  const priorPayoutPct = renewalPayoutPct(priorAttainment);
+
+  const cumPayout = renewalTI * payoutPct;
+  const priorCumPayout = renewalTI * priorPayoutPct;
+  const monthlyPayout = cumPayout - priorCumPayout;
+
+  return { monthlyPayout, cumRenewed, retentionPct, attainment, cumPayoutPct: payoutPct };
+}
+
+function renewalPayoutPct(attainment: number): number {
+  // Attainment is fraction (1.0 = 100%)
+  const att = attainment * 100; // work in percentage points
+  if (att <= 0) return 0;
+  if (att <= 50) return (att * 0.5) / 100;
+  if (att <= 75) return (25 + (att - 50) * 1.0) / 100;
+  if (att <= 100) return (50 + (att - 75) * 2.0) / 100;
+  // Above 100%: 8% per 1% attainment, max 200% total payout
+  const above = (100 + (att - 100) * 8.0) / 100;
+  return Math.min(above, 2.0);
+}
+
+function calcLargeRenewalAddon(entries: NumbersEntry[], settings: CompSettings): number {
+  if (settings.u4r < 1500000) return 0;
+  const totalRenewed = entries.reduce((s, e) => s + e.renewedAcv, 0);
+  const retentionRate = totalRenewed / settings.u4r;
+  if (retentionRate < settings.retentionTarget) return 0;
+  return totalRenewed * 0.005;
+}
+
+function calcAddOnPayouts(addons: AddOns, settings: CompSettings) {
+  // Multi-year
+  const multiYearRenewal = addons.multiYearDuration > 12 ? addons.multiYearRenewedAcv * 0.005 : 0;
+  const multiYearIncremental = addons.multiYearDuration > 12 ? addons.multiYearIncrementalAcv * 0.05 : 0;
+
+  // 1x Services
+  const services = addons.servicesAmount * 0.05;
+
+  // Kong buy-out
+  const kongDelta = Math.max(0, addons.kongExitAcv - addons.kongBlendedAcv);
+  const incrementalTI = settings.annualTI * settings.incrementalSplit;
+  const baseICR = incrementalTI / settings.annualIncrementalQuota;
+  const kong = kongDelta * baseICR;
+
+  return { multiYearRenewal, multiYearIncremental, services, kong, total: multiYearRenewal + multiYearIncremental + services + kong };
+}
+
+// ─── Storage ─────────────────────────────────────────────────────────
+
+const ENTRIES_KEY = "my_numbers_v2";
+const SETTINGS_KEY = "my_numbers_settings";
+const ADDONS_KEY = "my_numbers_addons";
+
 function loadEntries(): NumbersEntry[] {
   try {
-    return JSON.parse(localStorage.getItem("my_numbers") || "[]");
-  } catch { return []; }
+    const stored = localStorage.getItem(ENTRIES_KEY);
+    if (stored) return JSON.parse(stored);
+
+    // Migrate from old format
+    const old = localStorage.getItem("my_numbers");
+    if (old) {
+      const oldEntries = JSON.parse(old) as any[];
+      const migrated = FY27_MONTHS.map(m => {
+        const match = oldEntries.find((e: any) => e.month === m);
+        return {
+          month: m,
+          incrementalQuota: match?.quota ?? DEFAULT_QUOTAS[m] ?? 0,
+          incrementalBookings: match?.closedAcv ?? 0,
+          renewedAcv: 0,
+          pipelineAcv: match?.pipelineAcv ?? 0,
+          meetings: match?.meetings ?? 0,
+          outreachTouches: match?.outreachTouches ?? 0,
+        };
+      });
+      localStorage.setItem(ENTRIES_KEY, JSON.stringify(migrated));
+      return migrated;
+    }
+
+    // Fresh start
+    return FY27_MONTHS.map(m => ({
+      month: m,
+      incrementalQuota: DEFAULT_QUOTAS[m] ?? 0,
+      incrementalBookings: 0,
+      renewedAcv: 0,
+      pipelineAcv: 0,
+      meetings: 0,
+      outreachTouches: 0,
+    }));
+  } catch {
+    return FY27_MONTHS.map(m => ({
+      month: m, incrementalQuota: DEFAULT_QUOTAS[m] ?? 0,
+      incrementalBookings: 0, renewedAcv: 0, pipelineAcv: 0, meetings: 0, outreachTouches: 0,
+    }));
+  }
 }
 
-function saveEntries(entries: NumbersEntry[]) {
-  localStorage.setItem("my_numbers", JSON.stringify(entries));
+function loadSettings(): CompSettings {
+  try {
+    const stored = localStorage.getItem(SETTINGS_KEY);
+    return stored ? { ...DEFAULT_SETTINGS, ...JSON.parse(stored) } : DEFAULT_SETTINGS;
+  } catch { return DEFAULT_SETTINGS; }
 }
 
-const emptyForm = {
-  month: new Date().toISOString().slice(0, 7),
-  quota: 0,
-  closedAcv: 0,
-  pipelineAcv: 0,
-  meetings: 0,
-  outreachTouches: 0,
-};
+function loadAddOns(): AddOns {
+  try {
+    const stored = localStorage.getItem(ADDONS_KEY);
+    return stored ? { ...DEFAULT_ADDONS, ...JSON.parse(stored) } : DEFAULT_ADDONS;
+  } catch { return DEFAULT_ADDONS; }
+}
+
+// ─── Inline Edit Cell ────────────────────────────────────────────────
+
+function EditableCell({
+  value,
+  onChange,
+  isCurrency = true,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  isCurrency?: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        type="number"
+        className="w-full bg-transparent text-right font-mono text-sm border-b border-primary outline-none py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={() => { onChange(parseInt(draft) || 0); setEditing(false); }}
+        onKeyDown={e => { if (e.key === "Enter") { onChange(parseInt(draft) || 0); setEditing(false); } if (e.key === "Escape") setEditing(false); }}
+      />
+    );
+  }
+
+  return (
+    <span
+      onClick={() => { setDraft(String(value || "")); setEditing(true); }}
+      className="cursor-pointer hover:text-primary transition-colors font-mono text-sm"
+    >
+      {isCurrency ? fmt(value) : value.toLocaleString()}
+    </span>
+  );
+}
+
+// ─── Component ───────────────────────────────────────────────────────
 
 export default function MyNumbersPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [entries, setEntries] = useState<NumbersEntry[]>(loadEntries);
-  const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  const [settings, setSettings] = useState<CompSettings>(loadSettings);
+  const [addons, setAddons] = useState<AddOns>(loadAddOns);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showAddOns, setShowAddOns] = useState(false);
+  const [activeTab, setActiveTab] = useState("incremental");
 
-  const sorted = useMemo(
-    () => [...entries].sort((a, b) => a.month.localeCompare(b.month)),
-    [entries]
+  const save = useCallback((next: NumbersEntry[]) => {
+    setEntries(next);
+    localStorage.setItem(ENTRIES_KEY, JSON.stringify(next));
+  }, []);
+
+  const saveSettings = useCallback((next: CompSettings) => {
+    setSettings(next);
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+  }, []);
+
+  const saveAddOns = useCallback((next: AddOns) => {
+    setAddons(next);
+    localStorage.setItem(ADDONS_KEY, JSON.stringify(next));
+  }, []);
+
+  const updateEntry = useCallback((month: string, field: keyof NumbersEntry, value: number) => {
+    const next = entries.map(e => e.month === month ? { ...e, [field]: value } : e);
+    save(next);
+  }, [entries, save]);
+
+  // ─── Calculations ──────────────────────────────────────────────
+
+  const incrementalCalcs = useMemo(() =>
+    entries.map((_, i) => calcIncrementalForMonth(entries, i, settings)),
+    [entries, settings]
   );
 
-  const chartData = useMemo(
-    () => sorted.map(e => ({
-      month: formatMonth(e.month),
-      "Closed ACV": e.closedAcv,
-      "Quota": e.quota,
-    })),
-    [sorted]
+  const renewalCalcs = useMemo(() =>
+    entries.map((_, i) => calcRenewalForMonth(entries, i, settings)),
+    [entries, settings]
   );
 
-  const handleAdd = useCallback(() => {
-    const entry: NumbersEntry = {
-      id: Date.now().toString(),
-      month: form.month,
-      quota: form.quota,
-      closedAcv: form.closedAcv,
-      pipelineAcv: form.pipelineAcv,
-      meetings: form.meetings,
-      outreachTouches: form.outreachTouches,
+  const annualAccel = useMemo(() => calcAnnualAccel(entries, settings), [entries, settings]);
+  const largeRenewalAddon = useMemo(() => calcLargeRenewalAddon(entries, settings), [entries, settings]);
+  const addonPayouts = useMemo(() => calcAddOnPayouts(addons, settings), [addons, settings]);
+
+  const ytdTotals = useMemo(() => {
+    const totalIncrBookings = entries.reduce((s, e) => s + e.incrementalBookings, 0);
+    const totalIncrQuota = entries.reduce((s, e) => s + e.incrementalQuota, 0);
+    const totalRenewed = entries.reduce((s, e) => s + e.renewedAcv, 0);
+    const totalBaseComm = incrementalCalcs.reduce((s, c) => s + c.baseCommission, 0);
+    const totalYtdAccel = incrementalCalcs.reduce((s, c) => s + c.ytdAccel, 0);
+    const totalRenewalPayout = renewalCalcs.reduce((s, c) => s + c.monthlyPayout, 0);
+    const totalIncrPayout = totalBaseComm + totalYtdAccel;
+    const totalEarnings = totalIncrPayout + annualAccel + totalRenewalPayout + largeRenewalAddon + addonPayouts.total;
+
+    return {
+      totalIncrBookings, totalIncrQuota, totalRenewed,
+      totalBaseComm, totalYtdAccel, totalIncrPayout,
+      totalRenewalPayout, totalEarnings, annualAccel,
     };
-    const next = [...entries, entry];
-    setEntries(next);
-    saveEntries(next);
-    setForm(emptyForm);
-    setShowAdd(false);
-  }, [entries, form]);
+  }, [entries, incrementalCalcs, renewalCalcs, annualAccel, largeRenewalAddon, addonPayouts]);
 
-  const handleRemove = useCallback((id: string) => {
-    const next = entries.filter(e => e.id !== id);
-    setEntries(next);
-    saveEntries(next);
-  }, [entries]);
+  const chartData = useMemo(() =>
+    entries.map((e, i) => ({
+      month: formatMonth(e.month),
+      Bookings: e.incrementalBookings,
+      Quota: e.incrementalQuota,
+      Payout: Math.round(incrementalCalcs[i].baseCommission + incrementalCalcs[i].ytdAccel),
+    })),
+    [entries, incrementalCalcs]
+  );
 
   if (!user) return null;
+
+  const incrAttainment = ytdTotals.totalIncrQuota > 0 ? ytdTotals.totalIncrBookings / ytdTotals.totalIncrQuota : 0;
+  const renewalRetention = settings.u4r > 0 ? ytdTotals.totalRenewed / settings.u4r : 0;
+
+  // Count months with bookings for pace calc
+  const activeMonths = entries.filter(e => e.incrementalBookings > 0).length;
+  const monthlyPace = activeMonths > 0 ? ytdTotals.totalIncrBookings / activeMonths : 0;
+  const projectedAnnual = monthlyPace * 12;
+  const projectedAttainment = settings.annualIncrementalQuota > 0 ? projectedAnnual / settings.annualIncrementalQuota : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,136 +419,358 @@ export default function MyNumbersPage() {
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <h1 className="text-xl font-bold text-foreground">My Numbers</h1>
-            <Badge variant="secondary" className="font-mono text-xs">{entries.length}</Badge>
+            <span className="text-xs text-muted-foreground font-mono">FY27</span>
           </div>
-          <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5">
-            <Plus className="w-3.5 h-3.5" /> Log Month
+          <Button variant="outline" size="sm" onClick={() => setShowSettings(true)} className="gap-1.5">
+            <Settings className="w-3.5 h-3.5" /> Settings
           </Button>
         </div>
       </div>
 
       <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6 space-y-6">
-        {/* Trend Chart */}
-        {chartData.length >= 2 && (
-          <div className="rounded-lg border border-border p-5 bg-card">
-            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Closed ACV vs Quota</h2>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
-                <RechartsTooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
-                <Line type="monotone" dataKey="Closed ACV" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={{ r: 4 }} />
-                <Line type="monotone" dataKey="Quota" stroke="hsl(var(--muted-foreground))" strokeWidth={1.5} strokeDasharray="6 3" dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
+        {/* ─── Summary Cards ─────────────────────────────────────── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <SummaryCard
+            label="YTD Incremental"
+            value={fmt(ytdTotals.totalIncrBookings)}
+            sub={`of ${fmt(ytdTotals.totalIncrQuota)} quota`}
+            pct={incrAttainment}
+            icon={<Target className="w-4 h-4" />}
+          />
+          <SummaryCard
+            label="YTD Renewal"
+            value={fmt(ytdTotals.totalRenewed)}
+            sub={`${pct(renewalRetention)} retention of ${fmt(settings.u4r)} U4R`}
+            pct={renewalRetention / settings.retentionTarget}
+            icon={<ShieldCheck className="w-4 h-4" />}
+          />
+          <SummaryCard
+            label="Est. YTD Earnings"
+            value={fmt(ytdTotals.totalEarnings)}
+            sub={`Incr: ${fmt(ytdTotals.totalIncrPayout)} | Ren: ${fmt(ytdTotals.totalRenewalPayout)}`}
+            icon={<DollarSign className="w-4 h-4" />}
+          />
+          <SummaryCard
+            label="Annual Pace"
+            value={pct(projectedAttainment)}
+            sub={`${fmt(projectedAnnual)} projected (${fmt(monthlyPace)}/mo)`}
+            icon={<TrendingUp className="w-4 h-4" />}
+          />
+        </div>
+
+        {/* ─── Tabs: Incremental / Renewal ────────────────────────── */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-3">
+            <TabsTrigger value="incremental">Incremental ACV</TabsTrigger>
+            <TabsTrigger value="renewal">Renewal ACV</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="incremental">
+            <div className="rounded-lg border border-border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/40">
+                    <TableHead className="font-semibold text-foreground min-w-[100px]">Month</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[90px]">Quota</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[100px]">Bookings</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[70px]">Attain%</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[100px]">Base Comm.</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[90px]">YTD Accel</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[100px]">Est. Payout</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[90px]">Pipeline</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[70px]">Mtgs</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[70px]">Touches</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {entries.map((e, i) => {
+                    const c = incrementalCalcs[i];
+                    const monthAttain = e.incrementalQuota > 0 ? e.incrementalBookings / e.incrementalQuota : 0;
+                    const payout = c.baseCommission + c.ytdAccel;
+                    return (
+                      <TableRow key={e.month} className="group">
+                        <TableCell className="font-medium text-sm">{formatMonth(e.month)}</TableCell>
+                        <TableCell className="text-right">
+                          <EditableCell value={e.incrementalQuota} onChange={v => updateEntry(e.month, "incrementalQuota", v)} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <EditableCell value={e.incrementalBookings} onChange={v => updateEntry(e.month, "incrementalBookings", v)} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className={cn("font-bold font-mono text-sm",
+                            monthAttain >= 1 ? "text-emerald-600" : monthAttain >= 0.7 ? "text-amber-600" : "text-red-600"
+                          )}>{Math.round(monthAttain * 100)}%</span>
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-sm">{fmt(c.baseCommission)}</TableCell>
+                        <TableCell className="text-right font-mono text-sm">{c.ytdAccel > 0 ? fmt(c.ytdAccel) : "—"}</TableCell>
+                        <TableCell className="text-right font-mono text-sm font-semibold">{fmt(payout)}</TableCell>
+                        <TableCell className="text-right">
+                          <EditableCell value={e.pipelineAcv} onChange={v => updateEntry(e.month, "pipelineAcv", v)} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <EditableCell value={e.meetings} onChange={v => updateEntry(e.month, "meetings", v)} isCurrency={false} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <EditableCell value={e.outreachTouches} onChange={v => updateEntry(e.month, "outreachTouches", v)} isCurrency={false} />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {/* Totals row */}
+                  <TableRow className="bg-muted/30 font-semibold border-t-2 border-border">
+                    <TableCell className="text-sm">FY27 Total</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{fmt(ytdTotals.totalIncrQuota)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{fmt(ytdTotals.totalIncrBookings)}</TableCell>
+                    <TableCell className="text-right">
+                      <span className={cn("font-bold font-mono text-sm",
+                        incrAttainment >= 1 ? "text-emerald-600" : incrAttainment >= 0.7 ? "text-amber-600" : "text-red-600"
+                      )}>{Math.round(incrAttainment * 100)}%</span>
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm">{fmt(ytdTotals.totalBaseComm)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{fmt(ytdTotals.totalYtdAccel)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{fmt(ytdTotals.totalIncrPayout)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{fmt(entries.reduce((s, e) => s + e.pipelineAcv, 0))}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{entries.reduce((s, e) => s + e.meetings, 0)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{entries.reduce((s, e) => s + e.outreachTouches, 0)}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="renewal">
+            <div className="rounded-lg border border-border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/40">
+                    <TableHead className="font-semibold text-foreground min-w-[100px]">Month</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[110px]">ACV Renewed</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[120px]">Cumul. Renewed</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[100px]">Retention %</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[90px]">Attain %</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[110px]">Cumul. Payout %</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[120px]">Monthly Payout</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {entries.map((e, i) => {
+                    const r = renewalCalcs[i];
+                    return (
+                      <TableRow key={e.month}>
+                        <TableCell className="font-medium text-sm">{formatMonth(e.month)}</TableCell>
+                        <TableCell className="text-right">
+                          <EditableCell value={e.renewedAcv} onChange={v => updateEntry(e.month, "renewedAcv", v)} />
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-sm">{fmt(r.cumRenewed)}</TableCell>
+                        <TableCell className="text-right font-mono text-sm">{pct(r.retentionPct)}</TableCell>
+                        <TableCell className="text-right">
+                          <span className={cn("font-mono text-sm",
+                            r.attainment >= 1 ? "text-emerald-600 font-bold" : r.attainment >= 0.7 ? "text-amber-600" : "text-muted-foreground"
+                          )}>{pct(r.attainment)}</span>
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-sm">{pct(r.cumPayoutPct)}</TableCell>
+                        <TableCell className="text-right font-mono text-sm font-semibold">{fmt(r.monthlyPayout)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {/* Totals row */}
+                  <TableRow className="bg-muted/30 font-semibold border-t-2 border-border">
+                    <TableCell className="text-sm">FY27 Total</TableCell>
+                    <TableCell />
+                    <TableCell className="text-right font-mono text-sm">{fmt(ytdTotals.totalRenewed)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{pct(renewalRetention)}</TableCell>
+                    <TableCell />
+                    <TableCell />
+                    <TableCell className="text-right font-mono text-sm">{fmt(ytdTotals.totalRenewalPayout)}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+            {largeRenewalAddon > 0 && (
+              <div className="mt-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-sm">
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">Large Renewal Add-on: </span>
+                <span className="font-mono">{fmt(largeRenewalAddon)}</span>
+                <span className="text-muted-foreground ml-1">(0.5% on {fmt(ytdTotals.totalRenewed)} renewed, U4R ≥ $1.5M & retention ≥ target)</span>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        {/* ─── Add-ons Section ────────────────────────────────────── */}
+        <button
+          onClick={() => setShowAddOns(!showAddOns)}
+          className="flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+        >
+          {showAddOns ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          Add-ons & SPIFFs
+          {addonPayouts.total > 0 && <span className="font-mono text-emerald-600 text-xs">{fmt(addonPayouts.total)}</span>}
+        </button>
+
+        {showAddOns && (
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* Multi-year */}
+            <div className="rounded-lg border border-border p-4 space-y-3">
+              <h3 className="text-sm font-semibold">Multi-Year Deal</h3>
+              <label className="text-xs text-muted-foreground block">Duration (months)</label>
+              <Input type="number" value={addons.multiYearDuration || ""} onChange={e => saveAddOns({ ...addons, multiYearDuration: parseInt(e.target.value) || 0 })} placeholder="0" />
+              <label className="text-xs text-muted-foreground block">Renewed ACV</label>
+              <Input type="number" value={addons.multiYearRenewedAcv || ""} onChange={e => saveAddOns({ ...addons, multiYearRenewedAcv: parseInt(e.target.value) || 0 })} placeholder="0" />
+              <label className="text-xs text-muted-foreground block">Incremental ACV</label>
+              <Input type="number" value={addons.multiYearIncrementalAcv || ""} onChange={e => saveAddOns({ ...addons, multiYearIncrementalAcv: parseInt(e.target.value) || 0 })} placeholder="0" />
+              <div className="pt-2 border-t border-border text-sm">
+                <div className="flex justify-between"><span>Renewal (0.5%)</span><span className="font-mono">{fmt(addonPayouts.multiYearRenewal)}</span></div>
+                <div className="flex justify-between"><span>Incremental (5%)</span><span className="font-mono">{fmt(addonPayouts.multiYearIncremental)}</span></div>
+              </div>
+            </div>
+
+            {/* 1x Services */}
+            <div className="rounded-lg border border-border p-4 space-y-3">
+              <h3 className="text-sm font-semibold">1x Services</h3>
+              <label className="text-xs text-muted-foreground block">Services Amount</label>
+              <Input type="number" value={addons.servicesAmount || ""} onChange={e => saveAddOns({ ...addons, servicesAmount: parseInt(e.target.value) || 0 })} placeholder="0" />
+              <div className="pt-2 border-t border-border text-sm">
+                <div className="flex justify-between"><span>Payout (5%)</span><span className="font-mono">{fmt(addonPayouts.services)}</span></div>
+              </div>
+              <p className="text-[10px] text-muted-foreground">No payout when 1x services replace MS hours w/ retention exception</p>
+            </div>
+
+            {/* Kong Buy-out */}
+            <div className="rounded-lg border border-border p-4 space-y-3">
+              <h3 className="text-sm font-semibold">Kong Buy-out SPIFF</h3>
+              <label className="text-xs text-muted-foreground block">Exit ACV</label>
+              <Input type="number" value={addons.kongExitAcv || ""} onChange={e => saveAddOns({ ...addons, kongExitAcv: parseInt(e.target.value) || 0 })} placeholder="0" />
+              <label className="text-xs text-muted-foreground block">Blended ACV</label>
+              <Input type="number" value={addons.kongBlendedAcv || ""} onChange={e => saveAddOns({ ...addons, kongBlendedAcv: parseInt(e.target.value) || 0 })} placeholder="0" />
+              <div className="pt-2 border-t border-border text-sm">
+                <div className="flex justify-between"><span>Delta × ICR</span><span className="font-mono">{fmt(addonPayouts.kong)}</span></div>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Table */}
-        {sorted.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">
-            <Hash className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="text-lg font-medium">No entries yet</p>
-            <p className="text-sm mt-1">Click "Log Month" to record your first month's numbers.</p>
+        {/* ─── Total Comp Summary ─────────────────────────────────── */}
+        <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-5">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-primary mb-3">FY27 Total Variable Compensation</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground">Incremental Base</span>
+              <p className="font-mono font-semibold">{fmt(ytdTotals.totalBaseComm)}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">YTD Accelerators</span>
+              <p className="font-mono font-semibold">{fmt(ytdTotals.totalYtdAccel)}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Annual Accelerators</span>
+              <p className="font-mono font-semibold">{fmt(annualAccel)}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground font-semibold">Total Incremental</span>
+              <p className="font-mono font-bold text-base">{fmt(ytdTotals.totalIncrPayout + annualAccel)}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Renewal Payouts</span>
+              <p className="font-mono font-semibold">{fmt(ytdTotals.totalRenewalPayout)}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Large Renewal Add-on</span>
+              <p className="font-mono font-semibold">{fmt(largeRenewalAddon)}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Other Add-ons</span>
+              <p className="font-mono font-semibold">{fmt(addonPayouts.total)}</p>
+            </div>
+            <div>
+              <span className="text-primary font-bold">TOTAL FY27 VARIABLE</span>
+              <p className="font-mono font-bold text-xl text-primary">{fmt(ytdTotals.totalEarnings)}</p>
+            </div>
           </div>
-        ) : (
-          <div className="rounded-lg border border-border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/40">
-                  <TableHead className="font-semibold text-foreground">Month</TableHead>
-                  <TableHead className="font-semibold text-foreground text-right">Quota</TableHead>
-                  <TableHead className="font-semibold text-foreground text-right">Closed ACV</TableHead>
-                  <TableHead className="font-semibold text-foreground text-right">Attainment</TableHead>
-                  <TableHead className="font-semibold text-foreground text-right">Pipeline</TableHead>
-                  <TableHead className="font-semibold text-foreground text-right">Meetings</TableHead>
-                  <TableHead className="font-semibold text-foreground text-right">Touches</TableHead>
-                  <TableHead className="w-10" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sorted.map(e => {
-                  const attainment = e.quota > 0 ? Math.round((e.closedAcv / e.quota) * 100) : 0;
-                  return (
-                    <TableRow key={e.id} className="group">
-                      <TableCell className="font-medium">{formatMonth(e.month)}</TableCell>
-                      <TableCell className="text-right font-mono">${e.quota.toLocaleString()}</TableCell>
-                      <TableCell className="text-right font-mono">${e.closedAcv.toLocaleString()}</TableCell>
-                      <TableCell className="text-right">
-                        <span className={cn("font-bold font-mono",
-                          attainment >= 100 ? "text-emerald-600" : attainment >= 70 ? "text-amber-600" : "text-red-600"
-                        )}>{attainment}%</span>
-                      </TableCell>
-                      <TableCell className="text-right font-mono">${e.pipelineAcv.toLocaleString()}</TableCell>
-                      <TableCell className="text-right font-mono">{e.meetings}</TableCell>
-                      <TableCell className="text-right font-mono">{e.outreachTouches}</TableCell>
-                      <TableCell>
-                        <button
-                          onClick={() => handleRemove(e.id)}
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 transition-opacity"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                        </button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+        </div>
+
+        {/* ─── Chart ──────────────────────────────────────────────── */}
+        <div className="rounded-lg border border-border p-5 bg-card">
+          <h2 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Incremental Bookings vs Quota</h2>
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+              <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
+              <RechartsTooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
+              <Line type="monotone" dataKey="Bookings" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={{ r: 4 }} />
+              <Line type="monotone" dataKey="Quota" stroke="hsl(var(--muted-foreground))" strokeWidth={1.5} strokeDasharray="6 3" dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
-      {/* Add Dialog */}
-      <Dialog open={showAdd} onOpenChange={setShowAdd}>
+      {/* ─── Settings Dialog ──────────────────────────────────────── */}
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Log Monthly Numbers</DialogTitle>
+            <DialogTitle>Comp Plan Settings</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Month</label>
-              <Select value={form.month} onValueChange={v => setForm(f => ({ ...f, month: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {MONTH_OPTIONS.map(m => (
-                    <SelectItem key={m} value={m}>{formatMonth(m)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <SettingsField label="Annual TI ($)" value={settings.annualTI} onChange={v => saveSettings({ ...settings, annualTI: v })} />
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Quota ($)</label>
-                <Input type="number" value={form.quota || ""} onChange={e => setForm(f => ({ ...f, quota: parseInt(e.target.value) || 0 }))} placeholder="0" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Closed ACV ($)</label>
-                <Input type="number" value={form.closedAcv || ""} onChange={e => setForm(f => ({ ...f, closedAcv: parseInt(e.target.value) || 0 }))} placeholder="0" />
-              </div>
+              <SettingsField label="Incremental Split (%)" value={Math.round(settings.incrementalSplit * 100)} onChange={v => saveSettings({ ...settings, incrementalSplit: v / 100 })} />
+              <SettingsField label="Renewal Split (%)" value={Math.round(settings.renewalSplit * 100)} onChange={v => saveSettings({ ...settings, renewalSplit: v / 100 })} />
             </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Pipeline ACV ($)</label>
-              <Input type="number" value={form.pipelineAcv || ""} onChange={e => setForm(f => ({ ...f, pipelineAcv: parseInt(e.target.value) || 0 }))} placeholder="0" />
-            </div>
+            <SettingsField label="Annual Incremental Quota ($)" value={settings.annualIncrementalQuota} onChange={v => saveSettings({ ...settings, annualIncrementalQuota: v })} />
+            <SettingsField label="FY ACV U4R ($)" value={settings.u4r} onChange={v => saveSettings({ ...settings, u4r: v })} />
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Meetings</label>
-                <Input type="number" value={form.meetings || ""} onChange={e => setForm(f => ({ ...f, meetings: parseInt(e.target.value) || 0 }))} placeholder="0" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Outreach Touches</label>
-                <Input type="number" value={form.outreachTouches || ""} onChange={e => setForm(f => ({ ...f, outreachTouches: parseInt(e.target.value) || 0 }))} placeholder="0" />
-              </div>
+              <SettingsField label="Retention Target (%)" value={Math.round(settings.retentionTarget * 100)} onChange={v => saveSettings({ ...settings, retentionTarget: v / 100 })} />
+              <SettingsField label="Renewal >100% Rate (%)" value={settings.renewalAbove100Rate * 100} onChange={v => saveSettings({ ...settings, renewalAbove100Rate: v / 100 })} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
-            <Button onClick={handleAdd}>Save</Button>
+            <Button variant="outline" onClick={() => { saveSettings(DEFAULT_SETTINGS); }}>Reset Defaults</Button>
+            <Button onClick={() => setShowSettings(false)}>Done</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// ─── Sub-components ──────────────────────────────────────────────────
+
+function SummaryCard({ label, value, sub, pct, icon }: {
+  label: string; value: string; sub: string; pct?: number; icon: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-lg border border-border p-4 bg-card">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+        {icon}
+        {label}
+      </div>
+      <p className="text-xl font-bold font-mono text-foreground">{value}</p>
+      <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>
+      {pct !== undefined && (
+        <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
+          <div
+            className={cn("h-full rounded-full transition-all",
+              pct >= 1 ? "bg-emerald-500" : pct >= 0.7 ? "bg-amber-500" : "bg-red-500"
+            )}
+            style={{ width: `${Math.min(pct * 100, 100)}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SettingsField({ label, value, onChange }: {
+  label: string; value: number; onChange: (v: number) => void;
+}) {
+  return (
+    <div>
+      <label className="text-xs font-medium text-muted-foreground mb-1 block">{label}</label>
+      <Input
+        type="number"
+        value={value || ""}
+        onChange={e => onChange(parseFloat(e.target.value) || 0)}
+        className="font-mono"
+      />
     </div>
   );
 }
