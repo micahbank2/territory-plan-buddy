@@ -19,6 +19,7 @@ export type Database = {
           close_date: string
           created_at: string
           id: string
+          incremental_acv: number | null
           name: string
           notes: string
           point_of_contact: string
@@ -35,6 +36,7 @@ export type Database = {
           close_date?: string
           created_at?: string
           id?: string
+          incremental_acv?: number | null
           name: string
           notes?: string
           point_of_contact?: string
@@ -51,6 +53,7 @@ export type Database = {
           close_date?: string
           created_at?: string
           id?: string
+          incremental_acv?: number | null
           name?: string
           notes?: string
           point_of_contact?: string

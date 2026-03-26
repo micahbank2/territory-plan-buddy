@@ -57,6 +57,7 @@ const emptyOpp = {
   name: "",
   type: "Net New",
   potential_value: 0,
+  incremental_acv: null as number | null,
   point_of_contact: "",
   stage: "Develop",
   notes: "",
@@ -255,6 +256,7 @@ export default function OpportunitiesPage() {
   }, [opportunities, search, sortField, sortDir, prospectMap]);
 
   const totalACV = useMemo(() => filtered.reduce((s, o) => s + (o.potential_value || 0), 0), [filtered]);
+  const totalIncrementalACV = useMemo(() => filtered.reduce((s, o) => s + (o.incremental_acv || 0), 0), [filtered]);
 
   const weightedACV = useMemo(() => {
     return Math.round(opportunities.reduce((s, o) => {
@@ -453,6 +455,7 @@ export default function OpportunitiesPage() {
                               <SortIcon field="potential_value" sortField={sortField} sortDir={sortDir} />
                             </span>
                           </TableHead>
+                          <TableHead className="font-semibold text-foreground text-right">Incremental</TableHead>
                           <TableHead className="font-semibold text-foreground">Stage</TableHead>
                           <TableHead
                             className="font-semibold text-foreground cursor-pointer select-none hover:text-primary"
@@ -512,6 +515,9 @@ export default function OpportunitiesPage() {
                               <TableCell className="text-right font-mono text-foreground">
                                 ${(opp.potential_value || 0).toLocaleString()}
                               </TableCell>
+                              <TableCell className="text-right font-mono text-muted-foreground">
+                                {opp.incremental_acv ? `$${opp.incremental_acv.toLocaleString()}` : "—"}
+                              </TableCell>
                               {/* Stage */}
                               <TableCell>
                                 <span className={`text-sm ${stageColors[opp.stage] || "text-foreground"}`}>{opp.stage}</span>
@@ -537,7 +543,12 @@ export default function OpportunitiesPage() {
                   {/* Footer summary */}
                   <div className="flex items-center justify-between mt-3 px-2 text-sm text-muted-foreground">
                     <span>{filtered.length} deal{filtered.length !== 1 ? "s" : ""}</span>
-                    <span className="font-mono font-medium text-foreground">${totalACV.toLocaleString()} total ACV</span>
+                    <div className="flex items-center gap-4">
+                      <span className="font-mono font-medium text-foreground">${totalACV.toLocaleString()} total ACV</span>
+                      {totalIncrementalACV > 0 && (
+                        <span className="font-mono font-medium text-muted-foreground">${totalIncrementalACV.toLocaleString()} incremental</span>
+                      )}
+                    </div>
                   </div>
                 </>
               )}
@@ -634,6 +645,10 @@ export default function OpportunitiesPage() {
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">ACV ($)</label>
                 <Input type="number" value={form.potential_value || ""} onChange={e => setForm(f => ({ ...f, potential_value: parseInt(e.target.value) || 0 }))} placeholder="0" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Incremental ACV ($)</label>
+                <Input type="number" value={form.incremental_acv || ""} onChange={e => setForm(f => ({ ...f, incremental_acv: parseInt(e.target.value) || null }))} placeholder="Optional" />
               </div>
             </div>
             <div>

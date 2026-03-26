@@ -94,6 +94,7 @@ export function OpportunitySheet({
   const [localProducts, setLocalProducts] = useState("");
   const [localNotes, setLocalNotes] = useState("");
   const [localACV, setLocalACV] = useState("");
+  const [localIncrementalACV, setLocalIncrementalACV] = useState("");
   const [localPOC, setLocalPOC] = useState("");
   const [localWebsite, setLocalWebsite] = useState("");
   
@@ -110,6 +111,7 @@ export function OpportunitySheet({
       setLocalName(opp.name || "");
       setLocalProducts(opp.products || "");
       setLocalACV(opp.potential_value ? String(opp.potential_value) : "");
+      setLocalIncrementalACV(opp.incremental_acv ? String(opp.incremental_acv) : "");
       setLocalPOC(opp.point_of_contact || "");
       setLocalWebsite(opp.website || "");
       const p = opp.prospect_id && prospectMap ? prospectMap.get(opp.prospect_id) : null;
@@ -120,7 +122,7 @@ export function OpportunitySheet({
         setSyncedOppId(opp.id);
       }
     }
-  }, [opp?.id, opp?.name, opp?.products, opp?.notes, opp?.potential_value, opp?.point_of_contact, opp?.prospect_id, opp?.website, prospectMap]);
+  }, [opp?.id, opp?.name, opp?.products, opp?.notes, opp?.potential_value, opp?.incremental_acv, opp?.point_of_contact, opp?.prospect_id, opp?.website, prospectMap]);
 
   if (!opp) return null;
 
@@ -132,15 +134,21 @@ export function OpportunitySheet({
     toast.success("Updated!");
   };
 
-  const commitField = (field: string, localVal: string, currentVal: string | number) => {
-    const trimmed = localVal.trim();
+  const commitField = (field: string, localVal: string, currentVal: string | number | null) => {
     if (field === "potential_value") {
-      const num = parseInt(trimmed) || 0;
+      const num = parseInt(localVal) || 0;
       if (num !== currentVal) {
         update(opp.id, { potential_value: num } as any);
         toast.success("Updated!");
       }
+    } else if (field === "incremental_acv") {
+      const num = parseInt(localVal) || null;
+      if (num !== currentVal) {
+        update(opp.id, { incremental_acv: num } as any);
+        toast.success("Updated!");
+      }
     } else {
+      const trimmed = localVal.trim();
       if (trimmed !== currentVal) {
         update(opp.id, { [field]: trimmed } as any);
         toast.success("Updated!");
@@ -154,6 +162,7 @@ export function OpportunitySheet({
     localProducts.trim() !== (opp.products || "") ||
     localNotes !== (opp.notes || "") ||
     (parseInt(localACV) || 0) !== (opp.potential_value || 0) ||
+    (parseInt(localIncrementalACV) || null) !== (opp.incremental_acv || null) ||
     localPOC.trim() !== (opp.point_of_contact || "") ||
     localWebsite.trim() !== (opp.website || "");
 
@@ -164,6 +173,8 @@ export function OpportunitySheet({
     if (localNotes !== (opp.notes || "")) changes.notes = localNotes;
     const acvNum = parseInt(localACV) || 0;
     if (acvNum !== (opp.potential_value || 0)) changes.potential_value = acvNum;
+    const incAcvNum = parseInt(localIncrementalACV) || null;
+    if (incAcvNum !== (opp.incremental_acv || null)) changes.incremental_acv = incAcvNum;
     if (localPOC.trim() !== (opp.point_of_contact || "")) changes.point_of_contact = localPOC.trim();
     if (localWebsite.trim() !== (opp.website || "")) changes.website = localWebsite.trim();
     if (Object.keys(changes).length > 0) {
@@ -216,6 +227,9 @@ export function OpportunitySheet({
           <div className="text-right px-2">
             <div className="text-2xl font-black text-foreground font-mono">${(opp.potential_value || 0).toLocaleString()}</div>
             <div className="text-xs text-muted-foreground font-medium">ACV</div>
+            {opp.incremental_acv != null && opp.incremental_acv > 0 && (
+              <div className="text-sm font-bold text-primary font-mono">${opp.incremental_acv.toLocaleString()} <span className="text-xs font-medium text-muted-foreground">incremental</span></div>
+            )}
           </div>
         </div>
       </div>
@@ -306,6 +320,17 @@ export function OpportunitySheet({
                 onBlur={() => commitField("potential_value", localACV, opp.potential_value)}
                 className={inputClass}
                 placeholder="0"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase">Incremental ACV ($)</label>
+              <input
+                type="number"
+                value={localIncrementalACV}
+                onChange={e => setLocalIncrementalACV(e.target.value)}
+                onBlur={() => commitField("incremental_acv", localIncrementalACV, opp.incremental_acv)}
+                className={inputClass}
+                placeholder="Optional"
               />
             </div>
             <div className="space-y-1">
