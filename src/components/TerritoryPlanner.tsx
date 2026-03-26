@@ -386,7 +386,7 @@ export default function TerritoryPlanner() {
     territories, activeTerritory, members, myRole, loading: terrLoading,
     switchTerritory, renameTerritory, inviteMember, removeMember, updateMemberRole, createTerritory,
   } = useTerritories();
-  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete, seedData, seeding, deleteNote, addNote, addContact, updateContact, removeContact } = useProspects(activeTerritory);
+  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archived, restore, permanentDelete, seedData, seeding, deleteNote, addNote, addContact, updateContact, removeContact, addInteraction, removeInteraction, addTask, removeTask } = useProspects(activeTerritory);
   const { signals, addSignal, removeSignal, getProspectSignalRelevance } = useSignals(activeTerritory);
   const { signOut, user } = useAuth();
   const isOwner = user?.email && OWNER_EMAILS.includes(user.email);
@@ -2017,6 +2017,11 @@ export default function TerritoryPlanner() {
         addContact={addContact}
         updateContact={updateContact}
         removeContact={removeContact}
+        addInteraction={addInteraction}
+        removeInteraction={removeInteraction}
+        addNote={addNote}
+        addTaskDirect={addTask}
+        removeTaskDirect={removeTask}
         signals={signals}
         addSignal={addSignal}
         removeSignal={removeSignal}

@@ -95,11 +95,16 @@ export function useOpportunities(territoryId: string | null) {
   }, []);
 
   const remove = useCallback(async (id: string) => {
+    const previous = opportunities.find(o => o.id === id);
+    setOpportunities(prev => prev.filter(o => o.id !== id));  // optimistic
     const { error } = await supabase.from("opportunities").delete().eq("id", id);
-    if (error) { toast.error("Failed to delete"); return; }
-    setOpportunities(prev => prev.filter(o => o.id !== id));
+    if (error) {
+      if (previous) setOpportunities(prev => [previous, ...prev]);
+      toast.error("Failed to delete opportunity");
+      return;
+    }
     toast.success("Opportunity deleted");
-  }, []);
+  }, [opportunities]);
 
   return { opportunities, loading, add, update, remove, reload: load };
 }

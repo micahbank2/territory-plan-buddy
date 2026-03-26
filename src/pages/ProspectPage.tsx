@@ -304,7 +304,7 @@ export default function ProspectPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { activeTerritory } = useTerritories();
-  const { data, ok, update, remove, deleteNote } = useProspects(activeTerritory);
+  const { data, ok, update, remove, deleteNote, addInteraction, addNote, addTask, removeTask } = useProspects(activeTerritory);
   const { signals, addSignal, removeSignal, getProspectSignals } = useSignals(activeTerritory);
 
   const prospect = useMemo(
@@ -419,41 +419,36 @@ export default function ProspectPage() {
     toast("👤 Contact removed");
   };
 
-  const logInteraction = () => {
-    const interaction: InteractionLog = {
-      id: Date.now().toString(),
+  const logInteraction = async () => {
+    await addInteraction(prospect.id, {
       type: interactionType,
       date: new Date().toISOString().split("T")[0],
       notes: interactionNotes || `${interactionType} logged`,
-    };
-    update(prospect.id, { interactions: [...(prospect.interactions || []), interaction] });
+    });
     setInteractionNotes("");
     toast.success("📝 Activity logged!");
   };
 
-  const addTask = () => {
+  const handleAddTask = async () => {
     if (!newTaskText.trim()) return;
-    const task: Task = { id: Date.now().toString(), text: newTaskText.trim(), dueDate: newTaskDate };
-    update(prospect.id, { tasks: [...(prospect.tasks || []), task] });
+    await addTask(prospect.id, { text: newTaskText.trim(), dueDate: newTaskDate });
     setNewTaskText("");
     setNewTaskDate("");
     toast.success("✅ Task added!");
   };
 
-  const completeTask = (task: Task) => {
-    const interaction: InteractionLog = {
-      id: Date.now().toString(), type: "Task Completed",
-      date: new Date().toISOString().split("T")[0], notes: task.text,
-    };
-    update(prospect.id, {
-      tasks: (prospect.tasks || []).filter(t => t.id !== task.id),
-      interactions: [...(prospect.interactions || []), interaction],
+  const completeTask = async (task: Task) => {
+    await removeTask(task.id);
+    await addInteraction(prospect.id, {
+      type: "Task Completed",
+      date: new Date().toISOString().split("T")[0],
+      notes: task.text,
     });
     toast.success("✅ Task completed!");
   };
 
-  const removeTask = (taskId: string) => {
-    update(prospect.id, { tasks: (prospect.tasks || []).filter(t => t.id !== taskId) });
+  const handleRemoveTask = async (taskId: string) => {
+    await removeTask(taskId);
     toast("🗑️ Task removed");
   };
 
@@ -463,14 +458,9 @@ export default function ProspectPage() {
     navigate("/");
   };
 
-  const addNote = () => {
+  const submitNote = async () => {
     if (!newNote.trim()) return;
-    const entry: NoteEntry = {
-      id: Date.now().toString(),
-      text: newNote.trim(),
-      timestamp: new Date().toISOString(),
-    };
-    update(prospect.id, { noteLog: [...(prospect.noteLog || []), entry] });
+    await addNote(prospect.id, newNote.trim());
     setNewNote("");
     toast.success("📌 Note saved!");
   };
@@ -650,7 +640,7 @@ export default function ProspectPage() {
                     onChange={(e) => setNewTaskText(e.target.value)}
                     placeholder="e.g. Send follow-up email"
                     className={inputClass}
-                    onKeyDown={e => e.key === "Enter" && addTask()}
+                    onKeyDown={e => e.key === "Enter" && handleAddTask()}
                   />
                 </Field>
                 <Field label="Due Date">
@@ -674,7 +664,7 @@ export default function ProspectPage() {
                 </Field>
               </div>
               {newTaskText.trim() && (
-                <button onClick={addTask}
+                <button onClick={handleAddTask}
                   className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 font-medium">
                   <Plus className="w-3 h-3" /> Add Task
                 </button>
@@ -701,7 +691,7 @@ export default function ProspectPage() {
                               {isOverdue ? "⚠️ " : ""}{task.dueDate}
                             </span>
                           )}
-                          <button onClick={() => removeTask(task.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10">
+                          <button onClick={() => handleRemoveTask(task.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10">
                             <X className="w-3 h-3 text-destructive" />
                           </button>
                         </div>
@@ -720,9 +710,9 @@ export default function ProspectPage() {
                   onChange={(e) => setNewNote(e.target.value)}
                   placeholder="Add a note..."
                   className={cn(inputClass, "flex-1")}
-                  onKeyDown={(e) => e.key === "Enter" && addNote()}
+                  onKeyDown={(e) => e.key === "Enter" && submitNote()}
                 />
-                <Button size="sm" onClick={addNote} disabled={!newNote.trim()} className="glow-blue">Add</Button>
+                <Button size="sm" onClick={submitNote} disabled={!newNote.trim()} className="glow-blue">Add</Button>
               </div>
               {(prospect.noteLog || []).length > 0 && (
                 <div className="space-y-2 max-h-60 overflow-y-auto">
