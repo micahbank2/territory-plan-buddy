@@ -18,7 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   ExternalLink, Plus, X, Mail, Phone, Building2, MessageSquare, PhoneCall,
   Linkedin, Clock, CalendarIcon, Target, ArrowRight, Check, CheckCircle, Trash2,
-  Sparkles, Copy, Loader2, RefreshCw, FileText, Pencil, Star,
+  Sparkles, Copy, Loader2, RefreshCw, FileText, Pencil, Star, Search, ThumbsUp, ThumbsDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -130,6 +130,17 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
   const [meetingPrepBrief, setMeetingPrepBrief] = useState("");
   const [meetingPrepLoading, setMeetingPrepLoading] = useState(false);
   const [showMeetingPrepDialog, setShowMeetingPrepDialog] = useState(false);
+  // Research state
+  interface ResearchFinding {
+    title: string;
+    description: string;
+    signal_type: string;
+    relevance: string;
+    source: string;
+  }
+  const [researchFindings, setResearchFindings] = useState<ResearchFinding[]>([]);
+  const [researchLoading, setResearchLoading] = useState(false);
+  const [researchRan, setResearchRan] = useState(false);
 
   // Sync local state when prospect changes
   useEffect(() => {
@@ -401,6 +412,65 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
 </body></html>`);
     printWindow.document.close();
     setTimeout(() => { printWindow.print(); }, 300);
+  };
+
+  const runResearch = async () => {
+    if (!prospect) return;
+    setResearchLoading(true);
+    setResearchFindings([]);
+    setResearchRan(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke("research-account", {
+        body: {
+          companyName: prospect.name,
+          website: prospect.website,
+          industry: prospect.industry,
+          locationCount: prospect.locationCount,
+          contacts: (prospect.contacts || []).slice(0, 5).map(c => ({ name: c.name, title: c.title })),
+          competitor: prospect.competitor,
+        },
+      });
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
+      const findings = result?.findings || [];
+      setResearchFindings(findings);
+      if (findings.length === 0) {
+        toast("No new findings for this account", { description: "Try again later or research manually." });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Research failed";
+      toast.error(msg);
+    } finally {
+      setResearchLoading(false);
+    }
+  };
+
+  const keepFinding = async (finding: ResearchFinding) => {
+    if (!addSignal || !prospect) return;
+    const result = await addSignal({
+      prospect_id: prospect.id,
+      territory_id: territoryId || null,
+      signal_type: finding.signal_type,
+      opportunity_type: "Other",
+      title: finding.title,
+      description: finding.description,
+      relevance: finding.relevance,
+      source: finding.source,
+    });
+    if (result) {
+      setResearchFindings(prev => prev.filter(f => f.title !== finding.title));
+      toast.success("Signal saved");
+    }
+  };
+
+  const discardFinding = (finding: ResearchFinding) => {
+    setResearchFindings(prev => prev.filter(f => f.title !== finding.title));
+  };
+
+  const keepAllFindings = async () => {
+    for (const f of researchFindings) {
+      await keepFinding(f);
+    }
   };
 
   const inputClass = "w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 placeholder:text-muted-foreground transition-all";
@@ -793,6 +863,82 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
               />
             </div>
           )}
+
+          {/* Account Research */}
+          <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "175ms" }}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Account Research</h3>
+              <button
+                onClick={runResearch}
+                disabled={researchLoading}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+              >
+                {researchLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                {researchLoading ? "Researching..." : "Research"}
+              </button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">AI-powered search for news, leadership changes, and buying signals. Keep findings to save as signals.</p>
+
+            {researchLoading && (
+              <div className="flex items-center justify-center py-8">
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <span className="text-xs text-muted-foreground">Searching for intel on {prospect.name}...</span>
+                </div>
+              </div>
+            )}
+
+            {!researchLoading && researchFindings.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-semibold text-muted-foreground">{researchFindings.length} finding{researchFindings.length !== 1 ? "s" : ""}</span>
+                  <button onClick={keepAllFindings} className="text-[10px] font-semibold text-primary hover:underline">Keep All</button>
+                </div>
+                {researchFindings.map((finding, idx) => (
+                  <div key={idx} className="p-3 rounded-lg border border-border bg-muted/30 space-y-2 animate-fade-in-up" style={{ animationDelay: `${idx * 60}ms` }}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={cn(
+                            "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded",
+                            finding.relevance === "Hot" ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400" :
+                            finding.relevance === "Warm" ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" :
+                            "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                          )}>
+                            {finding.relevance}
+                          </span>
+                          <span className="text-[9px] text-muted-foreground">{finding.signal_type}</span>
+                        </div>
+                        <p className="text-xs font-semibold text-foreground leading-snug">{finding.title}</p>
+                        <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{finding.description}</p>
+                        <p className="text-[9px] text-muted-foreground/60 mt-1">via {finding.source}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1 border-t border-border/50">
+                      <button
+                        onClick={() => keepFinding(finding)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
+                      >
+                        <ThumbsUp className="w-3 h-3" /> Keep as Signal
+                      </button>
+                      <button
+                        onClick={() => discardFinding(finding)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-md text-muted-foreground hover:bg-muted transition-colors"
+                      >
+                        <ThumbsDown className="w-3 h-3" /> Discard
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!researchLoading && researchRan && researchFindings.length === 0 && (
+              <div className="text-center py-4">
+                <p className="text-xs text-muted-foreground">No new findings. Check back later or try a manual search.</p>
+              </div>
+            )}
+          </div>
 
           {/* AI Readiness */}
           <div className="animate-fade-in-up" style={{ animationDelay: "180ms" }}>
