@@ -989,24 +989,21 @@ export default function TerritoryPlanner() {
       )}
 
       {/* ===== NAVBAR ===== */}
-      <nav className="h-16 bg-background border-b border-gray-200 dark:border-border px-4 sm:px-8 flex items-center gap-4">
-        {/* Left: Logo + title */}
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0 shrink-0">
-          <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-8 sm:h-9 w-auto object-contain shrink-0" />
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight truncate gradient-text leading-tight">Territory Planner</h1>
-              <span className="hidden sm:inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">{data.length}</span>
-            </div>
-            <div className="text-xs text-muted-foreground hidden sm:block">
+      <nav className="bg-background border-b border-border">
+        {/* Top bar: Logo, territory, utilities, actions */}
+        <div className="h-14 px-4 sm:px-8 flex items-center gap-4">
+          {/* Left: Logo + territory */}
+          <div className="flex items-center gap-3 min-w-0 shrink-0">
+            <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-7 w-auto object-contain shrink-0" />
+            <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="text-border">/</span>
               {territories.length > 1 ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-1 hover:text-foreground transition-colors">
-                      <Users className="w-3 h-3" />
-                      <span className="truncate max-w-[200px]">{activeTerrObj?.name || "My Territory"}</span>
-                      <ChevronDown className="w-3 h-3" />
-                      {isReadOnly && <span className="text-[9px] bg-muted rounded px-1 ml-1">VIEW ONLY</span>}
+                    <button className="flex items-center gap-1.5 hover:text-foreground transition-colors font-medium">
+                      <span className="truncate max-w-[180px]">{activeTerrObj?.name || "My Territory"}</span>
+                      <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                      {isReadOnly && <span className="text-[9px] bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 rounded px-1.5 py-0.5 font-semibold uppercase">View Only</span>}
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-56 bg-popover border-border z-50">
@@ -1028,205 +1025,198 @@ export default function TerritoryPlanner() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <span>{activeTerrObj?.name || "My Territory"}</span>
+                <span className="font-medium">{activeTerrObj?.name || "My Territory"}</span>
               )}
+              <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground tabular-nums">{data.length}</span>
             </div>
           </div>
-        </div>
 
-        {/* Center: Nav tabs (desktop) */}
-        <div className="hidden md:flex items-center ml-auto">
-          <div className="flex items-center bg-muted rounded-lg p-1.5 gap-1">
-            <button
-              onClick={() => navigate("/today")}
-              className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold transition-all hover:bg-background hover:shadow-sm text-muted-foreground"
-            >
-              <CalendarDays className="w-4 h-4" />
-              Today
-            </button>
-            <button
-              onClick={() => navigate("/opportunities")}
-              className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold transition-all hover:bg-background hover:shadow-sm text-muted-foreground"
-            >
-              <DollarSign className="w-4 h-4" />
-              Pipeline
-            </button>
-            <button
-              onClick={() => navigate("/my-numbers")}
-              className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold transition-all hover:bg-background hover:shadow-sm text-muted-foreground"
-            >
-              <Target className="w-4 h-4" />
-              Quota & Attainment
-            </button>
-            <button
-              onClick={() => setShowEnrich(true)}
-              className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold transition-all hover:bg-background hover:shadow-sm text-muted-foreground"
-            >
-              <Sparkles className="w-4 h-4" />
-              Enrich
-            </button>
-          </div>
-        </div>
-
-        {/* Right section */}
-        <div className="flex items-center gap-2 shrink-0 md:ml-4">
-          {selected.size >= 2 && selected.size <= 3 && (
-            <Button variant="outline" size="sm" onClick={() => setShowCompare(true)} className="gap-1.5 hidden sm:inline-flex">
-              <GitCompare className="w-3.5 h-3.5" /> Compare ({selected.size})
-            </Button>
-          )}
-
-          {/* Icon buttons (desktop) — view toggle, theme, utilities */}
-          <div className="hidden md:flex items-center gap-1">
-            <div className="inline-flex items-center rounded-md border border-border overflow-hidden">
-              <Tooltip delayDuration={150}>
-                <TooltipTrigger asChild>
-                  <button onClick={() => setViewMode("table")} className={cn("h-8 w-8 flex items-center justify-center transition-colors", viewMode === "table" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-gray-100 dark:hover:bg-muted text-muted-foreground")}>
-                    <List className="h-4 w-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8}><p>Table view</p></TooltipContent>
-              </Tooltip>
-              <Tooltip delayDuration={150}>
-                <TooltipTrigger asChild>
-                  <button onClick={() => setViewMode("kanban")} className={cn("h-8 w-8 flex items-center justify-center transition-colors", viewMode === "kanban" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-gray-100 dark:hover:bg-muted text-muted-foreground")}>
-                    <LayoutGrid className="h-4 w-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8}><p>Kanban view</p></TooltipContent>
-              </Tooltip>
-            </div>
-            <Tooltip delayDuration={150}>
-              <TooltipTrigger asChild>
-                <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-gray-100 dark:hover:bg-muted transition-colors">
-                  {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={8}><p>{theme === "dark" ? "Light mode" : "Dark mode"}</p></TooltipContent>
-            </Tooltip>
-            <Tooltip delayDuration={150}>
-              <TooltipTrigger asChild>
-                <button onClick={() => { setResetInput(""); setResetDialogOpen(true); }} className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-gray-100 dark:hover:bg-muted transition-colors">
-                  <RotateCcw className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={8}><p>Reset data</p></TooltipContent>
-            </Tooltip>
-            <Tooltip delayDuration={150}>
-              <TooltipTrigger asChild>
-                <button onClick={() => setShowArchive(true)} className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-gray-100 dark:hover:bg-muted transition-colors relative">
-                  <Archive className="h-4 w-4" />
-                  {archivedData.length > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">{archivedData.length}</span>
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={8}><p>Archive</p></TooltipContent>
-            </Tooltip>
-            <Tooltip delayDuration={150}>
-              <TooltipTrigger asChild>
-                <button onClick={signOut} className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-gray-100 dark:hover:bg-muted transition-colors">
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={8}><p>Sign out</p></TooltipContent>
-            </Tooltip>
-          </div>
-
-          {/* Draft Emails button */}
-          <Button variant="outline" onClick={() => setShowContactPicker(true)} className="gap-2 hidden sm:inline-flex">
-            <Mail className="w-4 h-4" /> Draft Emails
-          </Button>
-
-          {/* Share Territory button */}
-          <Button variant="outline" onClick={() => setShowShare(true)} className="gap-2 hidden md:inline-flex">
-            <Share2 className="w-4 h-4" /> Share
-          </Button>
-
-          {/* + Add Data dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="gap-2 bg-primary hover:bg-primary/90 font-semibold px-5">
-                <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Add Data</span><span className="sm:hidden">Add</span>
-                <ChevronDown className="w-3.5 h-3.5 ml-0.5 opacity-70" />
+          {/* Right: Utilities + action buttons */}
+          <div className="flex items-center gap-2 ml-auto shrink-0">
+            {selected.size >= 2 && selected.size <= 3 && (
+              <Button variant="outline" size="sm" onClick={() => setShowCompare(true)} className="gap-1.5 hidden sm:inline-flex">
+                <GitCompare className="w-3.5 h-3.5" /> Compare ({selected.size})
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px] z-50 p-1">
-              <DropdownMenuItem onClick={() => setShowAdd(true)} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
-                <Building2 className="w-4 h-4 text-muted-foreground shrink-0" /> Add Account
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {/* TODO: add single contact flow */}} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
-                <Users className="w-4 h-4 text-muted-foreground shrink-0" /> Add Contact
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="my-1" />
-              <DropdownMenuItem onClick={() => setShowUpload(true)} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
-                <Upload className="w-4 h-4 text-muted-foreground shrink-0" /> Upload CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowPasteImport(true)} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
-                <ClipboardPaste className="w-4 h-4 text-muted-foreground shrink-0" /> Paste Import
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            )}
 
-          {/* Mobile menu */}
-          <div className="md:hidden">
+            {/* Compact utility icons (desktop) */}
+            <div className="hidden md:flex items-center gap-0.5">
+              <div className="inline-flex items-center rounded-md border border-border overflow-hidden mr-1">
+                <Tooltip delayDuration={150}>
+                  <TooltipTrigger asChild>
+                    <button onClick={() => setViewMode("table")} className={cn("h-7 w-7 flex items-center justify-center transition-colors", viewMode === "table" ? "bg-foreground text-background" : "bg-background hover:bg-muted text-muted-foreground")}>
+                      <List className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={8}><p>Table view</p></TooltipContent>
+                </Tooltip>
+                <Tooltip delayDuration={150}>
+                  <TooltipTrigger asChild>
+                    <button onClick={() => setViewMode("kanban")} className={cn("h-7 w-7 flex items-center justify-center transition-colors", viewMode === "kanban" ? "bg-foreground text-background" : "bg-background hover:bg-muted text-muted-foreground")}>
+                      <LayoutGrid className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={8}><p>Kanban view</p></TooltipContent>
+                </Tooltip>
+              </div>
+              <Tooltip delayDuration={150}>
+                <TooltipTrigger asChild>
+                  <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8}><p>{theme === "dark" ? "Light mode" : "Dark mode"}</p></TooltipContent>
+              </Tooltip>
+              <Tooltip delayDuration={150}>
+                <TooltipTrigger asChild>
+                  <button onClick={() => setShowArchive(true)} className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors relative">
+                    <Archive className="h-3.5 w-3.5" />
+                    {archivedData.length > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full flex items-center justify-center">{archivedData.length}</span>
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8}><p>Archive</p></TooltipContent>
+              </Tooltip>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 z-50">
+                  <DropdownMenuItem onClick={() => { setResetInput(""); setResetDialogOpen(true); }} className="gap-2 text-sm">
+                    <RotateCcw className="w-3.5 h-3.5" /> Reset Data
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={signOut} className="gap-2 text-sm text-destructive">
+                    <LogOut className="w-3.5 h-3.5" /> Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <div className="hidden md:block w-px h-6 bg-border mx-1" />
+
+            {/* Draft Emails */}
+            <Button variant="outline" size="sm" onClick={() => setShowContactPicker(true)} className="gap-1.5 hidden sm:inline-flex h-8 text-xs font-medium">
+              <Mail className="w-3.5 h-3.5" /> Draft Emails
+            </Button>
+
+            {/* Share */}
+            <Button variant="outline" size="sm" onClick={() => setShowShare(true)} className="gap-1.5 hidden md:inline-flex h-8 text-xs font-medium">
+              <Share2 className="w-3.5 h-3.5" /> Share
+            </Button>
+
+            {/* + Add Data dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="h-9 w-9 flex items-center justify-center rounded-md border border-border bg-background hover:bg-muted transition-colors">
-                  <Menu className="w-4 h-4" />
-                </button>
+                <Button size="sm" className="gap-1.5 bg-primary hover:bg-primary/90 font-semibold h-8 px-3.5 text-xs">
+                  <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Add Data</span><span className="sm:hidden">Add</span>
+                  <ChevronDown className="w-3 h-3 ml-0.5 opacity-70" />
+                </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[220px] z-50 p-1">
-                <DropdownMenuItem onClick={() => navigate("/today")} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  <CalendarDays className="w-4 h-4 text-muted-foreground" /> Today
+              <DropdownMenuContent align="end" className="w-[200px] z-50 p-1">
+                <DropdownMenuItem onClick={() => setShowAdd(true)} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
+                  <Building2 className="w-4 h-4 text-muted-foreground shrink-0" /> Add Account
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/opportunities")} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  <DollarSign className="w-4 h-4 text-muted-foreground" /> Pipeline
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/my-numbers")} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  <Target className="w-4 h-4 text-muted-foreground" /> Quota & Attainment
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowEnrich(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  <Sparkles className="w-4 h-4 text-muted-foreground" /> Enrich
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowContactPicker(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  <Mail className="w-4 h-4 text-muted-foreground" /> Draft Emails
+                <DropdownMenuItem onClick={() => {/* TODO: add single contact flow */}} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
+                  <Users className="w-4 h-4 text-muted-foreground shrink-0" /> Add Contact
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-1" />
-                <DropdownMenuItem onClick={() => setShowAdd(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  <Building2 className="w-4 h-4 text-muted-foreground" /> Add Account
+                <DropdownMenuItem onClick={() => setShowUpload(true)} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
+                  <Upload className="w-4 h-4 text-muted-foreground shrink-0" /> Upload CSV
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowUpload(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  <Upload className="w-4 h-4 text-muted-foreground" /> Upload CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowPasteImport(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  <ClipboardPaste className="w-4 h-4 text-muted-foreground" /> Paste Import
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowShare(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  <Share2 className="w-4 h-4 text-muted-foreground" /> Share Territory
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="my-1" />
-                <DropdownMenuItem onClick={() => setViewMode(viewMode === "table" ? "kanban" : "table")} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  {viewMode === "table" ? <LayoutGrid className="w-4 h-4 text-muted-foreground" /> : <List className="w-4 h-4 text-muted-foreground" />}
-                  {viewMode === "table" ? "Kanban View" : "Table View"}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  {theme === "dark" ? <Sun className="w-4 h-4 text-muted-foreground" /> : <Moon className="w-4 h-4 text-muted-foreground" />}
-                  {theme === "dark" ? "Light Mode" : "Dark Mode"}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="my-1" />
-                <DropdownMenuItem onClick={() => setShowArchive(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
-                  <Archive className="w-4 h-4 text-muted-foreground" /> Archive {archivedData.length > 0 && `(${archivedData.length})`}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { setResetInput(""); setResetDialogOpen(true); }} className="text-destructive gap-3 px-4 py-2 rounded-md text-sm">
-                  <RotateCcw className="w-4 h-4" /> Reset Data
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={signOut} className="text-destructive gap-3 px-4 py-2 rounded-md text-sm">
-                  <LogOut className="w-4 h-4" /> Sign Out
+                <DropdownMenuItem onClick={() => setShowPasteImport(true)} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
+                  <ClipboardPaste className="w-4 h-4 text-muted-foreground shrink-0" /> Paste Import
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Mobile menu */}
+            <div className="md:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="h-8 w-8 flex items-center justify-center rounded-md border border-border bg-background hover:bg-muted transition-colors">
+                    <Menu className="w-4 h-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[220px] z-50 p-1">
+                  <DropdownMenuItem onClick={() => navigate("/today")} className="gap-3 px-4 py-2 rounded-md text-sm">
+                    <CalendarDays className="w-4 h-4 text-muted-foreground" /> Today
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/opportunities")} className="gap-3 px-4 py-2 rounded-md text-sm">
+                    <DollarSign className="w-4 h-4 text-muted-foreground" /> Pipeline
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/my-numbers")} className="gap-3 px-4 py-2 rounded-md text-sm">
+                    <Target className="w-4 h-4 text-muted-foreground" /> Quota
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowEnrich(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
+                    <Sparkles className="w-4 h-4 text-muted-foreground" /> Enrich
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowContactPicker(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
+                    <Mail className="w-4 h-4 text-muted-foreground" /> Draft Emails
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="my-1" />
+                  <DropdownMenuItem onClick={() => setShowAdd(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
+                    <Building2 className="w-4 h-4 text-muted-foreground" /> Add Account
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowUpload(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
+                    <Upload className="w-4 h-4 text-muted-foreground" /> Upload CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowPasteImport(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
+                    <ClipboardPaste className="w-4 h-4 text-muted-foreground" /> Paste Import
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowShare(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
+                    <Share2 className="w-4 h-4 text-muted-foreground" /> Share Territory
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="my-1" />
+                  <DropdownMenuItem onClick={() => setViewMode(viewMode === "table" ? "kanban" : "table")} className="gap-3 px-4 py-2 rounded-md text-sm">
+                    {viewMode === "table" ? <LayoutGrid className="w-4 h-4 text-muted-foreground" /> : <List className="w-4 h-4 text-muted-foreground" />}
+                    {viewMode === "table" ? "Kanban View" : "Table View"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="gap-3 px-4 py-2 rounded-md text-sm">
+                    {theme === "dark" ? <Sun className="w-4 h-4 text-muted-foreground" /> : <Moon className="w-4 h-4 text-muted-foreground" />}
+                    {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="my-1" />
+                  <DropdownMenuItem onClick={() => setShowArchive(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
+                    <Archive className="w-4 h-4 text-muted-foreground" /> Archive {archivedData.length > 0 && `(${archivedData.length})`}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setResetInput(""); setResetDialogOpen(true); }} className="text-destructive gap-3 px-4 py-2 rounded-md text-sm">
+                    <RotateCcw className="w-4 h-4" /> Reset Data
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={signOut} className="text-destructive gap-3 px-4 py-2 rounded-md text-sm">
+                    <LogOut className="w-4 h-4" /> Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
+        </div>
+
+        {/* Bottom row: Navigation tabs — clean underline style like Linear/Notion */}
+        <div className="hidden md:flex items-center px-4 sm:px-8 -mb-px">
+          {[
+            { label: "Accounts", icon: Building2, onClick: () => {}, active: true },
+            { label: "Today", icon: CalendarDays, onClick: () => navigate("/today"), active: false },
+            { label: "Pipeline", icon: DollarSign, onClick: () => navigate("/opportunities"), active: false },
+            { label: "Quota", icon: Target, onClick: () => navigate("/my-numbers"), active: false },
+            { label: "Enrich", icon: Sparkles, onClick: () => setShowEnrich(true), active: false },
+          ].map((tab) => (
+            <button
+              key={tab.label}
+              onClick={tab.onClick}
+              className={cn(
+                "inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px",
+                tab.active
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+              )}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          ))}
         </div>
       </nav>
 
