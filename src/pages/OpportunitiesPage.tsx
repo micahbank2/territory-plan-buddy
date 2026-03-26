@@ -5,9 +5,9 @@ import { useTerritories } from "@/hooks/useTerritories";
 import { useOpportunities, OPP_TYPES, OPP_STAGES, type Opportunity } from "@/hooks/useOpportunities";
 import { useProspects } from "@/hooks/useProspects";
 import { OpportunitySheet } from "@/components/OpportunitySheet";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -23,6 +23,23 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { ArrowLeft, Plus, Search, DollarSign, ArrowUp, ArrowDown, ArrowUpDown, X, Trash2, CalendarIcon, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+function htmlToPreviewText(html: string) {
+  if (!html) return "";
+
+  if (typeof window === "undefined") {
+    return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  }
+
+  const container = document.createElement("div");
+  container.innerHTML = html;
+
+  container.querySelectorAll("li").forEach((item) => {
+    item.prepend("• ");
+  });
+
+  return (container.textContent || "").replace(/\s+/g, " ").trim();
+}
 
 const STAGE_WEIGHTS: Record<string, number> = {
   "Develop": 0.10,
@@ -527,9 +544,11 @@ export default function OpportunitiesPage() {
                                 {opp.close_date || "—"}
                               </TableCell>
                               {/* Notes / Next Steps - truncated to 2 lines */}
-                              <TableCell className="max-w-[250px]">
-                                {opp.notes ? (
-                                  <p className="text-sm text-foreground/80 line-clamp-2">{opp.notes}</p>
+                               <TableCell className="max-w-[250px]">
+                                 {opp.notes ? (
+                                   <p className="text-sm text-foreground/80 line-clamp-2 whitespace-pre-wrap break-words">
+                                     {htmlToPreviewText(opp.notes)}
+                                   </p>
                                 ) : (
                                   <span className="text-sm text-muted-foreground">—</span>
                                 )}
@@ -670,11 +689,11 @@ export default function OpportunitiesPage() {
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Notes / Next Steps</label>
-              <Textarea
-                className="resize-y"
+              <RichTextEditor
+                content={form.notes}
+                onChange={(html) => setForm(f => ({ ...f, notes: html }))}
                 placeholder="Add notes..."
-                value={form.notes}
-                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                minHeight="120px"
               />
             </div>
           </div>
