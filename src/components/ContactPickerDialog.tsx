@@ -300,7 +300,7 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
               </span>
             </div>
 
-            <ScrollArea className="flex-1 min-h-0 px-6" style={{ maxHeight: "55vh" }}>
+            <ScrollArea className="flex-1 min-h-0 px-6">
               <pre className="text-xs text-foreground whitespace-pre-wrap font-mono leading-relaxed bg-muted/30 rounded-lg p-4 border border-border">
                 {promptText}
               </pre>
