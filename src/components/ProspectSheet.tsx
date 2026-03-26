@@ -13,6 +13,7 @@ import {
   type Prospect, type Contact, type InteractionLog, type NoteEntry, type Task,
 } from "@/data/prospects";
 import { RoleBadge, StrengthDot } from "@/components/ContactBadges";
+import { SafeHTML } from "@/components/SafeHTML";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { AIReadinessCard } from "@/components/AIReadinessCard";
 import { SignalsSection } from "@/components/SignalsSection";
@@ -719,7 +720,7 @@ Keep it concise and actionable. Use bullet points. No fluff.`;
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {[...(prospect.noteLog || [])].reverse().map(note => (
                   <div key={note.id} className="group p-2.5 rounded-lg bg-muted/50 border border-border relative">
-                     <div className="text-sm text-foreground pr-6 prose prose-sm dark:prose-invert max-w-none [&_p]:my-0.5" dangerouslySetInnerHTML={{ __html: note.text }} />
+                     <SafeHTML html={note.text} className="text-sm text-foreground pr-6 prose prose-sm dark:prose-invert max-w-none [&_p]:my-0.5" />
                      <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><Clock className="w-3 h-3" />{relativeTime(note.timestamp)}</span>
                     {deleteNote && (
                       <button
