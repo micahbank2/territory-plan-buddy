@@ -125,9 +125,16 @@ function KanbanCard({ opp, prospectMap, onClick, isDragOverlay }: {
 
       {/* ACV + type */}
       <div className="flex items-center justify-between gap-2 mb-1.5">
-        <span className="text-sm font-mono font-bold text-foreground">
-          ${(opp.potential_value || 0).toLocaleString()}
-        </span>
+        <div>
+          <span className="text-sm font-mono font-bold text-foreground">
+            ${(opp.potential_value || 0).toLocaleString()}
+          </span>
+          {opp.incremental_acv != null && opp.incremental_acv > 0 && (
+            <span className="text-[10px] font-mono text-primary ml-1.5">
+              +${opp.incremental_acv.toLocaleString()}
+            </span>
+          )}
+        </div>
         <Badge className={`${typeColors[opp.type] || "bg-muted text-foreground"} border-0 text-[10px] px-1.5 py-0`}>
           {opp.type}
         </Badge>
