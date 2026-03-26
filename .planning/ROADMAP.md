@@ -29,7 +29,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can archive a prospect from the main list and it disappears; an "Archived" view shows archived prospects with Restore and Permanently Delete actions
   4. Anthropic API calls route through a Supabase Edge Function — no VITE_ANTHROPIC_API_KEY in the client bundle
   5. HTML rendered in notes fields is sanitized through DOMPurify before display
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Test scaffolds for all 11 phase requirements
+- [ ] 01-02-PLAN.md — Error rollback + direct sub-collection CRUD (DATA-01–04)
+- [ ] 01-03-PLAN.md — XSS sanitization + API key migration to Edge Function (SEC-01–03)
+- [ ] 01-04-PLAN.md — Soft delete + archive view with Restore and Permanently Delete (DATA-05–08)
 
 ### Phase 2: TanStack Query Migration
 **Goal**: Data fetching and mutations use TanStack Query with proper cache, rollback, and on-demand sub-collection loading
