@@ -35,7 +35,7 @@ Plans:
 - [x] 01-01-PLAN.md — Test scaffolds for all 11 phase requirements
 - [x] 01-02-PLAN.md — Error rollback + direct sub-collection CRUD (DATA-01–04)
 - [x] 01-03-PLAN.md — XSS sanitization + API key migration to Edge Function (SEC-01–03)
-- [ ] 01-04-PLAN.md — Soft delete + archive view with Restore and Permanently Delete (DATA-05–08)
+- [x] 01-04-PLAN.md — Soft delete + archive view with Restore and Permanently Delete (DATA-05–08)
 
 ### Phase 2: TanStack Query Migration
 **Goal**: Data fetching and mutations use TanStack Query with proper cache, rollback, and on-demand sub-collection loading
@@ -77,7 +77,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Integrity & Security | 0/? | Not started | - |
+| 1. Data Integrity & Security | 4/4 | Complete (checkpoint pending) | 2026-03-26 |
 | 2. TanStack Query Migration | 0/? | Not started | - |
 | 3. Component Decomposition & UX Polish | 0/? | Not started | - |
 | 4. AI Capabilities | 0/? | Not started | - |

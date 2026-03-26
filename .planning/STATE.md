@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-data-integrity-security 01-03-PLAN.md
-last_updated: "2026-03-26T17:04:49.622Z"
+stopped_at: Completed 01-data-integrity-security 01-04-PLAN.md (checkpoint pending: Supabase schema change)
+last_updated: "2026-03-26T17:05:40.000Z"
 last_activity: 2026-03-26
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 4
-  completed_plans: 3
-  percent: 0
+  completed_plans: 4
+  percent: 25
 ---
 
 # Project State
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 ## Current Position
 
 Phase: 01 (data-integrity-security) — EXECUTING
-Plan: 4 of 4
-Status: Ready to execute
+Plan: 4 of 4 (COMPLETE — checkpoint pending)
+Status: Awaiting schema change (Supabase dashboard action)
 Last activity: 2026-03-26
 
 Progress: [░░░░░░░░░░] 0%
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-data-integrity-security P01 | 78s | 2 tasks | 4 files |
 | Phase 01-data-integrity-security P02 | 21min | 2 tasks | 7 files |
 | Phase 01-data-integrity-security P03 | 143s | 2 tasks | 5 files |
+| Phase 01-data-integrity-security P04 | 170s | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,7 @@ Recent decisions affecting current work:
 - [Phase 01-data-integrity-security]: Rollback pattern: snapshot before optimistic update, restore on DB error + toast.error — no silent data divergence
 - [Phase 01-data-integrity-security]: Direct single-row CRUD for interactions/notes/tasks replaces delete-all + re-insert; callers migrated in ProspectSheet and ProspectPage
 - [Phase 01-data-integrity-security]: Use DOMPurify allowlist for XSS prevention; meeting-prep routed through Edge Function to remove VITE_ANTHROPIC_API_KEY from client bundle
+- [Phase 01-data-integrity-security P04]: deleted_at filter in app queries only (.is('deleted_at', null)) — NOT in RLS policy to avoid WITH CHECK violation on soft-delete UPDATE
 
 ### Pending Todos
 
@@ -83,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T17:04:49.619Z
-Stopped at: Completed 01-data-integrity-security 01-03-PLAN.md
+Last session: 2026-03-26T17:05:40.000Z
+Stopped at: Completed 01-data-integrity-security 01-04-PLAN.md (checkpoint: add deleted_at column to Supabase prospects table)
 Resume file: None
