@@ -1,57 +1,40 @@
 
 
-## Plan: Fix RichTextEditor + Convert Account Panel to Center Dialog
+## Plan: Add Incremental ACV Field to Opportunities
 
-### Two Changes
+### What
+Add an optional "Incremental ACV" field to deals. Example: a renewal has $200K ACV but the customer currently pays $150K, so the incremental value is $50K. This field is not required — sometimes incremental equals the full ACV or isn't relevant.
 
-**1. Fix RichTextEditor (tiptap v3 compatibility)**
+### Changes
 
-The project uses `@tiptap/react` v3.20.5, which changed defaults from v2:
-- `shouldRerenderOnTransaction` now defaults to `false`, so toolbar button active states don't update and the editor appears "broken"
-- `setContent` signature changed in v3
+**1. Database migration** — Add `incremental_acv` column to `opportunities` table:
+```sql
+ALTER TABLE public.opportunities ADD COLUMN incremental_acv integer DEFAULT NULL;
+```
+Nullable, no default value forced — keeps it optional.
 
-Fix in `RichTextEditor.tsx`:
-- Add `shouldRerenderOnTransaction: true` to the `useEditor` config
-- This ensures the toolbar highlights (bold, italic, list active states) update correctly on every transaction
+**2. `src/hooks/useOpportunities.ts`**
+- Add `incremental_acv: number | null` to the `Opportunity` interface
+- Add `"incremental_acv"` to the `DB_FIELDS` set
+- Add it to the SELECT column list in `load()`
 
-**2. Convert ProspectSheet from side panel to center dialog**
+**3. `src/pages/OpportunitiesPage.tsx`** (Add Deal form + table)
+- Add `incremental_acv: null` to `emptyOpp`
+- Add an "Incremental ACV ($)" input field next to the existing ACV field in the Add Deal dialog (optional, no validation)
+- Add an "Incremental" column in the table next to ACV — show value if set, dash or blank if null
+- Include incremental ACV in the footer totals row
 
-Currently uses `<Sheet side="right">` (slide-over panel). Change to a `<Dialog>` that hovers centered over the page.
+**4. `src/components/OpportunitySheet.tsx`** (Deal detail panel)
+- Add local state `localIncrementalACV` mirroring the existing `localACV` pattern
+- Add an editable "Incremental ACV" field below the ACV field
+- Show incremental ACV in the header summary area next to ACV when set
+- Wire up `commitField` and `saveAll` to handle `incremental_acv`
 
-Changes in `ProspectSheet.tsx`:
-- Replace `Sheet`/`SheetContent`/`SheetHeader`/`SheetTitle` imports with `Dialog`/`DialogContent`/`DialogHeader`/`DialogTitle` (already imported for sub-dialogs)
-- Remove the `Drawer` mobile path — Dialog works on both
-- Set `DialogContent` to a large size: `max-w-4xl max-h-[90vh] overflow-y-auto p-0`
-- Keep the existing `sheetContent` JSX as the dialog body — no layout changes needed inside
-- Update TerritoryPlanner's `<ProspectSheet>` usage if needed (props stay the same)
+**5. `src/components/OpportunityKanban.tsx`** (Kanban cards)
+- Show incremental ACV on cards when set, as a smaller secondary value below the main ACV
 
 ### Technical Details
-
-**RichTextEditor.tsx** — add one line to `useEditor`:
-```typescript
-const editor = useEditor({
-  shouldRerenderOnTransaction: true,
-  extensions: [...],
-  ...
-});
-```
-
-**ProspectSheet.tsx** — bottom of file changes from:
-```typescript
-// Sheet/Drawer wrapper
-if (isMobile) { return <Drawer>...</Drawer> }
-return <Sheet><SheetContent side="right">...</SheetContent></Sheet>
-```
-to:
-```typescript
-return (
-  <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
-      {sheetContent}
-    </DialogContent>
-  </Dialog>
-);
-```
-
-Remove unused Sheet/Drawer imports. DialogContent already has a close button built in.
+- The field follows the exact same pattern as `potential_value`: integer, nullable, sanitized via `DB_FIELDS`, committed via `commitField`
+- No form validation needed — blank/empty means null, parsed via `parseInt() || null`
+- In `sanitizeForDb`, treat `incremental_acv` like `close_date`: omit if falsy
 
