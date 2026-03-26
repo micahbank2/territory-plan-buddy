@@ -82,7 +82,7 @@ function SheetLogoImg({ website, size = 32, customLogo }: { website?: string; si
 
 export function ProspectSheet({ prospectId, onClose, data, update, remove, deleteNote, addContact: addContactDirect, updateContact: updateContactDirect, removeContact: removeContactDirect, addInteraction: addInteractionDirect, removeInteraction: removeInteractionDirect, addNote: addNoteDirect, addTaskDirect, removeTaskDirect, signals = [], addSignal, removeSignal, territoryId }: ProspectSheetProps) {
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
+  
   const prospect = useMemo(() => data.find(p => p.id === prospectId), [data, prospectId]);
   const prospectSignals = useMemo(() => signals.filter(s => s.prospect_id === prospectId), [signals, prospectId]);
 
@@ -439,9 +439,9 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                   prospect.tier === "Tier 1" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
                 )}>{prospect.tier === "Tier 1" ? "⭐" : prospect.tier === "Tier 2" ? "🥈" : "🥉"} {prospect.tier}</span>}
               </div>
-              <SheetDescription className="text-xs mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {prospect.website && <a href={normalizeUrl(prospect.website)} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">{prospect.website} <ExternalLink className="w-3 h-3" /></a>}
-              </SheetDescription>
+              </p>
             </div>
             <TooltipProvider>
               <Tooltip>
