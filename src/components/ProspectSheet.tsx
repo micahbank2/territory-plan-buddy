@@ -13,6 +13,7 @@ import {
   type Prospect, type Contact, type InteractionLog, type NoteEntry, type Task,
 } from "@/data/prospects";
 import { RoleBadge, StrengthDot } from "@/components/ContactBadges";
+import { SafeHTML } from "@/components/SafeHTML";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { AIReadinessCard } from "@/components/AIReadinessCard";
 import { SignalsSection } from "@/components/SignalsSection";
@@ -339,85 +340,26 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     setShowMeetingPrepDialog(true);
     setMeetingPrepBrief("");
     try {
-      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-      if (!apiKey) throw new Error("VITE_ANTHROPIC_API_KEY is not set. Add it to your .env file.");
-
-      const contactLines = (prospect.contacts || [])
-        .map(c => `- ${c.name}${c.title ? ` (${c.title})` : ""}${c.role && c.role !== "Unknown" ? ` — Role: ${c.role}` : ""}${c.relationshipStrength && c.relationshipStrength !== "Unknown" ? `, Relationship: ${c.relationshipStrength}` : ""}${c.notes ? ` | Notes: ${c.notes}` : ""}`)
-        .join("\n") || "No contacts on file";
-
-      const interactionLines = (prospect.interactions || [])
-        .slice(-10).reverse()
-        .map(i => `- ${i.date}: ${i.type}${i.notes ? ` — "${i.notes}"` : ""}`)
-        .join("\n") || "No interactions logged";
-
-      const taskLines = (prospect.tasks || [])
-        .map(t => `- ${t.text}${t.dueDate ? ` (due: ${t.dueDate})` : ""}`)
-        .join("\n") || "No open tasks";
-
-      const noteLines = (prospect.noteLog || [])
-        .slice(-5).reverse()
-        .map(n => `- ${n.text}`)
-        .join("\n") || "No notes";
-
-      const userPrompt = `You are helping a Senior AE at Yext prepare for a meeting with a multi-location brand prospect. Generate a one-page meeting prep brief.
-
-ACCOUNT DATA:
-- Company: ${prospect.name}
-- Website: ${prospect.website || "unknown"}
-- Industry: ${prospect.industry || "unknown"}
-- Location count: ${prospect.locationCount ?? "unknown"}
-- Tier: ${prospect.tier || "untiered"}
-- Priority: ${prospect.priority || "none"}
-- Current competitor/solution: ${prospect.competitor || "none known"}
-- Account score: ${score ?? "N/A"}/100
-
-CONTACTS:
-${contactLines}
-
-RECENT INTERACTIONS (newest first):
-${interactionLines}
-
-OPEN TASKS:
-${taskLines}
-
-NOTES:
-${noteLines}
-
-Generate the brief with these sections:
-1. **Situation Summary** — 2-3 sentences on who they are, where they stand, and why we're meeting
-2. **Key Contacts & Roles** — Who matters, their role in the deal, relationship status
-3. **Open Items & Risks** — Overdue tasks, gaps (missing decision maker?), competitive threats
-4. **Recommended Talking Points** — 3-5 specific, insight-led points to drive the conversation. Position Yext around AI search visibility, multi-location brand consistency, and local SEO at scale.
-5. **Suggested Ask** — The one thing to close on in this meeting (next step, intro, demo, etc.)
-
-Keep it concise and actionable. Use bullet points. No fluff.`;
-
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
+      const { data: result, error } = await supabase.functions.invoke("meeting-prep", {
+        body: {
+          name: prospect.name,
+          website: prospect.website,
+          industry: prospect.industry,
+          locationCount: prospect.locationCount,
+          tier: prospect.tier,
+          priority: prospect.priority,
+          competitor: prospect.competitor,
+          score,
+          contacts: prospect.contacts,
+          interactions: prospect.interactions,
+          tasks: prospect.tasks,
+          notes: prospect.noteLog,
         },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1024,
-          system: "You are an elite B2B enterprise sales strategist. Generate concise, actionable meeting prep briefs that help AEs walk into meetings prepared and confident.",
-          messages: [{ role: "user", content: userPrompt }],
-        }),
       });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error("[MeetingPrep] API error:", response.status, errText);
-        throw new Error(`Anthropic API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const text = data.content?.[0]?.text?.trim();
-      if (!text) throw new Error("Empty response from Anthropic API");
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
+      const text = result?.brief;
+      if (!text) throw new Error("Empty response from meeting prep");
       setMeetingPrepBrief(text);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to generate meeting prep";
@@ -717,7 +659,7 @@ Keep it concise and actionable. Use bullet points. No fluff.`;
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {[...(prospect.noteLog || [])].reverse().map(note => (
                   <div key={note.id} className="group p-2.5 rounded-lg bg-muted/50 border border-border relative">
-                     <div className="text-sm text-foreground pr-6 prose prose-sm dark:prose-invert max-w-none [&_p]:my-0.5" dangerouslySetInnerHTML={{ __html: note.text }} />
+                     <SafeHTML html={note.text} className="text-sm text-foreground pr-6 prose prose-sm dark:prose-invert max-w-none [&_p]:my-0.5" />
                      <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><Clock className="w-3 h-3" />{relativeTime(note.timestamp)}</span>
                     {deleteNote && (
                       <button

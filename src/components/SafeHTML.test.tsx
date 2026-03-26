@@ -1,12 +1,21 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
-
-// SafeHTML component does not exist yet — this import will fail until Plan 03 creates it.
-// import { SafeHTML } from "./SafeHTML";
+import { SafeHTML } from "./SafeHTML";
 
 describe("SafeHTML (SEC-03)", () => {
-  it.todo("strips XSS payload: <img src=x onerror=alert(1)> renders with onerror removed");
-  it.todo("preserves safe tags: <strong>, <em>, <p>, <br>, <ul>, <li> are kept");
-  it.todo("strips javascript: href links");
-  it.todo("renders empty string without throwing");
+  it("strips XSS payload: onerror attribute removed from img tag", () => {
+    const { container } = render(<SafeHTML html='<img src="x" onerror="alert(1)">' />);
+    expect(container.innerHTML).not.toContain("onerror");
+  });
+  it("preserves safe tags: strong is kept", () => {
+    const { container } = render(<SafeHTML html="<strong>bold</strong>" />);
+    expect(container.innerHTML).toContain("<strong>bold</strong>");
+  });
+  it("strips javascript: href", () => {
+    const { container } = render(<SafeHTML html='<a href="javascript:alert(1)">link</a>' />);
+    expect(container.innerHTML).not.toContain("javascript:");
+  });
+  it("renders empty string without throwing", () => {
+    expect(() => render(<SafeHTML html="" />)).not.toThrow();
+  });
 });

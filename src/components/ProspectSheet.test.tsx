@@ -1,15 +1,15 @@
-import { vi, describe, it } from "vitest";
+import { describe, it, expect } from "vitest";
+import * as fs from "fs";
+import * as path from "path";
 
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: {
-    from: vi.fn(),
-    functions: { invoke: vi.fn().mockResolvedValue({ data: { brief: "test brief" }, error: null }) },
-  },
-}));
-vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ user: { id: "u1" } }) }));
-vi.mock("react-router-dom", () => ({ useNavigate: () => vi.fn() }));
-vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
-
-describe("ProspectSheet (SEC-01)", () => {
-  it.todo("generateMeetingPrep calls supabase.functions.invoke('meeting-prep') not direct Anthropic URL");
+describe("ProspectSheet (SEC-01, SEC-02)", () => {
+  it("generateMeetingPrep calls functions.invoke('meeting-prep') not direct fetch", () => {
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "ProspectSheet.tsx"),
+      "utf-8"
+    );
+    expect(source).not.toContain("api.anthropic.com");
+    expect(source).not.toContain("VITE_ANTHROPIC_API_KEY");
+    expect(source).toContain('supabase.functions.invoke("meeting-prep"');
+  });
 });
