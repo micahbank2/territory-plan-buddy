@@ -619,7 +619,24 @@ export default function TerritoryPlanner() {
         return aEarliest.localeCompare(bEarliest);
       })
       .slice(0, 8);
-    return { untouched, stale, prospectTasks };
+    // Accounts with contacts but missing key roles (Champion or Decision Maker)
+    const missingCoverage = data
+      .filter((p) => {
+        const roles = (p.contacts || []).map((c) => c.role);
+        const hasChampion = roles.includes("Champion");
+        const hasDM = roles.includes("Decision Maker");
+        return (p.contacts?.length || 0) > 0 && (!hasChampion || !hasDM);
+      })
+      .map((p) => {
+        const roles = (p.contacts || []).map((c) => c.role);
+        const missing: string[] = [];
+        if (!roles.includes("Champion")) missing.push("Champion");
+        if (!roles.includes("Decision Maker")) missing.push("Decision Maker");
+        return { ...p, score: scoreProspect(p), missingRoles: missing };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+    return { untouched, stale, prospectTasks, missingCoverage };
   }, [data]);
 
   const stats = useMemo(() => {
@@ -1221,48 +1238,12 @@ export default function TerritoryPlanner() {
       </nav>
 
       <div className="px-4 sm:px-8 pt-6 pb-2">
-        {/* Pipeline Summary Bar */}
-        {pipelineTotal > 0 && (
-          <div className="mb-6 animate-fade-in-up">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pipeline</span>
-            </div>
-            <div className="flex h-4 rounded-full overflow-hidden bg-muted/50 border border-border" style={{ boxShadow: '0 0 12px -2px hsl(236 64% 57% / 0.15)' }}>
-              {pipelineCounts.map((s) => (
-                <div
-                  key={s.stage}
-                  className="pipeline-segment"
-                  style={{ flex: s.count, backgroundColor: s.color }}
-                  title={`${s.stage}: ${s.count}`}
-                  onClick={() => { clr(); setFOutreach([s.stage]); }}
-                />
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-3 mt-2">
-              {pipelineCounts.map((s) => (
-                <button
-                  key={s.stage}
-                  className="flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => { clr(); setFOutreach([s.stage]); }}
-                >
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
-                  {s.stage} ({s.count})
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Stat pills */}
         <div className="flex items-center gap-2.5 mb-6 overflow-x-auto scrollbar-hide flex-nowrap pb-1">
           {([
             ["📊 Total Accounts", stats.t, () => { clr(); }, false],
-            ["📍 50+ Locs", stats.o50, () => { setFLocRange((prev) => prev[0] === 50 ? [0, maxLocs] : [50, maxLocs]); }, fLocRange[0] === 50],
             ["📍 100+ Locs", stats.o100, () => { setFLocRange((prev) => prev[0] === 100 ? [0, maxLocs] : [100, maxLocs]); }, fLocRange[0] === 100],
             ["🏢 500+ Locs", stats.o500, () => { setFLocRange((prev) => prev[0] === 500 ? [0, maxLocs] : [500, maxLocs]); }, fLocRange[0] === 500],
-            ["🔥 Hot", stats.hot, () => { setFPriority((prev) => prev.includes("Hot") ? prev.filter(x => x !== "Hot") : [...prev, "Hot"]); }, fPriority.includes("Hot")],
-            ["☀️ Warm", stats.warm, () => { setFPriority((prev) => prev.includes("Warm") ? prev.filter(x => x !== "Warm") : [...prev, "Warm"]); }, fPriority.includes("Warm")],
-            ["🧊 Cold", stats.cold, () => { setFPriority((prev) => prev.includes("Cold") ? prev.filter(x => x !== "Cold") : [...prev, "Cold"]); }, fPriority.includes("Cold")],
             ["🎯 Prospects", stats.prospects, () => { setFStatus((prev) => prev.includes("Prospect") ? prev.filter(x => x !== "Prospect") : [...prev, "Prospect"]); }, fStatus.includes("Prospect")],
             ["💀 Churned", stats.ch, () => { setFStatus((prev) => prev.includes("Churned") ? prev.filter(x => x !== "Churned") : [...prev, "Churned"]); }, fStatus.includes("Churned")],
           ] as [string, number, () => void, boolean][]).map(([label, value, fn, active], i) => (
@@ -1282,7 +1263,7 @@ export default function TerritoryPlanner() {
         </div>
 
         {/* Action Items */}
-        {(homeCards.untouched.length > 0 || homeCards.stale.length > 0 || homeCards.prospectTasks.length > 0) && (
+        {(homeCards.untouched.length > 0 || homeCards.stale.length > 0 || homeCards.missingCoverage.length > 0) && (
           <Collapsible open={cardsOpen} onOpenChange={setCardsOpen} className="mb-6">
             <CollapsibleTrigger asChild>
               <button className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-3 uppercase tracking-wider">
@@ -1352,47 +1333,35 @@ export default function TerritoryPlanner() {
                   )}
                 </div>
 
-                {/* Upcoming Tasks */}
+                {/* Contact Coverage Gaps */}
                 <div className="glass-card rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="p-1.5 rounded-lg bg-[hsl(var(--warning))]/10">
-                      <Target className="w-4 h-4 text-[hsl(var(--warning))]" />
+                      <Users className="w-4 h-4 text-[hsl(var(--warning))]" />
                     </div>
-                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Upcoming Tasks</h3>
+                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Coverage Gaps</h3>
                   </div>
-                  <p className="text-[10px] text-muted-foreground mb-2">Open tasks grouped by account, sorted by due date.</p>
-                  {homeCards.prospectTasks.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">📋 No open tasks</p>
+                  <p className="text-[10px] text-muted-foreground mb-2">Accounts with contacts but missing a Champion or Decision Maker.</p>
+                  {homeCards.missingCoverage.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">✅ All accounts have key roles covered</p>
                   ) : (
-                    <div className="space-y-3">
-                      {homeCards.prospectTasks.map((p) => (
-                        <div key={p.id}>
-                          <button
-                            onClick={() => setSheetProspectId(p.id)}
-                            className="w-full flex items-center gap-2 p-1.5 rounded-lg hover:bg-primary/5 transition-colors text-left"
-                          >
-                            <LogoImg website={p.website} size={16} customLogo={p.customLogo} />
-                            <span className="text-xs font-semibold text-foreground truncate">{p.name}</span>
-                          </button>
-                          <div className="ml-6 space-y-0.5">
-                            {p.sortedTasks.map((task) => {
-                              const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
-                              const isToday = task.dueDate === new Date().toISOString().split("T")[0];
-                              return (
-                                <div key={task.id} className="flex items-center gap-2 py-0.5">
-                                  <span className="text-[10px] text-muted-foreground truncate flex-1">{task.text}</span>
-                                  {task.dueDate && (
-                                    <span className={cn("text-[10px] font-semibold shrink-0",
-                                      isOverdue ? "text-destructive" : isToday ? "text-[hsl(var(--warning))]" : "text-muted-foreground"
-                                    )}>
-                                      {isOverdue ? "⚠️ " : isToday ? "📅 " : ""}{task.dueDate}
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            })}
+                    <div className="space-y-1.5">
+                      {homeCards.missingCoverage.map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => setSheetProspectId(p.id)}
+                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors text-left"
+                        >
+                          <LogoImg website={p.website} size={20} customLogo={p.customLogo} />
+                          <span className="text-xs font-medium text-foreground truncate flex-1">{p.name}</span>
+                          <div className="flex gap-1 shrink-0">
+                            {p.missingRoles.map((role) => (
+                              <span key={role} className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                                {role === "Decision Maker" ? "DM" : role}
+                              </span>
+                            ))}
                           </div>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   )}
