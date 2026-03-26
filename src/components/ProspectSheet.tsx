@@ -2,11 +2,6 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
-} from "@/components/ui/sheet";
-import { Drawer, DrawerContent } from "@/components/ui/drawer";
-import { useIsMobile } from "@/hooks/use-mobile";
-import {
   INDUSTRIES, STAGES, PRIORITIES, TIERS, COMPETITORS, INTERACTION_TYPES,
   CONTACT_ROLES, RELATIONSHIP_STRENGTHS,
   scoreProspect, scoreBreakdown, getScoreLabel, getLogoUrl,
@@ -909,21 +904,11 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
       </div>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer direction="right" open={isOpen} onOpenChange={handleOpenChange}>
-        <DrawerContent direction="right" className="w-full h-full">
-          {sheetContent}
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-[700px] sm:max-w-[50vw] overflow-y-auto p-0">
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
         {sheetContent}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
