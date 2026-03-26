@@ -45,7 +45,7 @@ function dbToProspect(row: any, contacts: any[], interactions: any[], notes: any
 export function useProspects(territoryId?: string | null) {
   const { user } = useAuth();
   const [data, setData] = useState<Prospect[]>([]);
-  const [archived] = useState<ArchivedProspect[]>([]);
+  const [archivedData, setArchivedData] = useState<ArchivedProspect[]>([]);
   const [ok, setOk] = useState(false);
   const [seeding, setSeeding] = useState(false);
 
@@ -56,6 +56,7 @@ export function useProspects(territoryId?: string | null) {
     let query = supabase
       .from("prospects")
       .select("*")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
     // If territory is specified, filter by it; otherwise load user's own
@@ -104,6 +105,43 @@ export function useProspects(territoryId?: string | null) {
 
     setData(mapped);
     setOk(true);
+  }, [user, territoryId]);
+
+  const loadArchivedData = useCallback(async () => {
+    if (!user) return;
+    let query = supabase
+      .from("prospects")
+      .select("*")
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false });
+    if (territoryId) query = query.eq("territory_id", territoryId);
+    const { data: prospects, error } = await query;
+    if (error) { console.error("Error loading archived prospects:", error); return; }
+    if (!prospects || prospects.length === 0) { setArchivedData([]); return; }
+
+    const prospectIds = prospects.map((p: any) => p.id);
+    const [contactsRes, interactionsRes, notesRes, tasksRes] = await Promise.all([
+      supabase.from("prospect_contacts").select("*").in("prospect_id", prospectIds),
+      supabase.from("prospect_interactions").select("*").in("prospect_id", prospectIds),
+      supabase.from("prospect_notes").select("*").in("prospect_id", prospectIds),
+      supabase.from("prospect_tasks").select("*").in("prospect_id", prospectIds),
+    ]);
+    const contacts = contactsRes.data || [];
+    const interactions = interactionsRes.data || [];
+    const notes = notesRes.data || [];
+    const tasks = tasksRes.data || [];
+
+    const mapped: ArchivedProspect[] = prospects.map((p: any) => ({
+      ...dbToProspect(
+        p,
+        contacts.filter((c: any) => c.prospect_id === p.id),
+        interactions.filter((i: any) => i.prospect_id === p.id),
+        notes.filter((n: any) => n.prospect_id === p.id),
+        tasks.filter((t: any) => t.prospect_id === p.id),
+      ),
+      archivedAt: p.deleted_at,
+    }));
+    setArchivedData(mapped);
   }, [user, territoryId]);
 
   useEffect(() => {
@@ -224,11 +262,14 @@ export function useProspects(territoryId?: string | null) {
   const remove = useCallback(async (id: any) => {
     if (!user) return;
     const previousItem = data.find(p => p.id === id);
-    setData((prev) => prev.filter((p) => p.id !== id));  // optimistic
-    const { error } = await supabase.from("prospects").delete().eq("id", id);
+    setData(prev => prev.filter(p => p.id !== id));  // optimistic
+    const { error } = await supabase
+      .from("prospects")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id);
     if (error) {
-      if (previousItem) setData((prev) => [previousItem, ...prev]);
-      toast.error("Failed to remove prospect");
+      if (previousItem) setData(prev => [previousItem, ...prev]);
+      toast.error("Failed to archive prospect");
     }
   }, [user, data]);
 
@@ -262,9 +303,17 @@ export function useProspects(territoryId?: string | null) {
 
   const bulkRemove = useCallback(async (ids: any[]) => {
     if (!user) return;
-    await supabase.from("prospects").delete().in("id", ids);
-    setData((prev) => prev.filter((p) => !ids.includes(p.id)));
-  }, [user]);
+    const previousItems = data.filter(p => ids.includes(p.id));
+    setData(prev => prev.filter(p => !ids.includes(p.id)));  // optimistic
+    const { error } = await supabase
+      .from("prospects")
+      .update({ deleted_at: new Date().toISOString() })
+      .in("id", ids);
+    if (error) {
+      setData(prev => [...previousItems, ...prev]);
+      toast.error("Failed to archive prospects");
+    }
+  }, [user, data]);
 
   const bulkAdd = useCallback(async (partials: (Partial<Prospect> & { name: string })[]) => {
     if (!user) return;
@@ -419,9 +468,25 @@ export function useProspects(territoryId?: string | null) {
     toast.success("🎉 Seed data imported!");
   }, [user, seeding, loadData]);
 
-  // Archive operations are simplified - just delete for now
-  const restore = useCallback((_id: any) => {}, []);
-  const permanentDelete = useCallback((_id: any) => {}, []);
+  const restore = useCallback(async (id: any) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from("prospects")
+      .update({ deleted_at: null })
+      .eq("id", id);
+    if (error) { toast.error("Failed to restore prospect"); return; }
+    setArchivedData(prev => prev.filter(p => p.id !== id));
+    await loadData();
+    toast.success("Prospect restored");
+  }, [user, loadData]);
+
+  const permanentDelete = useCallback(async (id: any) => {
+    if (!user) return;
+    const { error } = await supabase.from("prospects").delete().eq("id", id);
+    if (error) { toast.error("Failed to permanently delete prospect"); return; }
+    setArchivedData(prev => prev.filter(p => p.id !== id));
+    toast.success("Prospect permanently deleted");
+  }, [user]);
 
   const deleteNote = useCallback(async (prospectId: any, noteId: string) => {
     if (!user) return;
@@ -604,7 +669,8 @@ export function useProspects(territoryId?: string | null) {
     bulkAdd,
     bulkMerge,
     reset,
-    archived,
+    archivedData,
+    loadArchivedData,
     restore,
     permanentDelete,
     seedData,
