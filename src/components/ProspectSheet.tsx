@@ -41,6 +41,11 @@ interface ProspectSheetProps {
   addContact?: (prospectId: string, contact: Omit<Contact, "id">) => Promise<void>;
   updateContact?: (contactId: string, fields: Partial<Contact>) => Promise<void>;
   removeContact?: (contactId: string) => Promise<void>;
+  addInteraction?: (prospectId: string, interaction: Omit<InteractionLog, "id">) => Promise<void>;
+  removeInteraction?: (interactionId: string) => Promise<void>;
+  addNote?: (prospectId: string, text: string) => Promise<void>;
+  addTaskDirect?: (prospectId: string, task: Omit<Task, "id">) => Promise<void>;
+  removeTaskDirect?: (taskId: string) => Promise<void>;
   signals?: Signal[];
   addSignal?: (signal: Omit<Signal, "id" | "created_at" | "user_id">) => Promise<Signal | null>;
   removeSignal?: (id: string) => Promise<void>;
@@ -79,7 +84,7 @@ function SheetLogoImg({ website, size = 32, customLogo }: { website?: string; si
   return <img src={url} alt="" className="rounded-lg bg-muted object-contain" style={{ width: size, height: size }} onError={() => setErr(true)} />;
 }
 
-export function ProspectSheet({ prospectId, onClose, data, update, remove, deleteNote, addContact: addContactDirect, updateContact: updateContactDirect, removeContact: removeContactDirect, signals = [], addSignal, removeSignal, territoryId }: ProspectSheetProps) {
+export function ProspectSheet({ prospectId, onClose, data, update, remove, deleteNote, addContact: addContactDirect, updateContact: updateContactDirect, removeContact: removeContactDirect, addInteraction: addInteractionDirect, removeInteraction: removeInteractionDirect, addNote: addNoteDirect, addTaskDirect, removeTaskDirect, signals = [], addSignal, removeSignal, territoryId }: ProspectSheetProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const prospect = useMemo(() => data.find(p => p.id === prospectId), [data, prospectId]);
@@ -192,29 +197,26 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     }
   };
 
-  const addTask = () => {
+  const addTask = async () => {
     if (!newTaskText.trim()) return;
-    const task: Task = { id: Date.now().toString(), text: newTaskText.trim(), dueDate: newTaskDate };
-    update(prospect.id, { tasks: [...(prospect.tasks || []), task] });
+    await addTaskDirect?.(prospect.id, { text: newTaskText.trim(), dueDate: newTaskDate });
     setNewTaskText("");
     setNewTaskDate("");
     toast.success("✅ Task added!");
   };
 
-  const completeTask = (task: Task) => {
-    const interaction: InteractionLog = {
-      id: Date.now().toString(), type: "Task Completed",
-      date: new Date().toISOString().split("T")[0], notes: task.text,
-    };
-    update(prospect.id, {
-      tasks: (prospect.tasks || []).filter(t => t.id !== task.id),
-      interactions: [...(prospect.interactions || []), interaction],
+  const completeTask = async (task: Task) => {
+    await removeTaskDirect?.(task.id);
+    await addInteractionDirect?.(prospect.id, {
+      type: "Task Completed",
+      date: new Date().toISOString().split("T")[0],
+      notes: task.text,
     });
     toast.success("✅ Task completed!");
   };
 
-  const removeTask = (taskId: string) => {
-    update(prospect.id, { tasks: (prospect.tasks || []).filter(t => t.id !== taskId) });
+  const removeTask = async (taskId: string) => {
+    await removeTaskDirect?.(taskId);
     toast("🗑️ Task removed");
   };
 
@@ -253,34 +255,31 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     toast.success("✅ Contact updated!");
   };
 
-  const logInteraction = () => {
-    const interaction: InteractionLog = {
-      id: Date.now().toString(), type: interactionType,
-      date: new Date().toISOString().split("T")[0], notes: interactionNotes || `${interactionType} logged`,
-    };
-    update(prospect.id, { interactions: [...(prospect.interactions || []), interaction] });
+  const logInteraction = async () => {
+    await addInteractionDirect?.(prospect.id, {
+      type: interactionType,
+      date: new Date().toISOString().split("T")[0],
+      notes: interactionNotes || `${interactionType} logged`,
+    });
     setInteractionNotes("");
     toast.success("📝 Activity logged!");
   };
 
-  const logActivity = () => {
+  const logActivity = async () => {
     if (!interactionNotes.trim() && !showFollowUp) {
       toast.error("Add notes or a follow-up task");
       return;
     }
-    const updates: Partial<Prospect> = {};
     // Log the interaction
-    const interaction: InteractionLog = {
-      id: Date.now().toString(), type: interactionType,
-      date: new Date().toISOString().split("T")[0], notes: interactionNotes || `${interactionType} logged`,
-    };
-    updates.interactions = [...(prospect.interactions || []), interaction];
+    await addInteractionDirect?.(prospect.id, {
+      type: interactionType,
+      date: new Date().toISOString().split("T")[0],
+      notes: interactionNotes || `${interactionType} logged`,
+    });
     // Optionally create follow-up task
     if (showFollowUp && newTaskText.trim()) {
-      const task: Task = { id: (Date.now() + 1).toString(), text: newTaskText.trim(), dueDate: newTaskDate };
-      updates.tasks = [...(prospect.tasks || []), task];
+      await addTaskDirect?.(prospect.id, { text: newTaskText.trim(), dueDate: newTaskDate });
     }
-    update(prospect.id, updates);
     setInteractionNotes("");
     setNewTaskText("");
     setNewTaskDate("");
@@ -288,12 +287,11 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     toast.success(showFollowUp && newTaskText.trim() ? "📝 Activity logged + task created!" : "📝 Activity logged!");
   };
 
-  const addNote = () => {
+  const submitNote = async () => {
     // Strip HTML tags to check if there's actual text content
     const textOnly = newNote.replace(/<[^>]*>/g, "").trim();
     if (!textOnly) return;
-    const entry: NoteEntry = { id: Date.now().toString(), text: newNote, timestamp: new Date().toISOString() };
-    update(prospect.id, { noteLog: [...(prospect.noteLog || []), entry] });
+    await addNoteDirect?.(prospect.id, newNote);
     setNewNote("");
     toast.success("📌 Note saved!");
   };
@@ -714,7 +712,7 @@ Keep it concise and actionable. Use bullet points. No fluff.`;
               placeholder="Add a note..."
               minHeight="60px"
             />
-            <Button size="sm" onClick={addNote} disabled={!newNote.replace(/<[^>]*>/g, "").trim()}>Add Note</Button>
+            <Button size="sm" onClick={submitNote} disabled={!newNote.replace(/<[^>]*>/g, "").trim()}>Add Note</Button>
             {(prospect.noteLog || []).length > 0 && (
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {[...(prospect.noteLog || [])].reverse().map(note => (

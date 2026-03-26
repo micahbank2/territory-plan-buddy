@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 export interface Signal {
   id: string;
@@ -83,6 +84,7 @@ export function useSignals(territoryId?: string | null) {
 
     if (error) {
       console.error("Error adding signal:", error);
+      toast.error("Failed to add signal");
       return null;
     }
     setSignals((prev) => [data as Signal, ...prev]);
@@ -91,9 +93,14 @@ export function useSignals(territoryId?: string | null) {
 
   const removeSignal = useCallback(async (id: string) => {
     if (!user) return;
-    await supabase.from("prospect_signals").delete().eq("id", id);
-    setSignals((prev) => prev.filter((s) => s.id !== id));
-  }, [user]);
+    const previous = signals.find(s => s.id === id);
+    setSignals((prev) => prev.filter((s) => s.id !== id));  // optimistic
+    const { error } = await supabase.from("prospect_signals").delete().eq("id", id);
+    if (error) {
+      if (previous) setSignals((prev) => [previous, ...prev]);
+      toast.error("Failed to remove signal");
+    }
+  }, [user, signals]);
 
   // Get signals for a specific prospect
   const getProspectSignals = useCallback((prospectId: string) => {
