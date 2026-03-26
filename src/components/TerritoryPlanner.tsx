@@ -26,6 +26,7 @@ import { CSVUploadDialog } from "@/components/CSVUploadDialog";
 import { ShareTerritoryDialog } from "@/components/ShareTerritoryDialog";
 import { BulkEditDialog } from "@/components/BulkEditDialog";
 import { BulkOutreachQueue } from "@/components/BulkOutreachQueue";
+import { ContactPickerDialog } from "@/components/ContactPickerDialog";
 import { PasteImportDialog } from "@/components/PasteImportDialog";
 import { EnrichmentQueue } from "@/components/EnrichmentQueue";
 import { AIReadinessBadge } from "@/components/AIReadinessCard";
@@ -68,6 +69,7 @@ import {
   ChevronDown,
   ChevronUp as ChevronUpIcon,
   SlidersHorizontal,
+  Mail,
   Sun,
   Moon,
   Menu,
@@ -419,6 +421,7 @@ export default function TerritoryPlanner() {
   const [bulkCompetitor, setBulkCompetitor] = useState("");
   const [showBulkEdit, setShowBulkEdit] = useState(false);
   const [showBulkOutreach, setShowBulkOutreach] = useState(false);
+  const [showContactPicker, setShowContactPicker] = useState(false);
   const [bulkConfirm, setBulkConfirm] = useState<{ label: string; action: () => void } | null>(null);
 
   // Quick Add
@@ -1179,6 +1182,9 @@ export default function TerritoryPlanner() {
           </div>
 
           {/* Add Prospect CTA */}
+          <Button variant="outline" onClick={() => setShowContactPicker(true)} className="gap-2 ml-2 hidden sm:inline-flex">
+            <Mail className="w-4 h-4" /> Draft Emails
+          </Button>
           <Button onClick={() => setShowAdd(true)} className="gap-2 bg-primary hover:bg-primary/90 font-semibold px-5 ml-2">
             <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Add Prospect</span><span className="sm:hidden">Add</span>
           </Button>
@@ -1206,6 +1212,9 @@ export default function TerritoryPlanner() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowEnrich(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
                   <Sparkles className="w-4 h-4 text-muted-foreground" /> Enrich
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowContactPicker(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
+                  <Mail className="w-4 h-4 text-muted-foreground" /> Draft Emails
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem onClick={exportCSV} className="gap-3 px-4 py-2 rounded-md text-sm">
@@ -1944,6 +1953,14 @@ export default function TerritoryPlanner() {
         open={showBulkOutreach}
         onOpenChange={setShowBulkOutreach}
         prospects={data.filter(p => selected.has(p.id))}
+      />
+
+      {/* --- Contact Picker for Email Drafting --- */}
+      <ContactPickerDialog
+        open={showContactPicker}
+        onOpenChange={setShowContactPicker}
+        prospects={data}
+        signals={signals}
       />
 
       {/* --- Bulk Confirm --- */}
