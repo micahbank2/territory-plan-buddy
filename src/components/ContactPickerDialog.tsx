@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Mail, Copy, ChevronDown, ChevronRight, Search, ArrowLeft, Check } from "lucide-react";
 import { toast } from "sonner";
 import type { Prospect, Contact } from "@/data/prospects";
@@ -29,13 +28,11 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
   const [promptText, setPromptText] = useState("");
   const [copied, setCopied] = useState(false);
 
-  // Only accounts with contacts
   const accountsWithContacts = useMemo(
     () => prospects.filter(p => p.contacts.length > 0),
     [prospects],
   );
 
-  // Filter by search
   const filteredAccounts = useMemo(() => {
     if (!search.trim()) return accountsWithContacts;
     const q = search.toLowerCase();
@@ -51,12 +48,10 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
     });
   }, [accountsWithContacts, search]);
 
-  // Filter contacts within each account when searching
   const getVisibleContacts = useCallback(
     (p: Prospect): Contact[] => {
       if (!search.trim()) return p.contacts;
       const q = search.toLowerCase();
-      // If the account name matched, show all contacts
       if (p.name.toLowerCase().includes(q) || p.industry?.toLowerCase().includes(q)) return p.contacts;
       return p.contacts.filter(
         c =>
@@ -111,7 +106,6 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
     });
   };
 
-  // Build signal lookup
   const signalsByProspect = useMemo(() => {
     const map = new Map<string, Signal[]>();
     for (const s of signals) {
@@ -154,7 +148,6 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
     onOpenChange(false);
   };
 
-  // Auto-expand accounts when searching
   const isExpanded = (id: string) => {
     if (search.trim()) return true;
     return expanded.has(id);
@@ -165,8 +158,8 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[85vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-0">
+      <DialogContent className="sm:max-w-[700px] h-[85vh] max-h-[85vh] min-h-0 overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Mail className="w-4 h-4 text-primary" />
             {view === "picking" ? "Select Contacts for Email Drafting" : "Prompt Preview"}
@@ -175,8 +168,7 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
 
         {view === "picking" ? (
           <>
-            {/* Search + actions bar */}
-            <div className="px-6 pt-3 pb-2 space-y-2">
+            <div className="px-6 pt-3 pb-2 space-y-2 shrink-0">
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
                 <Input
@@ -198,8 +190,7 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
               </div>
             </div>
 
-            {/* Contact list */}
-            <ScrollArea className="flex-1 min-h-0 px-6 pb-2" style={{ maxHeight: "50vh" }}>
+            <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-2">
               <div className="space-y-1">
                 {filteredAccounts.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-8">
@@ -214,7 +205,6 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
 
                   return (
                     <div key={p.id} className="border border-border rounded-lg overflow-hidden">
-                      {/* Account header */}
                       <button
                         onClick={() => toggleExpanded(p.id)}
                         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/50 transition-colors text-left"
@@ -238,7 +228,6 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
                         </span>
                       </button>
 
-                      {/* Contacts */}
                       {open && (
                         <div className="border-t border-border">
                           {visibleContacts.map(c => (
@@ -270,10 +259,9 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
 
-            {/* Bottom bar */}
-            <div className="px-6 py-3 border-t border-border flex items-center justify-between">
+            <div className="px-6 py-3 border-t border-border flex items-center justify-between shrink-0">
               <span className="text-xs text-muted-foreground">
                 {selected.size > 0 && `${selected.size} contact${selected.size !== 1 ? "s" : ""} across ${new Set(
                   prospects.flatMap(p => p.contacts.filter(c => selected.has(c.id)).map(() => p.id))
@@ -287,8 +275,7 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
           </>
         ) : (
           <>
-            {/* Prompt preview */}
-            <div className="px-6 pt-3 pb-2 flex items-center justify-between">
+            <div className="px-6 pt-3 pb-2 flex items-center justify-between shrink-0">
               <button
                 onClick={() => setView("picking")}
                 className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
@@ -300,13 +287,13 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
               </span>
             </div>
 
-            <ScrollArea className="flex-1 min-h-0 px-6">
+            <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-4">
               <pre className="text-xs text-foreground whitespace-pre-wrap font-mono leading-relaxed bg-muted/30 rounded-lg p-4 border border-border">
                 {promptText}
               </pre>
-            </ScrollArea>
+            </div>
 
-            <div className="px-6 py-3 border-t border-border flex items-center justify-between">
+            <div className="px-6 py-3 border-t border-border flex items-center justify-between shrink-0">
               <span className="text-xs text-muted-foreground">
                 {selected.size} contact{selected.size !== 1 ? "s" : ""} included
               </span>
