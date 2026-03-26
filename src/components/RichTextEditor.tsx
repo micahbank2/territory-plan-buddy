@@ -14,6 +14,7 @@ interface RichTextEditorProps {
 
 export function RichTextEditor({ content, onChange, placeholder, minHeight = "130px", className }: RichTextEditorProps) {
   const editor = useEditor({
+    shouldRerenderOnTransaction: true,
     extensions: [
       StarterKit.configure({
         bulletList: { keepMarks: true, keepAttributes: false },

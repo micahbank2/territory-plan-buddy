@@ -1,0 +1,1 @@
+ALTER TABLE public.prospect_contacts ADD COLUMN IF NOT EXISTS starred boolean NOT NULL DEFAULT false;

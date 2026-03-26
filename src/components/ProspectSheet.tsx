@@ -2,11 +2,6 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
-} from "@/components/ui/sheet";
-import { Drawer, DrawerContent } from "@/components/ui/drawer";
-import { useIsMobile } from "@/hooks/use-mobile";
-import {
   INDUSTRIES, STAGES, PRIORITIES, TIERS, COMPETITORS, INTERACTION_TYPES,
   CONTACT_ROLES, RELATIONSHIP_STRENGTHS,
   scoreProspect, scoreBreakdown, getScoreLabel, getLogoUrl,
@@ -87,7 +82,7 @@ function SheetLogoImg({ website, size = 32, customLogo }: { website?: string; si
 
 export function ProspectSheet({ prospectId, onClose, data, update, remove, deleteNote, addContact: addContactDirect, updateContact: updateContactDirect, removeContact: removeContactDirect, addInteraction: addInteractionDirect, removeInteraction: removeInteractionDirect, addNote: addNoteDirect, addTaskDirect, removeTaskDirect, signals = [], addSignal, removeSignal, territoryId }: ProspectSheetProps) {
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
+  
   const prospect = useMemo(() => data.find(p => p.id === prospectId), [data, prospectId]);
   const prospectSignals = useMemo(() => signals.filter(s => s.prospect_id === prospectId), [signals, prospectId]);
 
@@ -104,7 +99,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     setStarOverrides(prev => new Map(prev).set(contactId, newVal));
     const { error } = await supabase
       .from("prospect_contacts")
-      .update({ starred: newVal })
+      .update({ starred: newVal } as any)
       .eq("id", contactId);
     if (error) {
       // Revert on failure
@@ -444,9 +439,9 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                   prospect.tier === "Tier 1" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
                 )}>{prospect.tier === "Tier 1" ? "⭐" : prospect.tier === "Tier 2" ? "🥈" : "🥉"} {prospect.tier}</span>}
               </div>
-              <SheetDescription className="text-xs mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {prospect.website && <a href={normalizeUrl(prospect.website)} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">{prospect.website} <ExternalLink className="w-3 h-3" /></a>}
-              </SheetDescription>
+              </p>
             </div>
             <TooltipProvider>
               <Tooltip>
@@ -909,21 +904,11 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
       </div>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer direction="right" open={isOpen} onOpenChange={handleOpenChange}>
-        <DrawerContent direction="right" className="w-full h-full">
-          {sheetContent}
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-[700px] sm:max-w-[50vw] overflow-y-auto p-0">
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
         {sheetContent}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }

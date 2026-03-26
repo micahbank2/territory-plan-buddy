@@ -1,56 +1,57 @@
 
-## Add Contact Import Support to CSV Upload
 
-### Problem
-The CSV upload system only understands prospect/account-level fields. When you upload a contacts CSV (with First Name, Last Name, Title, Email, Company), the system:
-- Can't map "First Name", "Last Name", or "Title" columns -- warns they'll be omitted
-- Maps "Email" to the account-level contactEmail field instead of a contact record
-- Maps "Company" as a prospect name, potentially creating duplicates or overwriting data
-- Has no way to add contacts to existing prospects
+## Plan: Fix RichTextEditor + Convert Account Panel to Center Dialog
 
-### Solution
-Detect when a CSV contains contact-specific columns, switch to a "contact import" mode, and merge contacts into matching existing prospects without touching any other account data.
+### Two Changes
 
-### How It Will Work
-1. **Auto-detect contact CSVs** -- If the file has columns like "First Name" or "Last Name", treat it as a contact import
-2. **Match by Company name** -- Use the Company column to find the existing prospect (using the same fuzzy matching already in place)
-3. **Add contacts, don't overwrite** -- Append new contacts to the prospect's contacts list; skip duplicates (matched by email)
-4. **Never create new prospects** -- Contact-only rows that don't match an existing company are flagged for review, not auto-created
-5. **Never touch account fields** -- No prospect fields (industry, tier, outreach, etc.) are modified during a contact import
+**1. Fix RichTextEditor (tiptap v3 compatibility)**
+
+The project uses `@tiptap/react` v3.20.5, which changed defaults from v2:
+- `shouldRerenderOnTransaction` now defaults to `false`, so toolbar button active states don't update and the editor appears "broken"
+- `setContent` signature changed in v3
+
+Fix in `RichTextEditor.tsx`:
+- Add `shouldRerenderOnTransaction: true` to the `useEditor` config
+- This ensures the toolbar highlights (bold, italic, list active states) update correctly on every transaction
+
+**2. Convert ProspectSheet from side panel to center dialog**
+
+Currently uses `<Sheet side="right">` (slide-over panel). Change to a `<Dialog>` that hovers centered over the page.
+
+Changes in `ProspectSheet.tsx`:
+- Replace `Sheet`/`SheetContent`/`SheetHeader`/`SheetTitle` imports with `Dialog`/`DialogContent`/`DialogHeader`/`DialogTitle` (already imported for sub-dialogs)
+- Remove the `Drawer` mobile path — Dialog works on both
+- Set `DialogContent` to a large size: `max-w-4xl max-h-[90vh] overflow-y-auto p-0`
+- Keep the existing `sheetContent` JSX as the dialog body — no layout changes needed inside
+- Update TerritoryPlanner's `<ProspectSheet>` usage if needed (props stay the same)
 
 ### Technical Details
 
-**File: `src/components/CSVUploadDialog.tsx`**
+**RichTextEditor.tsx** — add one line to `useEditor`:
+```typescript
+const editor = useEditor({
+  shouldRerenderOnTransaction: true,
+  extensions: [...],
+  ...
+});
+```
 
-1. Add contact-specific column aliases to detect contact CSVs:
-   - "first name", "fname", "given name" -> contactFirstName
-   - "last name", "lname", "surname", "family name" -> contactLastName  
-   - "title", "job title", "position", "role" -> contactTitle
-   - "email", "email address", "e-mail" -> contactEmail (already partially exists)
-   - "phone", "phone number", "mobile" -> contactPhone
+**ProspectSheet.tsx** — bottom of file changes from:
+```typescript
+// Sheet/Drawer wrapper
+if (isMobile) { return <Drawer>...</Drawer> }
+return <Sheet><SheetContent side="right">...</SheetContent></Sheet>
+```
+to:
+```typescript
+return (
+  <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+      {sheetContent}
+    </DialogContent>
+  </Dialog>
+);
+```
 
-2. Add a detection step after parsing headers: if contact-specific columns (first name, last name) are present, flag the import as `mode: "contacts"` instead of `mode: "prospects"`
+Remove unused Sheet/Drawer imports. DialogContent already has a close button built in.
 
-3. In contact mode, change `mapRow` behavior:
-   - Map "Company" to a lookup key (not to `name` for creating prospects)
-   - Combine First Name + Last Name into a contact name
-   - Map Title, Email, Phone to contact fields
-   - Return a structured contact object instead of a flat prospect partial
-
-4. In contact mode, change the matching/preview logic:
-   - Match each row's Company value against existing prospects (exact, then fuzzy)
-   - If matched: action = "update" (will add contact to that prospect)
-   - If no match: action = "review" (user decides; cannot auto-create)
-   - If contact email already exists on that prospect: action = "skip" (duplicate)
-
-5. In contact mode, change `handleConfirm`:
-   - For each "update" row, append the new contact to the matched prospect's existing contacts array
-   - Call `onImport` with updates that only modify the `contacts` field
-   - Never pass new prospect rows
-
-6. Update the preview table columns to show contact-relevant info (Name, Title, Email, Company) instead of prospect fields when in contact mode
-
-7. Update the dialog description to indicate "Contact Import" when in contact mode
-
-**File: `src/hooks/useProspects.ts`**
-- No changes needed -- the existing `update` function already handles syncing contacts when `contacts` is included in the update payload
