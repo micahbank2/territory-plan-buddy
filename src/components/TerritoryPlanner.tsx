@@ -1239,26 +1239,26 @@ export default function TerritoryPlanner() {
       </nav>
 
       <div className="px-4 sm:px-8 pt-6 pb-2">
-        {/* Stat pills */}
-        <div className="flex items-center gap-2.5 mb-6 overflow-x-auto scrollbar-hide flex-nowrap pb-1">
+        {/* Quick Stats Bar */}
+        <div className="flex items-center gap-3 mb-6 overflow-x-auto scrollbar-hide flex-nowrap pb-1">
           {([
-            ["📊 Total Accounts", stats.t, () => { clr(); }, false],
+            ["📊 Accounts", stats.t, () => { clr(); }, false],
             ["📍 100+ Locs", stats.o100, () => { setFLocRange((prev) => prev[0] === 100 ? [0, maxLocs] : [100, maxLocs]); }, fLocRange[0] === 100],
-            ["🏢 500+ Locs", stats.o500, () => { setFLocRange((prev) => prev[0] === 500 ? [0, maxLocs] : [500, maxLocs]); }, fLocRange[0] === 500],
-            ["🎯 Prospects", stats.prospects, () => { setFStatus((prev) => prev.includes("Prospect") ? prev.filter(x => x !== "Prospect") : [...prev, "Prospect"]); }, fStatus.includes("Prospect")],
+            ["🏢 500+", stats.o500, () => { setFLocRange((prev) => prev[0] === 500 ? [0, maxLocs] : [500, maxLocs]); }, fLocRange[0] === 500],
+            ["🔥 Hot", stats.hot, () => { setFPriority((prev) => prev.includes("Hot") ? prev.filter(x => x !== "Hot") : [...prev, "Hot"]); }, fPriority.includes("Hot")],
+            ["☀️ Warm", stats.warm, () => { setFPriority((prev) => prev.includes("Warm") ? prev.filter(x => x !== "Warm") : [...prev, "Warm"]); }, fPriority.includes("Warm")],
             ["💀 Churned", stats.ch, () => { setFStatus((prev) => prev.includes("Churned") ? prev.filter(x => x !== "Churned") : [...prev, "Churned"]); }, fStatus.includes("Churned")],
           ] as [string, number, () => void, boolean][]).map(([label, value, fn, active], i) => (
             <button
               key={i}
               onClick={() => fn()}
               className={cn(
-                "flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-3.5 rounded-xl glass-card cursor-pointer group animate-fade-in-up shrink-0",
-                active ? "ring-2 ring-primary/50 glow-blue" : "glow-blue"
+                "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer group shrink-0 transition-all",
+                active ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/30 hover:bg-muted/50"
               )}
-              style={{ animationDelay: `${i * 50}ms` }}
             >
-              <span className="text-xs sm:text-sm text-muted-foreground group-hover:text-foreground transition-colors font-medium whitespace-nowrap">{label}</span>
-              <span className="text-lg sm:text-xl font-black text-foreground animate-count-up" style={{ animationDelay: `${i * 50 + 200}ms` }}>{value}</span>
+              <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors font-medium whitespace-nowrap">{label}</span>
+              <span className="text-base font-black text-foreground">{value}</span>
             </button>
           ))}
         </div>
