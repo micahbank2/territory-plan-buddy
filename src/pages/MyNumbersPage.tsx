@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useTerritories } from "@/hooks/useTerritories";
+import { useOpportunities, type Opportunity } from "@/hooks/useOpportunities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -329,12 +331,33 @@ function EditableCell({
 export default function MyNumbersPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { activeTerritory } = useTerritories();
+  const { opportunities } = useOpportunities(activeTerritory);
   const [entries, setEntries] = useState<NumbersEntry[]>(loadEntries);
   const [settings, setSettings] = useState<CompSettings>(loadSettings);
   const [addons, setAddons] = useState<AddOns>(loadAddOns);
   const [showSettings, setShowSettings] = useState(false);
   const [showAddOns, setShowAddOns] = useState(false);
   const [activeTab, setActiveTab] = useState("incremental");
+
+  // Auto-compute pipeline from deals by close date and type
+  const pipelineByMonth = useMemo(() => {
+    const incr = new Map<string, number>();
+    const renew = new Map<string, number>();
+    const CLOSED_STAGES = new Set(["Won", "Closed Won", "Closed Lost", "Dead"]);
+
+    for (const opp of opportunities) {
+      if (!opp.close_date || CLOSED_STAGES.has(opp.stage)) continue;
+      const month = opp.close_date.substring(0, 7); // "YYYY-MM"
+      if (opp.type === "Renewal") {
+        renew.set(month, (renew.get(month) ?? 0) + (opp.potential_value || 0));
+      } else {
+        // Net New + Order Form → incremental pipeline
+        incr.set(month, (incr.get(month) ?? 0) + (opp.incremental_acv ?? opp.potential_value ?? 0));
+      }
+    }
+    return { incr, renew };
+  }, [opportunities]);
 
   const save = useCallback((next: NumbersEntry[]) => {
     setEntries(next);
@@ -505,8 +528,8 @@ export default function MyNumbersPage() {
                         <TableCell className="text-right font-mono text-sm">{fmt(c.baseCommission)}</TableCell>
                         <TableCell className="text-right font-mono text-sm">{c.ytdAccel > 0 ? fmt(c.ytdAccel) : "—"}</TableCell>
                         <TableCell className="text-right font-mono text-sm font-semibold">{fmt(payout)}</TableCell>
-                        <TableCell className="text-right">
-                          <EditableCell value={e.pipelineAcv} onChange={v => updateEntry(e.month, "pipelineAcv", v)} />
+                        <TableCell className="text-right font-mono text-sm text-muted-foreground">
+                          {fmt(pipelineByMonth.incr.get(e.month) ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
                           <EditableCell value={e.meetings} onChange={v => updateEntry(e.month, "meetings", v)} isCurrency={false} />
@@ -551,6 +574,7 @@ export default function MyNumbersPage() {
                     <TableHead className="font-semibold text-foreground text-right min-w-[90px]">Attain %</TableHead>
                     <TableHead className="font-semibold text-foreground text-right min-w-[110px]">Cumul. Payout %</TableHead>
                     <TableHead className="font-semibold text-foreground text-right min-w-[120px]">Monthly Payout</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[90px]">Pipeline</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -571,6 +595,7 @@ export default function MyNumbersPage() {
                         </TableCell>
                         <TableCell className="text-right font-mono text-sm">{pct(r.cumPayoutPct)}</TableCell>
                         <TableCell className="text-right font-mono text-sm font-semibold">{fmt(r.monthlyPayout)}</TableCell>
+                        <TableCell className="text-right font-mono text-sm text-muted-foreground">{fmt(pipelineByMonth.renew.get(e.month) ?? 0)}</TableCell>
                       </TableRow>
                     );
                   })}
@@ -583,6 +608,9 @@ export default function MyNumbersPage() {
                     <TableCell />
                     <TableCell />
                     <TableCell className="text-right font-mono text-sm">{fmt(ytdTotals.totalRenewalPayout)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm text-muted-foreground">
+                      {fmt(Array.from(pipelineByMonth.renew.values()).reduce((s, v) => s + v, 0))}
+                    </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>

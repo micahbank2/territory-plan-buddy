@@ -903,30 +903,33 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
               return (
               <div key={c.id} className="p-2.5 border border-border rounded-lg group relative hover:border-primary/20 transition-colors">
                 {editingContactId === c.id ? (
-                  <div className="space-y-1.5">
-                    <input value={editContact.name || ""} onChange={e => setEditContact({...editContact, name: e.target.value})} placeholder="Name *" className={cn(inputClass, "text-xs py-1.5")} />
-                    <input value={editContact.title || ""} onChange={e => setEditContact({...editContact, title: e.target.value})} placeholder="Title" className={cn(inputClass, "text-xs py-1.5")} />
-                    <input value={editContact.email || ""} onChange={e => setEditContact({...editContact, email: e.target.value})} placeholder="Email" className={cn(inputClass, "text-xs py-1.5")} />
-                    <input value={editContact.phone || ""} onChange={e => setEditContact({...editContact, phone: e.target.value})} placeholder="Phone" className={cn(inputClass, "text-xs py-1.5")} />
-                    <input value={editContact.linkedinUrl || ""} onChange={e => setEditContact({...editContact, linkedinUrl: e.target.value})} placeholder="LinkedIn URL" className={cn(inputClass, "text-xs py-1.5")} />
+                  <div className="space-y-2.5 p-3 -m-2.5 bg-muted/30 rounded-lg border border-primary/20">
+                    <div className="text-xs font-bold text-foreground uppercase tracking-wider mb-1">Edit Contact</div>
+                    <input value={editContact.name || ""} onChange={e => setEditContact({...editContact, name: e.target.value})} placeholder="Name *" className={cn(inputClass, "text-sm py-2")} />
+                    <input value={editContact.title || ""} onChange={e => setEditContact({...editContact, title: e.target.value})} placeholder="Title" className={cn(inputClass, "text-sm py-2")} />
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-0.5">
+                      <input value={editContact.email || ""} onChange={e => setEditContact({...editContact, email: e.target.value})} placeholder="Email" className={cn(inputClass, "text-sm py-2")} />
+                      <input value={editContact.phone || ""} onChange={e => setEditContact({...editContact, phone: e.target.value})} placeholder="Phone" className={cn(inputClass, "text-sm py-2")} />
+                    </div>
+                    <input value={editContact.linkedinUrl || ""} onChange={e => setEditContact({...editContact, linkedinUrl: e.target.value})} placeholder="LinkedIn URL (e.g. linkedin.com/in/...)" className={cn(inputClass, "text-sm py-2")} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
                         <label className="text-xs font-semibold text-muted-foreground uppercase">Role</label>
-                        <select value={(editContact as any).role || "Unknown"} onChange={e => setEditContact({...editContact, role: e.target.value} as any)} className={cn(selectClass, "text-xs py-1.5")}>
+                        <select value={(editContact as any).role || "Unknown"} onChange={e => setEditContact({...editContact, role: e.target.value} as any)} className={cn(selectClass, "text-sm py-2")}>
                           {CONTACT_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                       </div>
-                      <div className="space-y-0.5">
+                      <div className="space-y-1">
                         <label className="text-xs font-semibold text-muted-foreground uppercase">Relationship</label>
-                        <select value={(editContact as any).relationshipStrength || "Unknown"} onChange={e => setEditContact({...editContact, relationshipStrength: e.target.value} as any)} className={cn(selectClass, "text-xs py-1.5")}>
+                        <select value={(editContact as any).relationshipStrength || "Unknown"} onChange={e => setEditContact({...editContact, relationshipStrength: e.target.value} as any)} className={cn(selectClass, "text-sm py-2")}>
                           {RELATIONSHIP_STRENGTHS.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                       </div>
                     </div>
-                    <textarea value={editContact.notes || ""} onChange={e => setEditContact({...editContact, notes: e.target.value})} placeholder="Notes" className={cn(inputClass, "text-xs py-1.5 resize-none")} rows={2} />
-                    <div className="flex gap-2">
-                      <button onClick={saveEditContact} className="px-3 py-1.5 bg-primary text-primary-foreground text-xs rounded-md hover:bg-primary/90">Save</button>
-                      <button onClick={() => { setEditingContactId(null); setEditContact({}); }} className="px-3 py-1.5 bg-muted text-muted-foreground text-xs rounded-md">Cancel</button>
+                    <textarea value={editContact.notes || ""} onChange={e => setEditContact({...editContact, notes: e.target.value})} placeholder="Notes (e.g. met at conference, reports to VP)" className={cn(inputClass, "text-sm py-2 resize-none")} rows={3} />
+                    <div className="flex gap-2 pt-1">
+                      <button onClick={saveEditContact} className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90">Save</button>
+                      <button onClick={() => { setEditingContactId(null); setEditContact({}); }} className="px-4 py-2 bg-muted text-muted-foreground text-sm rounded-md hover:bg-muted/80">Cancel</button>
                     </div>
                   </div>
                 ) : (

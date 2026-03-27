@@ -1116,21 +1116,21 @@ export default function TerritoryPlanner() {
             <div className="hidden md:block w-px h-6 bg-border mx-1" />
 
             {/* Draft Emails */}
-            <Button variant="outline" size="sm" onClick={() => setShowContactPicker(true)} className="gap-1.5 hidden sm:inline-flex h-8 text-xs font-medium">
-              <Mail className="w-3.5 h-3.5" /> Draft Emails
+            <Button variant="outline" onClick={() => setShowContactPicker(true)} className="gap-2 hidden sm:inline-flex h-9 px-4 text-sm font-semibold border-primary/30 hover:bg-primary/5 hover:border-primary/50">
+              <Mail className="w-4 h-4" /> Draft Emails
             </Button>
 
             {/* Share */}
-            <Button variant="outline" size="sm" onClick={() => setShowShare(true)} className="gap-1.5 hidden md:inline-flex h-8 text-xs font-medium">
-              <Share2 className="w-3.5 h-3.5" /> Share
+            <Button variant="outline" onClick={() => setShowShare(true)} className="gap-2 hidden md:inline-flex h-9 px-4 text-sm font-semibold">
+              <Share2 className="w-4 h-4" /> Share
             </Button>
 
             {/* + Add Data dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" className="gap-1.5 bg-primary hover:bg-primary/90 font-semibold h-8 px-3.5 text-xs">
-                  <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Add Data</span><span className="sm:hidden">Add</span>
-                  <ChevronDown className="w-3 h-3 ml-0.5 opacity-70" />
+                <Button className="gap-2 bg-primary hover:bg-primary/90 font-bold h-9 px-5 text-sm shadow-sm">
+                  <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Add Data</span><span className="sm:hidden">Add</span>
+                  <ChevronDown className="w-3.5 h-3.5 ml-0.5 opacity-70" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-[200px] z-50 p-1">
