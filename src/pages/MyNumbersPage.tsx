@@ -316,7 +316,8 @@ function EditableCell({
   return (
     <span
       onClick={() => { setDraft(String(value || "")); setEditing(true); }}
-      className="cursor-pointer hover:text-primary transition-colors font-mono text-sm"
+      className="cursor-pointer hover:text-primary hover:bg-primary/5 rounded px-1.5 py-0.5 -mx-1.5 transition-colors font-mono text-sm border border-transparent hover:border-primary/20"
+      title="Click to edit"
     >
       {isCurrency ? fmt(value) : value.toLocaleString()}
     </span>
