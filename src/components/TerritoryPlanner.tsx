@@ -1044,9 +1044,9 @@ export default function TerritoryPlanner() {
                   <CommandItem onSelect={() => { setCmdOpen(false); navigate("/opportunities"); }}>
                     <DollarSign className="w-4 h-4 mr-2" /> Open Pipeline
                   </CommandItem>
-                  <CommandItem onSelect={() => { setCmdOpen(false); navigate("/my-numbers"); }}>
+                  {canManageTerritory && <CommandItem onSelect={() => { setCmdOpen(false); navigate("/my-numbers"); }}>
                     <Target className="w-4 h-4 mr-2" /> Open Quota & Attainment
-                  </CommandItem>
+                  </CommandItem>}
                   <CommandItem onSelect={() => { setCmdOpen(false); setViewMode(viewMode === "table" ? "kanban" : "table"); }}>
                     <LayoutGrid className="w-4 h-4 mr-2" /> Toggle {viewMode === "table" ? "Kanban" : "Table"} View
                   </CommandItem>
@@ -1225,9 +1225,9 @@ export default function TerritoryPlanner() {
                   <DropdownMenuItem onClick={() => navigate("/opportunities")} className="gap-3 px-4 py-2 rounded-md text-sm">
                     <DollarSign className="w-4 h-4 text-muted-foreground" /> Pipeline
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/my-numbers")} className="gap-3 px-4 py-2 rounded-md text-sm">
+                  {canManageTerritory && <DropdownMenuItem onClick={() => navigate("/my-numbers")} className="gap-3 px-4 py-2 rounded-md text-sm">
                     <Target className="w-4 h-4 text-muted-foreground" /> Quota
-                  </DropdownMenuItem>
+                  </DropdownMenuItem>}
                   <DropdownMenuItem onClick={() => setShowEnrich(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
                     <Sparkles className="w-4 h-4 text-muted-foreground" /> Enrich
                   </DropdownMenuItem>
@@ -1278,7 +1278,7 @@ export default function TerritoryPlanner() {
             { label: "Accounts", icon: Building2, onClick: () => {}, active: true },
             { label: "Today", icon: CalendarDays, onClick: () => navigate("/today"), active: false },
             { label: "Pipeline", icon: DollarSign, onClick: () => navigate("/opportunities"), active: false },
-            { label: "Quota", icon: Target, onClick: () => navigate("/my-numbers"), active: false },
+            ...(canManageTerritory ? [{ label: "Quota", icon: Target, onClick: () => navigate("/my-numbers"), active: false }] : []),
             { label: "Enrich", icon: Sparkles, onClick: () => setShowEnrich(true), active: false },
           ].map((tab) => (
             <button
@@ -1323,8 +1323,8 @@ export default function TerritoryPlanner() {
           ))}
         </div>
 
-        {/* Quota & Pipeline Strip */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        {/* Quota & Pipeline Strip — owner only */}
+        {canManageTerritory && <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           {(() => {
             const { monthBooked, monthQuota, qBooked, qQuota, ytdBooked, ytdQuota, ytdRenewed, totalPipeline, fmtK, settings } = quotaSummary;
             const monthPct = monthQuota > 0 ? monthBooked / monthQuota : 0;
@@ -1405,7 +1405,7 @@ export default function TerritoryPlanner() {
               </>
             );
           })()}
-        </div>
+        </div>}
 
         {/* Saved Views */}
         {savedViews.length > 0 && (
