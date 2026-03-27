@@ -82,6 +82,7 @@ import {
   DollarSign,
   CalendarDays,
   TrendingUp,
+  ShieldCheck,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -1323,9 +1324,9 @@ export default function TerritoryPlanner() {
         </div>
 
         {/* Quota & Pipeline Strip */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           {(() => {
-            const { monthBooked, monthQuota, qBooked, qQuota, ytdBooked, ytdQuota, totalPipeline, fmtK } = quotaSummary;
+            const { monthBooked, monthQuota, qBooked, qQuota, ytdBooked, ytdQuota, ytdRenewed, totalPipeline, fmtK, settings } = quotaSummary;
             const monthPct = monthQuota > 0 ? monthBooked / monthQuota : 0;
             const qPct = qQuota > 0 ? qBooked / qQuota : 0;
             const ytdPct = ytdQuota > 0 ? ytdBooked / ytdQuota : 0;
@@ -1379,6 +1380,27 @@ export default function TerritoryPlanner() {
                   <p className="text-3xl sm:text-4xl font-black font-mono text-foreground tracking-tight">{fmtK(totalPipeline)}</p>
                   <p className="text-sm text-muted-foreground mt-1 font-medium">{opportunities.filter(o => !["Won","Closed Won","Closed Lost","Dead"].includes(o.stage)).length} open deals</p>
                 </button>
+                {(() => {
+                  const u4r = settings?.u4r ?? 0;
+                  const renewPct = u4r > 0 ? ytdRenewed / u4r : 0;
+                  const renewBarColor = renewPct >= 0.86 ? "bg-emerald-500" : renewPct >= 0.6 ? "bg-amber-500" : "bg-red-400";
+                  const renewPctColor = renewPct >= 0.86 ? "text-emerald-500" : renewPct >= 0.6 ? "text-amber-500" : "text-muted-foreground";
+                  return (
+                    <button onClick={() => navigate("/my-numbers")} className="rounded-xl border-2 border-teal-500/20 p-5 bg-gradient-to-br from-teal-500/15 to-teal-500/5 hover:border-teal-500/40 hover:shadow-lg hover:shadow-teal-500/10 transition-all text-left group">
+                      <div className="flex items-center gap-2 text-sm font-black text-teal-600 dark:text-teal-400 uppercase tracking-widest mb-2">
+                        <ShieldCheck className="w-5 h-5" /> ACV RENEWED
+                      </div>
+                      <p className="text-3xl sm:text-4xl font-black font-mono text-foreground tracking-tight">{fmtK(ytdRenewed)}</p>
+                      <p className="text-sm text-muted-foreground mt-1 font-medium">of {fmtK(u4r)} U4R</p>
+                      <div className="flex items-center gap-2 mt-3">
+                        <div className="flex-1 h-2.5 rounded-full bg-muted overflow-hidden">
+                          <div className={cn("h-full rounded-full transition-all", renewBarColor)} style={{ width: `${Math.min(renewPct * 100, 100)}%` }} />
+                        </div>
+                        <span className={cn("text-sm font-black font-mono", renewPctColor)}>{Math.round(renewPct * 100)}%</span>
+                      </div>
+                    </button>
+                  );
+                })()}
               </>
             );
           })()}
