@@ -328,6 +328,8 @@ function EditableCell({
 
 // ─── Component ───────────────────────────────────────────────────────
 
+const OWNER_EMAILS = ["micahbank2@gmail.com", "mbank@yext.com"];
+
 export default function MyNumbersPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -340,6 +342,12 @@ export default function MyNumbersPage() {
   const [showAddOns, setShowAddOns] = useState(false);
   const [activeTab, setActiveTab] = useState("incremental");
   const [expandedQuarter, setExpandedQuarter] = useState<string | null>(null);
+
+  // Gate: non-owners get redirected away
+  if (user && !OWNER_EMAILS.includes(user.email ?? "")) {
+    navigate("/", { replace: true });
+    return null;
+  }
 
   // Auto-compute pipeline from deals by close date and type
   const pipelineByMonth = useMemo(() => {
