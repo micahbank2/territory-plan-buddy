@@ -33,7 +33,39 @@ serve(async (req) => {
     let maxTokens = 1000;
     let responseKey = "draft";
 
-    if (mode === "meeting-prep") {
+    if (mode === "research") {
+      // ---- RESEARCH MODE ----
+      systemPrompt = "You are a sales intelligence researcher for a Yext Senior AE. Research companies and find real, recent, actionable intelligence. Always respond with a valid JSON array only — no markdown, no code fences, no extra text.";
+      maxTokens = 2000;
+      responseKey = "findings";
+
+      userPrompt = `Research this company and find recent, actionable intelligence:
+
+Company: ${name}
+Website: ${website || "unknown"}
+Industry: ${industry || "unknown"}
+Locations: ${locationCount ?? "unknown"}
+Current Competitor: ${competitor || "unknown"}
+Known Contacts: ${contactSummary}
+
+Search for:
+1. Recent leadership changes (new CMO, VP Marketing, VP Digital, CTO) in the last 6 months
+2. Company news (expansion, new locations, acquisitions, rebrand, funding)
+3. Mentions of local SEO, listings management, reputation management, or digital presence
+4. Competitor mentions (SOCi, Birdeye, Uberall, Chatmeter, Rio SEO, Podium)
+5. Public job postings related to marketing, digital, or local SEO
+
+Return ONLY a valid JSON array. Each item:
+{
+  "title": "Short headline",
+  "description": "2-3 sentence summary with specific details",
+  "signal_type": one of "Leadership Change", "Expansion", "Competitor Contract Ending", "Bad Reviews / Reputation Issue", "Rebrand / Redesign", "Acquisition / Merger", "New Locations", "Funding Round", "Tech Vendor Evaluation", "Website Redesign", "Other",
+  "relevance": "Hot" or "Warm" or "Low",
+  "source": "Where this info comes from (e.g. Press Release, LinkedIn, Job Board, Google News)"
+}
+
+Return 0-6 findings. Only include real, recent info (last 12 months). If nothing notable, return [].`;
+    } else if (mode === "meeting-prep") {
       // ---- MEETING PREP MODE ----
       const interactionLines = (interactions || [])
         .slice(-10)
@@ -151,6 +183,23 @@ Return ONLY the email text, no markdown formatting, no extra commentary.`;
 
     const data = await response.json();
     const text = data.content?.[0]?.text || "";
+
+    // Research mode returns parsed JSON array
+    if (mode === "research") {
+      let findings;
+      try {
+        const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        const raw = jsonMatch ? jsonMatch[1].trim() : text.trim();
+        findings = JSON.parse(raw);
+        if (!Array.isArray(findings)) findings = [];
+      } catch {
+        console.error("Failed to parse research JSON:", text);
+        findings = [];
+      }
+      return new Response(JSON.stringify({ findings }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(JSON.stringify({ [responseKey]: text.trim() }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -420,13 +420,14 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     setResearchFindings([]);
     setResearchRan(true);
     try {
-      const { data: result, error } = await supabase.functions.invoke("research-account", {
+      const { data: result, error } = await supabase.functions.invoke("chat", {
         body: {
-          companyName: prospect.name,
+          mode: "research",
+          name: prospect.name,
           website: prospect.website,
           industry: prospect.industry,
           locationCount: prospect.locationCount,
-          contacts: (prospect.contacts || []).slice(0, 5).map(c => ({ name: c.name, title: c.title })),
+          contacts: (prospect.contacts || []).slice(0, 5).map(c => ({ name: c.name, title: c.title, role: c.role })),
           competitor: prospect.competitor,
         },
       });
