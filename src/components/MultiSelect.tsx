@@ -36,9 +36,10 @@ export function MultiSelect({ options, selected, onChange, placeholder }: MultiS
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          "flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 min-w-[120px] justify-between",
-          "bg-card/80 backdrop-blur-sm text-foreground hover:bg-muted hover:border-primary/30 hover:shadow-md transition-all",
-          selected.length > 0 ? "border-primary/50 bg-primary/5 shadow-sm" : "border-border/60"
+          "flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-full transition-all",
+          selected.length > 0
+            ? "bg-primary text-primary-foreground shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 hover:bg-primary/90"
+            : "bg-muted/80 text-muted-foreground hover:bg-muted hover:text-foreground"
         )}
       >
         <span className={cn("truncate", selected.length === 0 && "text-muted-foreground")}>
