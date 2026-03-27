@@ -61,16 +61,14 @@ Return ONLY a valid JSON array. Each item:
   "description": "2-3 sentence summary with specific details",
   "signal_type": one of "Leadership Change", "Expansion", "Competitor Contract Ending", "Bad Reviews / Reputation Issue", "Rebrand / Redesign", "Acquisition / Merger", "New Locations", "Funding Round", "Tech Vendor Evaluation", "Website Redesign", "Other",
   "relevance": "Hot" or "Warm" or "Low",
-  "source": "Source name (e.g. QSR Magazine, LinkedIn, PRNewswire)",
-  "url": "Full URL to the specific article or page. MUST be a real, complete URL starting with https://. If you cannot provide a real URL, omit this finding entirely."
+  "source": "Source name (e.g. QSR Magazine, LinkedIn, PRNewswire)"
 }
 
 CRITICAL RULES:
-- Only include findings from the LAST 6 MONTHS (since September 2025). Nothing older.
-- Every finding MUST have a real, verifiable URL. Do NOT make up URLs or use placeholder links.
-- If you cannot find a real source URL for a finding, do NOT include that finding.
+- Only include findings from the LAST 6 MONTHS (since September 2025). Nothing older. If a finding is from 2024 or earlier, do NOT include it.
 - Return 0-6 findings. Quality over quantity — fewer real findings beats more speculative ones.
-- If nothing recent and verifiable exists, return [].`;
+- If nothing recent exists, return an empty array [].
+- Do NOT include findings you are not confident happened in the last 6 months.`;
     } else if (mode === "meeting-prep") {
       // ---- MEETING PREP MODE ----
       const interactionLines = (interactions || [])
