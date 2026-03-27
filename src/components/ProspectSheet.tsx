@@ -680,13 +680,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                               {finding.relevance}
                             </span>
                             <span className="text-[9px] text-muted-foreground">{finding.signal_type}</span>
-                            {finding.url ? (
-                              <a href={finding.url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-primary/60 hover:text-primary ml-auto inline-flex items-center gap-0.5 hover:underline">
-                                {finding.source} <ExternalLink className="w-2.5 h-2.5" />
-                              </a>
-                            ) : (
-                              <span className="text-[9px] text-muted-foreground/50 ml-auto">{finding.source}</span>
-                            )}
+                            <span className="text-[9px] text-muted-foreground/50 ml-auto">{finding.source}</span>
                           </div>
                           <p className="text-xs font-semibold text-foreground leading-snug">{finding.title}</p>
                           <p className="text-[11px] text-muted-foreground leading-relaxed">{finding.description}</p>
@@ -703,6 +697,14 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                             >
                               <X className="w-3 h-3" /> Discard
                             </button>
+                            <a
+                              href={`https://www.google.com/search?q=${encodeURIComponent(prospect.name + " " + finding.title)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-md text-muted-foreground hover:bg-muted transition-colors ml-auto"
+                            >
+                              <Search className="w-3 h-3" /> Verify
+                            </a>
                           </div>
                         </div>
                       ))}
