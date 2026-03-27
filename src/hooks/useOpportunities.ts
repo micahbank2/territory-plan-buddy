@@ -33,16 +33,21 @@ const DB_FIELDS = new Set([
   "notes", "products", "close_date", "prospect_id", "website", "territory_id", "user_id",
 ]);
 
-function sanitizeForDb(obj: Record<string, any>): Record<string, any> {
+function sanitizeForDb(obj: Record<string, any>, isInsert = false): Record<string, any> {
   const clean: Record<string, any> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (!DB_FIELDS.has(key)) continue;
-    // close_date: Supabase types say `string` not `string | null` — OMIT if empty
-    if (key === "close_date" && !value) continue;
-    // prospect_id: nullable UUID — OMIT if empty/null
-    if (key === "prospect_id" && !value) continue;
-    // incremental_acv: nullable integer — OMIT if falsy (null/0/undefined)
-    if (key === "incremental_acv" && !value && value !== 0) continue;
+    // On INSERT only: skip empty optional fields so Supabase uses defaults
+    if (isInsert) {
+      if (key === "close_date" && !value) continue;
+      if (key === "prospect_id" && !value) continue;
+      if (key === "incremental_acv" && !value && value !== 0) continue;
+    } else {
+      // On UPDATE: allow null to clear nullable fields
+      if (key === "close_date" && !value) { clean[key] = null; continue; }
+      if (key === "prospect_id" && !value) { clean[key] = null; continue; }
+      if (key === "incremental_acv" && !value && value !== 0) { clean[key] = null; continue; }
+    }
     clean[key] = value;
   }
   return clean;
@@ -74,7 +79,7 @@ export function useOpportunities(territoryId: string | null) {
       ...opp,
       territory_id: territoryId,
       user_id: user.id,
-    });
+    }, true);
     console.log("[useOpportunities] inserting:", payload);
     const { error } = await supabase.from("opportunities").insert(payload as any);
     if (error) {
