@@ -10,7 +10,29 @@ export interface ContactSelection {
 
 const KEY_ROLES = ["Champion", "Decision Maker", "Executive Sponsor"] as const;
 
-export function buildContactPrompt(selections: ContactSelection[]): string {
+/**
+ * Build context-aware tone instructions based on the status of accounts in the selection.
+ */
+function buildToneGuidance(selections: ContactSelection[], filterSummary: string[]): string {
+  const statuses = new Set(selections.map(s => s.prospect.status));
+  const parts: string[] = [];
+
+  if (statuses.has("Churned")) {
+    parts.push(`**For CHURNED accounts:** These brands have used Yext in the past but parted ways. Acknowledge the prior relationship tactfully — don't ignore it. Lead with what's changed at Yext since they left (new AI capabilities, product improvements). Frame it as a fresh conversation, not a hard sell. Example hook: "I know [brand] worked with Yext previously — a lot has changed on our end since then, especially around AI search visibility."`);
+  }
+  if (statuses.has("Closed Lost Prospect")) {
+    parts.push(`**For CLOSED LOST PROSPECT accounts:** These were evaluated but not chosen. Don't reference the prior evaluation directly unless the contact was involved. Instead, lead with new developments or a different angle than what was pitched before. Be genuinely curious about what they went with and how it's working.`);
+  }
+  if (statuses.has("Customer")) {
+    parts.push(`**For CUSTOMER accounts:** These are existing Yext customers. Focus on expansion, upsell, or cross-sell. Reference products they likely already use and position additional capabilities. Tone should be collaborative partner, not cold prospector.`);
+  }
+
+  if (parts.length === 0) return "";
+
+  return `\n## TONE GUIDANCE BY ACCOUNT STATUS\n\n${parts.join("\n\n")}\n`;
+}
+
+export function buildContactPrompt(selections: ContactSelection[], filterSummary: string[] = []): string {
   if (selections.length === 0) return "";
 
   // Group by prospect
@@ -26,10 +48,17 @@ export function buildContactPrompt(selections: ContactSelection[]): string {
   const sections: string[] = [];
 
   // Header
-  sections.push(`You are drafting personalized outreach emails for Micah Bank, a Senior Account Executive at Yext covering Mid-Enterprise North.
+  let header = `You are drafting personalized outreach emails for Micah Bank, a Senior Account Executive at Yext covering Mid-Enterprise North.
 
 Yext's key products: Listings, Pages, Reviews, Search (Scout), Reputation Management, Analytics.
-Position Yext around: AI search visibility, multi-location brand consistency, local SEO at scale, competitive displacement of SOCi/Birdeye.
+Position Yext around: AI search visibility, multi-location brand consistency, local SEO at scale, competitive displacement of SOCi/Birdeye.`;
+
+  // Add filter context if filters were applied
+  if (filterSummary.length > 0) {
+    header += `\n\n**Selection Context:** These contacts were filtered by: ${filterSummary.join(" | ")}. Keep this context in mind when crafting emails — the filtering criteria reflects Micah's outreach strategy for this batch.`;
+  }
+
+  header += `
 
 ## STEP 1: RESEARCH EACH ACCOUNT
 
@@ -41,8 +70,20 @@ Before writing any email, search the web for each account below and look for:
 - **Leadership changes** — new CEO, COO, CTO, or any C-suite moves
 - **Competitive signals** — mentions of SOCi, Birdeye, Uberall, Chatmeter, or other listing/reputation vendors
 
-Use what you find to make each email hyper-relevant. If you find something specific, lead with it.
+**Also research each contact individually:**
+- Check their LinkedIn profile for recent posts, job changes, or shared content
+- Look for conference talks, podcast appearances, or published articles
+- Note any personal interests or causes that could make the email more human
 
+Use what you find to make each email hyper-relevant. If you find something specific, lead with it.`;
+
+  // Add tone guidance based on account statuses in selection
+  const toneGuidance = buildToneGuidance(selections, filterSummary);
+  if (toneGuidance) {
+    header += "\n" + toneGuidance;
+  }
+
+  header += `
 ## STEP 2: WRITE EMAILS
 
 For each contact below, write one personalized first-touch cold email.
@@ -55,6 +96,7 @@ For each contact below, write one personalized first-touch cold email.
 - Conversational tone, not corporate
 - If AI readiness data or signals are available, weave them in naturally
 - If you found recent news/hires/growth in your research, use it as the hook
+- Match the tone to the account's status (see TONE GUIDANCE above if provided)
 
 ## OUTPUT FORMAT
 
@@ -70,7 +112,9 @@ Return a clean, structured artifact. For EACH contact, use this exact format:
 ---
 
 If a contact has no email on file, write "EMAIL NEEDED" in the To field but still write the email.
-After all emails, add a **Research Notes** section summarizing what you found for each account (bullet points).`);
+After all emails, add a **Research Notes** section summarizing what you found for each account (bullet points).`;
+
+  sections.push(header);
 
   let contactNum = 0;
   for (const [, group] of byProspect) {
@@ -95,17 +139,20 @@ After all emails, add a **Research Notes** section summarizing what you found fo
       lines.push(`**Contact:** ${contactParts.join(", ")}${contact.email ? ` <${contact.email}>` : " (no email on file — find before sending)"}`);
       if (contact.role && contact.role !== "Unknown") lines.push(`**Role:** ${contact.role}`);
       if (contact.relationshipStrength && contact.relationshipStrength !== "Unknown") lines.push(`**Relationship:** ${contact.relationshipStrength}`);
+      if (contact.linkedinUrl) lines.push(`**LinkedIn:** ${contact.linkedinUrl}`);
 
       // Account context
       lines.push("");
       lines.push("**Account Context:**");
       const ctx: string[] = [];
+      if (p.status && p.status !== "Prospect") ctx.push(`Status: ${p.status}`);
       if (p.industry) ctx.push(`Industry: ${p.industry}`);
       if (p.locationCount) ctx.push(`Locations: ${p.locationCount}`);
       if (p.tier) ctx.push(`Tier: ${p.tier}`);
       if (p.priority) ctx.push(`Priority: ${p.priority}`);
       if (p.outreach) ctx.push(`Stage: ${p.outreach}`);
       if (p.competitor) ctx.push(`Competitor: ${p.competitor}`);
+      if ((p as any).activeAcv) ctx.push(`Active ACV: $${(p as any).activeAcv.toLocaleString()}`);
       lines.push(`- ${ctx.join(" | ")}`);
       lines.push(`- Score: ${score} (${label.short} — ${label.label})${breakdown.length > 0 ? ` — ${breakdown.map(b => `${b.label} ${b.value > 0 ? "+" : ""}${b.value}`).join(", ")}` : ""}`);
 
