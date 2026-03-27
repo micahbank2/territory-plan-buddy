@@ -1012,12 +1012,12 @@ export default function TerritoryPlanner() {
           {/* Left: Logo + territory */}
           <div className="flex items-center gap-3 min-w-0 shrink-0">
             <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-7 w-auto object-contain shrink-0" />
-            <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="hidden sm:flex items-center gap-2 text-muted-foreground">
               <span className="text-border">/</span>
               {territories.length > 1 ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-1.5 hover:text-foreground transition-colors font-medium">
+                    <button className="flex items-center gap-1.5 hover:text-foreground transition-colors text-base font-semibold">
                       <span className="truncate max-w-[180px]">{activeTerrObj?.name || "My Territory"}</span>
                       <ChevronDown className="w-3.5 h-3.5 opacity-60" />
                       {isReadOnly && <span className="text-[9px] bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 rounded px-1.5 py-0.5 font-semibold uppercase">View Only</span>}
@@ -1042,7 +1042,7 @@ export default function TerritoryPlanner() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <span className="font-medium">{activeTerrObj?.name || "My Territory"}</span>
+                <span className="text-base font-semibold text-foreground">{activeTerrObj?.name || "My Territory"}</span>
               )}
               <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground tabular-nums">{data.length}</span>
             </div>
