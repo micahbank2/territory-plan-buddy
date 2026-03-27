@@ -1468,10 +1468,10 @@ export default function TerritoryPlanner() {
             <Popover>
               <PopoverTrigger asChild>
                 <button className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-all",
+                  "inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 min-w-[120px] justify-between transition-all",
                   locFilterActive
-                    ? "border-primary/40 bg-primary/10 text-primary glow-blue"
-                    : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+                    ? "border-primary/50 bg-primary/5 text-primary shadow-sm"
+                    : "border-border/60 bg-card/80 text-muted-foreground hover:text-foreground hover:border-primary/30 hover:shadow-md"
                 )}>
                   <SlidersHorizontal className="w-3.5 h-3.5" />
                   {locFilterActive
