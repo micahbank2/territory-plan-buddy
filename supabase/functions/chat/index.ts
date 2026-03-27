@@ -61,7 +61,8 @@ Return ONLY a valid JSON array. Each item:
   "description": "2-3 sentence summary with specific details",
   "signal_type": one of "Leadership Change", "Expansion", "Competitor Contract Ending", "Bad Reviews / Reputation Issue", "Rebrand / Redesign", "Acquisition / Merger", "New Locations", "Funding Round", "Tech Vendor Evaluation", "Website Redesign", "Other",
   "relevance": "Hot" or "Warm" or "Low",
-  "source": "Where this info comes from (e.g. Press Release, LinkedIn, Job Board, Google News)"
+  "source": "Where this info comes from (e.g. Press Release, LinkedIn, Job Board, Google News)",
+  "url": "Full URL to the source article/page if available, or empty string if not"
 }
 
 Return 0-6 findings. Only include real, recent info (last 12 months). If nothing notable, return [].`;

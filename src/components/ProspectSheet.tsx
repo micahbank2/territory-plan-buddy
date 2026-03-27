@@ -108,8 +108,13 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     }
   };
 
-  // Reset local star overrides when switching prospects
-  useEffect(() => { setStarOverrides(new Map()); }, [prospectId]);
+  // Reset local state when switching prospects
+  useEffect(() => {
+    setStarOverrides(new Map());
+    setResearchFindings([]);
+    setResearchRan(false);
+    setResearchLoading(false);
+  }, [prospectId]);
   const [interactionType, setInteractionType] = useState(INTERACTION_TYPES[0]);
   const [interactionNotes, setInteractionNotes] = useState("");
   const [newNote, setNewNote] = useState("");
@@ -137,6 +142,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     signal_type: string;
     relevance: string;
     source: string;
+    url?: string;
   }
   const [researchFindings, setResearchFindings] = useState<ResearchFinding[]>([]);
   const [researchLoading, setResearchLoading] = useState(false);
@@ -629,6 +635,93 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
             </div>
           </div>
 
+          {/* Account Research — top of sheet, compact until clicked */}
+          {addSignal && (
+            <div className="animate-fade-in-up" style={{ animationDelay: "30ms" }}>
+              {!researchRan && !researchLoading ? (
+                <button
+                  onClick={runResearch}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-primary/30 text-primary hover:bg-primary/5 hover:border-primary/50 transition-all text-sm font-medium"
+                >
+                  <Search className="w-4 h-4" />
+                  Research {prospect.name} — find news, hires, and signals
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  {researchLoading && (
+                    <div className="flex items-center justify-center py-6 rounded-lg border border-border bg-muted/20">
+                      <div className="flex items-center gap-3">
+                        <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                        <span className="text-sm text-muted-foreground">Researching {prospect.name}...</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {!researchLoading && researchFindings.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-foreground">{researchFindings.length} finding{researchFindings.length !== 1 ? "s" : ""}</span>
+                        <div className="flex items-center gap-3">
+                          <button onClick={keepAllFindings} className="text-[10px] font-semibold text-primary hover:underline">Keep All</button>
+                          <button onClick={runResearch} className="text-[10px] font-semibold text-muted-foreground hover:text-foreground">
+                            <RefreshCw className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                      {researchFindings.map((finding, idx) => (
+                        <div key={idx} className="p-3 rounded-lg border border-border bg-muted/30 space-y-2 animate-fade-in-up" style={{ animationDelay: `${idx * 60}ms` }}>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={cn(
+                              "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded",
+                              finding.relevance === "Hot" ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400" :
+                              finding.relevance === "Warm" ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" :
+                              "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                            )}>
+                              {finding.relevance}
+                            </span>
+                            <span className="text-[9px] text-muted-foreground">{finding.signal_type}</span>
+                            {finding.url ? (
+                              <a href={finding.url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-primary/60 hover:text-primary ml-auto inline-flex items-center gap-0.5 hover:underline">
+                                {finding.source} <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            ) : (
+                              <span className="text-[9px] text-muted-foreground/50 ml-auto">{finding.source}</span>
+                            )}
+                          </div>
+                          <p className="text-xs font-semibold text-foreground leading-snug">{finding.title}</p>
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">{finding.description}</p>
+                          <div className="flex items-center gap-2 pt-1.5">
+                            <button
+                              onClick={() => keepFinding(finding)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
+                            >
+                              <Check className="w-3 h-3" /> Keep
+                            </button>
+                            <button
+                              onClick={() => discardFinding(finding)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-md text-muted-foreground hover:bg-muted transition-colors"
+                            >
+                              <X className="w-3 h-3" /> Discard
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {!researchLoading && researchRan && researchFindings.length === 0 && (
+                    <div className="flex items-center justify-between py-3 px-4 rounded-lg border border-border bg-muted/20">
+                      <span className="text-xs text-muted-foreground">No findings this time.</span>
+                      <button onClick={runResearch} className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1">
+                        <RefreshCw className="w-3 h-3" /> Try again
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Log Activity — unified widget */}
           <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "50ms" }}>
             <div className="flex items-center gap-2">
@@ -862,88 +955,6 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 territoryId={territoryId}
                 compact
               />
-            </div>
-          )}
-
-          {/* Account Research — inline with Signals, compact until clicked */}
-          {addSignal && (
-            <div className="animate-fade-in-up" style={{ animationDelay: "175ms" }}>
-              {!researchRan && !researchLoading ? (
-                /* Compact: just a single button */
-                <button
-                  onClick={runResearch}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-primary/30 text-primary hover:bg-primary/5 hover:border-primary/50 transition-all text-sm font-medium"
-                >
-                  <Search className="w-4 h-4" />
-                  Research {prospect.name} — find news, hires, and signals
-                </button>
-              ) : (
-                <div className="space-y-3">
-                  {researchLoading && (
-                    <div className="flex items-center justify-center py-6 rounded-lg border border-border bg-muted/20">
-                      <div className="flex items-center gap-3">
-                        <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                        <span className="text-sm text-muted-foreground">Researching {prospect.name}...</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {!researchLoading && researchFindings.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-foreground">{researchFindings.length} finding{researchFindings.length !== 1 ? "s" : ""} found</span>
-                        <div className="flex items-center gap-3">
-                          <button onClick={keepAllFindings} className="text-[10px] font-semibold text-primary hover:underline">Keep All</button>
-                          <button onClick={runResearch} className="text-[10px] font-semibold text-muted-foreground hover:text-foreground">
-                            <RefreshCw className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                      {researchFindings.map((finding, idx) => (
-                        <div key={idx} className="p-3 rounded-lg border border-border bg-muted/30 space-y-2 animate-fade-in-up" style={{ animationDelay: `${idx * 60}ms` }}>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className={cn(
-                              "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded",
-                              finding.relevance === "Hot" ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400" :
-                              finding.relevance === "Warm" ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" :
-                              "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
-                            )}>
-                              {finding.relevance}
-                            </span>
-                            <span className="text-[9px] text-muted-foreground">{finding.signal_type}</span>
-                            <span className="text-[9px] text-muted-foreground/50 ml-auto">via {finding.source}</span>
-                          </div>
-                          <p className="text-xs font-semibold text-foreground leading-snug">{finding.title}</p>
-                          <p className="text-[11px] text-muted-foreground leading-relaxed">{finding.description}</p>
-                          <div className="flex items-center gap-2 pt-1.5">
-                            <button
-                              onClick={() => keepFinding(finding)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
-                            >
-                              <Check className="w-3 h-3" /> Keep
-                            </button>
-                            <button
-                              onClick={() => discardFinding(finding)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-md text-muted-foreground hover:bg-muted transition-colors"
-                            >
-                              <X className="w-3 h-3" /> Discard
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {!researchLoading && researchRan && researchFindings.length === 0 && (
-                    <div className="flex items-center justify-between py-3 px-4 rounded-lg border border-border bg-muted/20">
-                      <span className="text-xs text-muted-foreground">No findings this time.</span>
-                      <button onClick={runResearch} className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1">
-                        <RefreshCw className="w-3 h-3" /> Try again
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           )}
 
