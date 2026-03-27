@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTerritories } from "@/hooks/useTerritories";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Settings, TrendingUp, DollarSign, Target, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Settings, TrendingUp, DollarSign, Target, ShieldCheck, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { cn } from "@/lib/utils";
 
@@ -339,6 +339,7 @@ export default function MyNumbersPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAddOns, setShowAddOns] = useState(false);
   const [activeTab, setActiveTab] = useState("incremental");
+  const [expandedQuarter, setExpandedQuarter] = useState<string | null>(null);
 
   // Auto-compute pipeline from deals by close date and type
   const pipelineByMonth = useMemo(() => {
@@ -609,9 +610,16 @@ export default function MyNumbersPage() {
                           return s + (idx >= 0 ? renewalCalcs[idx]?.monthlyPayout ?? 0 : 0);
                         }, 0));
                       const qPipeline = q.months.reduce((s, m) => s + (pipelineByMonth.renew.get(m) ?? 0), 0);
+                      const isExpanded = expandedQuarter === q.label;
                       return (
-                        <TableRow key={q.label}>
-                          <TableCell className="font-semibold text-sm">{q.label}</TableCell>
+                        <React.Fragment key={q.label}>
+                        <TableRow className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => setExpandedQuarter(isExpanded ? null : q.label)}>
+                          <TableCell className="font-semibold text-sm">
+                            <span className="flex items-center gap-1.5">
+                              <ChevronRight className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform", isExpanded && "rotate-90")} />
+                              {q.label}
+                            </span>
+                          </TableCell>
                           <TableCell className="text-right font-mono text-sm">{fmt(qRenewed)}</TableCell>
                           <TableCell className="text-right font-mono text-sm">{fmt(lastMonthCalc?.cumRenewed ?? 0)}</TableCell>
                           <TableCell className="text-right font-mono text-sm">{pct(lastMonthCalc?.retentionPct ?? 0)}</TableCell>
@@ -624,6 +632,21 @@ export default function MyNumbersPage() {
                           <TableCell className="text-right font-mono text-sm font-semibold">{fmt(qPayout)}</TableCell>
                           <TableCell className="text-right font-mono text-sm text-muted-foreground">{fmt(qPipeline)}</TableCell>
                         </TableRow>
+                        {isExpanded && q.months.map(m => {
+                          const e = entries.find(en => en.month === m);
+                          if (!e) return null;
+                          const label = new Date(m + "-15").toLocaleString("default", { month: "short", year: "2-digit" });
+                          return (
+                            <TableRow key={m} className="bg-muted/20">
+                              <TableCell className="pl-8 text-xs text-muted-foreground font-medium">{label}</TableCell>
+                              <TableCell className="text-right">
+                                <EditableCell value={e.renewedAcv} onChange={v => updateEntry(m, "renewedAcv", v)} />
+                              </TableCell>
+                              <TableCell colSpan={6} />
+                            </TableRow>
+                          );
+                        })}
+                        </React.Fragment>
                       );
                     });
                   })()}
