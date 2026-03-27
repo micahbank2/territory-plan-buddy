@@ -1379,6 +1379,7 @@ export default function TerritoryPlanner() {
                   </div>
                   <p className="text-3xl sm:text-4xl font-black font-mono text-foreground tracking-tight">{fmtK(totalPipeline)}</p>
                   <p className="text-sm text-muted-foreground mt-1 font-medium">{opportunities.filter(o => !["Won","Closed Won","Closed Lost","Dead"].includes(o.stage)).length} open deals</p>
+                  <div className="mt-3 h-2.5" />
                 </button>
                 {(() => {
                   const u4r = settings?.u4r ?? 0;
