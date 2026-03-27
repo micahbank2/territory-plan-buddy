@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   INDUSTRIES,
+  STATUSES,
   TIERS,
   COMPETITORS,
 } from "@/data/prospects";
@@ -561,8 +562,7 @@ export function AddProspectDialog({
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <select value={status} onChange={(e) => setStatus(e.target.value)} className={selectClass}>
-                      <option value="Prospect">Prospect</option>
-                      <option value="Churned">Churned</option>
+                      {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                     <select value={tier} onChange={(e) => setTier(e.target.value)} className={selectClass}>
                       <option value="">Tier</option>

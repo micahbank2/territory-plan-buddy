@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { INDUSTRIES, STAGES, COMPETITORS, TIERS } from "@/data/prospects";
+import { INDUSTRIES, STAGES, STATUSES, COMPETITORS, TIERS } from "@/data/prospects";
 import {
   Dialog,
   DialogContent,
@@ -116,8 +116,7 @@ export function BulkEditDialog({ open, onOpenChange, selectedCount, onApply }: B
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Status</label>
               <select value={status} onChange={(e) => setStatus(e.target.value)} className={selectClass}>
                 <option value="">— Keep —</option>
-                <option value="Prospect">Prospect</option>
-                <option value="Churned">Churned</option>
+                {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
           </div>

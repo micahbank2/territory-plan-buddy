@@ -495,11 +495,15 @@ export default function ProspectPage() {
               <h1 className="text-lg font-extrabold text-foreground">{prospect.name}</h1>
               <span className={cn(
                 "px-3 py-1 text-sm font-bold rounded-lg uppercase",
-                prospect.status === "Churned"
-                  ? "bg-destructive/15 text-destructive"
-                  : "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]"
+                prospect.status === "Churned" ? "bg-destructive/15 text-destructive" :
+                prospect.status === "Closed Lost Prospect" ? "bg-amber-500/15 text-amber-700 dark:text-amber-400" :
+                prospect.status === "Customer" ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" :
+                "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]"
               )}>
-                {prospect.status === "Churned" ? "💀 Churned" : "🎯 Prospect"}
+                {prospect.status === "Churned" ? "💀 Churned" :
+                 prospect.status === "Closed Lost Prospect" ? "❌ Closed Lost" :
+                 prospect.status === "Customer" ? "✅ Customer" :
+                 "🎯 Prospect"}
               </span>
               {prospect.competitor && (
                 <span className="px-3 py-1 text-sm font-bold rounded-lg bg-[hsl(var(--warning))]/15 text-[hsl(var(--warning))]">
