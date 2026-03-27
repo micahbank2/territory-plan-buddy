@@ -30,7 +30,8 @@ function dbToProspect(row: any, contacts: any[], interactions: any[], notes: any
     estimatedRevenue: row.estimated_revenue,
     competitor: row.competitor || "",
     tier: row.tier || "",
-    contacts: contacts.map((c: any) => ({ id: c.id, name: c.name, email: c.email, phone: c.phone, title: c.title, notes: c.notes, role: c.role || undefined, relationshipStrength: c.relationship_strength || undefined, starred: c.starred ?? false })),
+    activeAcv: row.active_acv ?? null,
+    contacts: contacts.map((c: any) => ({ id: c.id, name: c.name, email: c.email, phone: c.phone, title: c.title, notes: c.notes, role: c.role || undefined, relationshipStrength: c.relationship_strength || undefined, starred: c.starred ?? false, linkedinUrl: c.linkedin_url || "" })),
     interactions: interactions.map((i: any) => ({ id: i.id, type: i.type, date: i.date, notes: i.notes })),
     createdAt: row.created_at,
     tasks: tasks.map((t: any) => ({ id: t.id, text: t.text, dueDate: t.due_date })),
@@ -192,6 +193,7 @@ export function useProspects(territoryId?: string | null) {
       competitor: p.competitor,
       tier: p.tier,
       transition_owner: p.transitionOwner,
+      active_acv: (p as any).activeAcv || null,
     };
     if (territoryId) insertData.territory_id = territoryId;
 
@@ -344,6 +346,7 @@ export function useProspects(territoryId?: string | null) {
       if ("competitor" in c) dbFields.competitor = c.competitor;
       if ("tier" in c) dbFields.tier = c.tier;
       if ("transitionOwner" in c) dbFields.transition_owner = c.transitionOwner;
+      if ("activeAcv" in c) dbFields.active_acv = c.activeAcv;
 
       // Only update prospect fields if there are any
       const hasProspectFields = Object.keys(dbFields).length > 1; // more than just last_touched
@@ -367,6 +370,7 @@ export function useProspects(territoryId?: string | null) {
               role: contact.role || null,
               relationship_strength: contact.relationshipStrength || null,
               starred: contact.starred ?? false,
+              linkedin_url: contact.linkedinUrl || "",
             }))
           );
         }
@@ -465,6 +469,7 @@ export function useProspects(territoryId?: string | null) {
       notes: contact.notes || "",
       role: contact.role || null,
       relationship_strength: contact.relationshipStrength || null,
+      linkedin_url: contact.linkedinUrl || "",
     }).select().single();
     if (error || !inserted) { toast.error("Failed to add contact"); return; }
     const newContact: Contact = {
@@ -477,6 +482,7 @@ export function useProspects(territoryId?: string | null) {
       role: (inserted.role as Contact["role"]) || undefined,
       relationshipStrength: (inserted.relationship_strength as Contact["relationshipStrength"]) || undefined,
       starred: false,
+      linkedinUrl: (inserted as any).linkedin_url || "",
     };
     setData(prev => prev.map(p =>
       p.id === prospectId
@@ -496,6 +502,7 @@ export function useProspects(territoryId?: string | null) {
     if ("role" in fields) dbFields.role = fields.role || null;
     if ("relationshipStrength" in fields) dbFields.relationship_strength = fields.relationshipStrength || null;
     if ("starred" in fields) dbFields.starred = fields.starred ?? false;
+    if ("linkedinUrl" in fields) dbFields.linkedin_url = fields.linkedinUrl || "";
     const { error } = await supabase.from("prospect_contacts").update(dbFields).eq("id", contactId);
     if (error) { toast.error("Failed to update contact"); return; }
     setData(prev => prev.map(p => ({

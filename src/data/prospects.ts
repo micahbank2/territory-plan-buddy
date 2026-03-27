@@ -6,6 +6,9 @@ export const STAGES = [
   "Closed Won",
 ];
 
+export const STATUSES = ["Prospect", "Closed Lost Prospect", "Churned", "Customer"] as const;
+export type ProspectStatus = typeof STATUSES[number];
+
 export const PRIORITIES = ["", "Hot", "Warm", "Cold", "Dead"];
 
 export const TIERS = ["", "Tier 1", "Tier 2", "Tier 3", "Tier 4"];
@@ -87,6 +90,7 @@ export interface Contact {
   role?: ContactRole;
   relationshipStrength?: RelationshipStrength;
   starred?: boolean;
+  linkedinUrl?: string;
 }
 
 export interface InteractionLog {
@@ -145,6 +149,7 @@ export interface Prospect {
   /** @deprecated use tasks[] instead */
   nextStepDate?: string;
   customLogo?: string;
+  activeAcv?: number | null;
   aiReadinessScore?: number | null;
   aiReadinessGrade?: string | null;
   aiReadinessData?: AIReadinessData | null;
@@ -172,6 +177,8 @@ export function scoreBreakdown(p: Prospect): ScoreBreakdownItem[] {
   else if (p.priority === "Warm") items.push({ label: "Warm priority", value: 10 });
   else if (p.priority === "Dead") items.push({ label: "Dead priority", value: -30 });
   if (p.status === "Churned") items.push({ label: "Churned status", value: -10 });
+  if (p.status === "Closed Lost Prospect") items.push({ label: "Closed Lost Prospect", value: -5 });
+  if (p.status === "Customer") items.push({ label: "Customer", value: 15 });
   if (lc === 0 && p.locationNotes && p.locationNotes.includes("CLOSED"))
     items.push({ label: "Closed locations", value: -50 });
   return items;
@@ -214,6 +221,8 @@ export function scoreProspect(p: Prospect): number {
   else if (p.priority === "Warm") s += 10;
   else if (p.priority === "Dead") s -= 30;
   if (p.status === "Churned") s -= 10;
+  if (p.status === "Closed Lost Prospect") s -= 5;
+  if (p.status === "Customer") s += 15;
   if (lc === 0 && p.locationNotes && p.locationNotes.includes("CLOSED"))
     s -= 50;
   return s;

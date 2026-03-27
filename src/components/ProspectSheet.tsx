@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import {
-  INDUSTRIES, STAGES, PRIORITIES, TIERS, COMPETITORS, INTERACTION_TYPES,
+  INDUSTRIES, STAGES, STATUSES, PRIORITIES, TIERS, COMPETITORS, INTERACTION_TYPES,
   CONTACT_ROLES, RELATIONSHIP_STRENGTHS,
   scoreProspect, scoreBreakdown, getScoreLabel, getLogoUrl,
   type Prospect, type Contact, type InteractionLog, type NoteEntry, type Task,
@@ -244,6 +244,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
       name: newContact.name || "", email: newContact.email || "",
       phone: newContact.phone || "", title: newContact.title || "", notes: newContact.notes || "",
       role: (newContact as any).role || "Unknown", relationshipStrength: (newContact as any).relationshipStrength || "Unknown",
+      linkedinUrl: newContact.linkedinUrl || "",
     });
     setNewContact({}); setShowAddContact(false);
     toast.success("👤 Contact added!");
@@ -257,7 +258,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
 
   const startEditContact = (c: Contact) => {
     setEditingContactId(c.id);
-    setEditContact({ name: c.name, title: c.title, email: c.email, phone: c.phone, notes: c.notes, role: c.role, relationshipStrength: c.relationshipStrength } as any);
+    setEditContact({ name: c.name, title: c.title, email: c.email, phone: c.phone, notes: c.notes, role: c.role, relationshipStrength: c.relationshipStrength, linkedinUrl: c.linkedinUrl } as any);
   };
 
   const saveEditContact = async () => {
@@ -510,8 +511,14 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                   className="text-base font-extrabold truncate bg-transparent border-b border-transparent hover:border-border focus:border-primary focus:outline-none transition-colors max-w-[200px]"
                 />
                 <span className={cn("px-2 py-0.5 text-xs font-bold rounded-md uppercase",
-                  prospect.status === "Churned" ? "bg-destructive/15 text-destructive" : "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]"
-                )}>{prospect.status === "Churned" ? "💀 Churned" : "🎯 Prospect"}</span>
+                  prospect.status === "Churned" ? "bg-destructive/15 text-destructive" :
+                  prospect.status === "Closed Lost Prospect" ? "bg-amber-500/15 text-amber-700 dark:text-amber-400" :
+                  prospect.status === "Customer" ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" :
+                  "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]"
+                )}>{prospect.status === "Churned" ? "💀 Churned" :
+                   prospect.status === "Closed Lost Prospect" ? "❌ Closed Lost" :
+                   prospect.status === "Customer" ? "✅ Customer" :
+                   "🎯 Prospect"}</span>
                 {prospect.tier && <span className={cn("px-2 py-0.5 text-xs font-bold rounded-md",
                   prospect.tier === "Tier 1" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
                 )}>{prospect.tier === "Tier 1" ? "⭐" : prospect.tier === "Tier 2" ? "🥈" : "🥉"} {prospect.tier}</span>}
@@ -628,9 +635,25 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-muted-foreground uppercase">Status</label>
                 <select value={prospect.status} onChange={e => handleUpdate("status", e.target.value)} className={selectClass}>
-                  <option value="Prospect">🎯 Prospect</option>
-                  <option value="Churned">💀 Churned</option>
+                  {STATUSES.map(s => (
+                    <option key={s} value={s}>
+                      {s === "Prospect" ? "🎯" : s === "Closed Lost Prospect" ? "❌" : s === "Churned" ? "💀" : "✅"} {s}
+                    </option>
+                  ))}
                 </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Active ACV ($)</label>
+                <input
+                  type="number"
+                  value={(prospect as any).activeAcv || ""}
+                  onChange={e => {
+                    const val = e.target.value ? parseInt(e.target.value) : null;
+                    handleUpdate("activeAcv", val);
+                  }}
+                  className={inputClass}
+                  placeholder="Current ACV"
+                />
               </div>
             </div>
           </div>
@@ -849,6 +872,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 <input value={newContact.title || ""} onChange={e => setNewContact({...newContact, title: e.target.value})} placeholder="Title" className={cn(inputClass, "text-xs py-1.5")} />
                 <input value={newContact.email || ""} onChange={e => setNewContact({...newContact, email: e.target.value})} placeholder="Email" className={cn(inputClass, "text-xs py-1.5")} />
                 <input value={newContact.phone || ""} onChange={e => setNewContact({...newContact, phone: e.target.value})} placeholder="Phone" className={cn(inputClass, "text-xs py-1.5")} />
+                <input value={newContact.linkedinUrl || ""} onChange={e => setNewContact({...newContact, linkedinUrl: e.target.value})} placeholder="LinkedIn URL (e.g. linkedin.com/in/...)" className={cn(inputClass, "text-xs py-1.5")} />
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-0.5">
               <label className="text-xs font-semibold text-muted-foreground uppercase">Role</label>
@@ -884,6 +908,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                     <input value={editContact.title || ""} onChange={e => setEditContact({...editContact, title: e.target.value})} placeholder="Title" className={cn(inputClass, "text-xs py-1.5")} />
                     <input value={editContact.email || ""} onChange={e => setEditContact({...editContact, email: e.target.value})} placeholder="Email" className={cn(inputClass, "text-xs py-1.5")} />
                     <input value={editContact.phone || ""} onChange={e => setEditContact({...editContact, phone: e.target.value})} placeholder="Phone" className={cn(inputClass, "text-xs py-1.5")} />
+                    <input value={editContact.linkedinUrl || ""} onChange={e => setEditContact({...editContact, linkedinUrl: e.target.value})} placeholder="LinkedIn URL" className={cn(inputClass, "text-xs py-1.5")} />
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-0.5">
                         <label className="text-xs font-semibold text-muted-foreground uppercase">Role</label>
@@ -938,6 +963,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                      <div className="mt-1"><StrengthDot strength={c.relationshipStrength} /></div>
                     {c.email && <a href={`mailto:${c.email}`} className="text-xs text-primary hover:underline flex items-center gap-1 mt-1 select-text"><Mail className="w-3 h-3" /> {c.email}</a>}
                     {c.phone && <div className="text-xs text-foreground/70 flex items-center gap-1 mt-0.5 select-text"><Phone className="w-3 h-3" /> {c.phone}</div>}
+                    {c.linkedinUrl && <a href={c.linkedinUrl.startsWith("http") ? c.linkedinUrl : `https://${c.linkedinUrl}`} target="_blank" rel="noreferrer" className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 mt-0.5 select-text"><Linkedin className="w-3 h-3" /> LinkedIn</a>}
                     {c.notes && <div className="text-xs text-foreground/70 mt-1.5 pt-1.5 border-t border-border italic select-text">📝 {c.notes}</div>}
                   </div>
                 )}

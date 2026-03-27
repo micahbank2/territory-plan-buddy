@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { useAuth } from "@/hooks/useAuth";
 import {
   STAGES,
+  STATUSES,
   INDUSTRIES,
   COMPETITORS,
   TIERS,
@@ -1445,7 +1446,7 @@ export default function TerritoryPlanner() {
           )}>
             <MultiSelect options={INDUSTRIES} selected={fIndustry} onChange={setFIndustry} placeholder="Industry" />
             <MultiSelect options={STAGES} selected={fOutreach} onChange={setFOutreach} placeholder="Outreach" />
-            <MultiSelect options={["Prospect", "Churned"]} selected={fStatus} onChange={setFStatus} placeholder="Status" />
+            <MultiSelect options={[...STATUSES]} selected={fStatus} onChange={setFStatus} placeholder="Status" />
             <MultiSelect options={COMPETITORS.filter(Boolean)} selected={fCompetitor} onChange={setFCompetitor} placeholder="Competitor" />
             <MultiSelect options={TIERS.filter(Boolean)} selected={fTier} onChange={setFTier} placeholder="Tier" />
             <MultiSelect options={["Hot", "Warm", "Cold", "Dead"]} selected={fPriority} onChange={setFPriority} placeholder="Priority" />
@@ -1678,7 +1679,10 @@ export default function TerritoryPlanner() {
                         <div className="flex items-center gap-1.5 mt-1.5">
                           <span className={cn(
                             "inline-flex px-2.5 py-1 text-xs font-bold rounded-lg",
-                            p.status === "Churned" ? "bg-destructive/15 text-destructive" : "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]"
+                            p.status === "Churned" ? "bg-destructive/15 text-destructive" :
+                            p.status === "Closed Lost Prospect" ? "bg-amber-500/15 text-amber-700 dark:text-amber-400" :
+                            p.status === "Customer" ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" :
+                            "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]"
                           )}>{p.status}</span>
                           {p.competitor && (
                             <span className="inline-flex px-2.5 py-1 text-xs font-bold rounded-lg bg-[hsl(var(--warning))]/15 text-[hsl(var(--warning))]">
