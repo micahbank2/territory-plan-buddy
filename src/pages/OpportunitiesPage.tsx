@@ -22,6 +22,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { ArrowLeft, Plus, Search, DollarSign, ArrowUp, ArrowDown, ArrowUpDown, X, Trash2, CalendarIcon, ChevronDown, ChevronRight } from "lucide-react";
+import { QuotaHeroBoxes } from "@/components/QuotaHeroBoxes";
 import { cn } from "@/lib/utils";
 
 function htmlToPreviewText(html: string) {
@@ -329,9 +330,16 @@ export default function OpportunitiesPage() {
         </div>
       </div>
 
-      {/* Forecast Bar */}
+      {/* Quota Hero Boxes */}
       {!loading && opportunities.length > 0 && (
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-5 pb-0">
+          <QuotaHeroBoxes opportunities={opportunities} />
+        </div>
+      )}
+
+      {/* Forecast Bar */}
+      {!loading && opportunities.length > 0 && (
+        <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-4 pb-0">
           <div className="rounded-lg border border-border bg-muted/30 p-4">
             <div className="flex items-center gap-6 flex-wrap">
               <div>
