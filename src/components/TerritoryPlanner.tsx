@@ -1332,51 +1332,51 @@ export default function TerritoryPlanner() {
             const barColor = (p: number) => p >= 1 ? "bg-emerald-500" : p >= 0.5 ? "bg-amber-500" : "bg-red-400";
             return (
               <>
-                <button onClick={() => navigate("/my-numbers")} className="rounded-xl border border-border p-4 bg-gradient-to-br from-blue-500/15 to-blue-500/5 hover:border-blue-500/40 transition-all text-left group">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                    <Target className="w-3.5 h-3.5" /> This Month
+                <button onClick={() => navigate("/my-numbers")} className="rounded-xl border border-border p-5 bg-gradient-to-br from-blue-500/15 to-blue-500/5 hover:border-blue-500/40 transition-all text-left group">
+                  <div className="flex items-center gap-2 text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-2">
+                    <Target className="w-4 h-4" /> CLOSED WON THIS MONTH
                   </div>
-                  <p className="text-xl font-black font-mono text-foreground">{fmtK(monthBooked)}</p>
-                  <p className="text-[10px] text-muted-foreground">of {fmtK(monthQuota)} quota</p>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <p className="text-2xl sm:text-3xl font-black font-mono text-foreground tracking-tight">{fmtK(monthBooked)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 font-medium">of {fmtK(monthQuota)} quota</p>
+                  <div className="flex items-center gap-2 mt-2.5">
+                    <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                       <div className={cn("h-full rounded-full transition-all", barColor(monthPct))} style={{ width: `${Math.min(monthPct * 100, 100)}%` }} />
                     </div>
-                    <span className={cn("text-[10px] font-bold font-mono", pctColor(monthPct))}>{Math.round(monthPct * 100)}%</span>
+                    <span className={cn("text-xs font-black font-mono", pctColor(monthPct))}>{Math.round(monthPct * 100)}%</span>
                   </div>
                 </button>
-                <button onClick={() => navigate("/my-numbers")} className="rounded-xl border border-border p-4 bg-gradient-to-br from-violet-500/15 to-violet-500/5 hover:border-violet-500/40 transition-all text-left group">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                    <TrendingUp className="w-3.5 h-3.5" /> This Quarter
+                <button onClick={() => navigate("/my-numbers")} className="rounded-xl border border-border p-5 bg-gradient-to-br from-violet-500/15 to-violet-500/5 hover:border-violet-500/40 transition-all text-left group">
+                  <div className="flex items-center gap-2 text-xs font-black text-violet-600 dark:text-violet-400 uppercase tracking-widest mb-2">
+                    <TrendingUp className="w-4 h-4" /> CLOSED WON THIS QUARTER
                   </div>
-                  <p className="text-xl font-black font-mono text-foreground">{fmtK(qBooked)}</p>
-                  <p className="text-[10px] text-muted-foreground">of {fmtK(qQuota)} quota</p>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <p className="text-2xl sm:text-3xl font-black font-mono text-foreground tracking-tight">{fmtK(qBooked)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 font-medium">of {fmtK(qQuota)} quota</p>
+                  <div className="flex items-center gap-2 mt-2.5">
+                    <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                       <div className={cn("h-full rounded-full transition-all", barColor(qPct))} style={{ width: `${Math.min(qPct * 100, 100)}%` }} />
                     </div>
-                    <span className={cn("text-[10px] font-bold font-mono", pctColor(qPct))}>{Math.round(qPct * 100)}%</span>
+                    <span className={cn("text-xs font-black font-mono", pctColor(qPct))}>{Math.round(qPct * 100)}%</span>
                   </div>
                 </button>
-                <button onClick={() => navigate("/my-numbers")} className="rounded-xl border border-border p-4 bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 hover:border-emerald-500/40 transition-all text-left group">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                    <DollarSign className="w-3.5 h-3.5" /> YTD Incremental
+                <button onClick={() => navigate("/my-numbers")} className="rounded-xl border border-border p-5 bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 hover:border-emerald-500/40 transition-all text-left group">
+                  <div className="flex items-center gap-2 text-xs font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-2">
+                    <DollarSign className="w-4 h-4" /> CLOSED WON YTD
                   </div>
-                  <p className="text-xl font-black font-mono text-foreground">{fmtK(ytdBooked)}</p>
-                  <p className="text-[10px] text-muted-foreground">of {fmtK(ytdQuota)} annual quota</p>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <p className="text-2xl sm:text-3xl font-black font-mono text-foreground tracking-tight">{fmtK(ytdBooked)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 font-medium">of {fmtK(ytdQuota)} annual quota</p>
+                  <div className="flex items-center gap-2 mt-2.5">
+                    <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                       <div className={cn("h-full rounded-full transition-all", barColor(ytdPct))} style={{ width: `${Math.min(ytdPct * 100, 100)}%` }} />
                     </div>
-                    <span className={cn("text-[10px] font-bold font-mono", pctColor(ytdPct))}>{Math.round(ytdPct * 100)}%</span>
+                    <span className={cn("text-xs font-black font-mono", pctColor(ytdPct))}>{Math.round(ytdPct * 100)}%</span>
                   </div>
                 </button>
-                <button onClick={() => navigate("/opportunities")} className="rounded-xl border border-border p-4 bg-gradient-to-br from-amber-500/15 to-amber-500/5 hover:border-amber-500/40 transition-all text-left group">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                    <BarChart3 className="w-3.5 h-3.5" /> Active Pipeline
+                <button onClick={() => navigate("/opportunities")} className="rounded-xl border border-border p-5 bg-gradient-to-br from-amber-500/15 to-amber-500/5 hover:border-amber-500/40 transition-all text-left group">
+                  <div className="flex items-center gap-2 text-xs font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-2">
+                    <BarChart3 className="w-4 h-4" /> ACTIVE PIPELINE
                   </div>
-                  <p className="text-xl font-black font-mono text-foreground">{fmtK(totalPipeline)}</p>
-                  <p className="text-[10px] text-muted-foreground">{opportunities.filter(o => !["Won","Closed Won","Closed Lost","Dead"].includes(o.stage)).length} open deals</p>
+                  <p className="text-2xl sm:text-3xl font-black font-mono text-foreground tracking-tight">{fmtK(totalPipeline)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 font-medium">{opportunities.filter(o => !["Won","Closed Won","Closed Lost","Dead"].includes(o.stage)).length} open deals</p>
                 </button>
               </>
             );
