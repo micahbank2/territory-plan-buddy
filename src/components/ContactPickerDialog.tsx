@@ -209,7 +209,7 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[700px] h-[85vh] max-h-[85vh] min-h-0 overflow-hidden flex flex-col p-0">
+      <DialogContent className="sm:max-w-[900px] h-[90vh] max-h-[90vh] min-h-0 overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Mail className="w-4 h-4 text-primary" />
