@@ -673,7 +673,7 @@ export default function TerritoryPlanner() {
 
     let entries: any[];
     try {
-      const stored = localStorage.getItem("my_numbers_entries");
+      const stored = localStorage.getItem("my_numbers_v2");
       entries = stored ? JSON.parse(stored) : FY27_MONTHS.map(m => ({ month: m, incrementalQuota: DEFAULT_QUOTAS[m] ?? 0, incrementalBookings: 0, renewedAcv: 0 }));
     } catch { entries = FY27_MONTHS.map(m => ({ month: m, incrementalQuota: DEFAULT_QUOTAS[m] ?? 0, incrementalBookings: 0, renewedAcv: 0 })); }
 
