@@ -31,14 +31,46 @@ export function buildContactPrompt(selections: ContactSelection[]): string {
 Yext's key products: Listings, Pages, Reviews, Search (Scout), Reputation Management, Analytics.
 Position Yext around: AI search visibility, multi-location brand consistency, local SEO at scale, competitive displacement of SOCi/Birdeye.
 
-For each contact below, write one personalized first-touch cold email. Rules:
-- Lead with a specific insight about their business, not a generic opener
-- Under 150 words
+## STEP 1: RESEARCH EACH ACCOUNT
+
+Before writing any email, search the web for each account below and look for:
+- **New marketing hires** — CMO, VP Marketing, Director of Digital, Head of SEO, etc. (recent job changes in the last 6 months)
+- **Location growth** — new store openings, expansion announcements, franchise growth, new markets
+- **SEO & digital marketing moves** — website redesigns, new local pages, Google Business Profile changes, review management shifts
+- **Marketing initiatives** — new campaigns, rebrands, loyalty programs, app launches, digital transformation announcements
+- **Leadership changes** — new CEO, COO, CTO, or any C-suite moves
+- **Competitive signals** — mentions of SOCi, Birdeye, Uberall, Chatmeter, or other listing/reputation vendors
+
+Use what you find to make each email hyper-relevant. If you find something specific, lead with it.
+
+## STEP 2: WRITE EMAILS
+
+For each contact below, write one personalized first-touch cold email.
+
+**Rules:**
+- Lead with a specific, researched insight about their business — NOT a generic opener
+- Under 150 words for the email body
 - Reference the account's specific context (industry, location count, competitor situation)
 - Low-friction CTA (quick question, not a demo request)
 - Conversational tone, not corporate
-- Email body only (no subject line or signature)
-- If AI readiness data or signals are available, weave them in naturally`);
+- If AI readiness data or signals are available, weave them in naturally
+- If you found recent news/hires/growth in your research, use it as the hook
+
+## OUTPUT FORMAT
+
+Return a clean, structured artifact. For EACH contact, use this exact format:
+
+---
+
+**To:** [Full Name] <[email@domain.com]>
+**Subject:** [Short, compelling subject line — not generic, reference something specific]
+
+[Email body here — under 150 words, no signature block]
+
+---
+
+If a contact has no email on file, write "EMAIL NEEDED" in the To field but still write the email.
+After all emails, add a **Research Notes** section summarizing what you found for each account (bullet points).`);
 
   let contactNum = 0;
   for (const [, group] of byProspect) {
@@ -55,7 +87,7 @@ For each contact below, write one personalized first-touch cold email. Rules:
       contactNum++;
       const lines: string[] = [];
 
-      lines.push(`---\n\n## ${contactNum}. ${contact.name} — ${p.name}`);
+      lines.push(`---\n\n## ${contactNum}. ${contact.name} — ${p.name}${p.website ? ` (${p.website})` : ""}`);
 
       // Contact info
       const contactParts = [contact.name];
