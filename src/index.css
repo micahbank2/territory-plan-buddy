@@ -104,8 +104,8 @@
 
 /* === Glass Card === */
 .glass-card {
-  background: hsl(var(--card) / 0.65);
-  backdrop-filter: blur(6px);
+  background: hsl(var(--card) / 0.7);
+  backdrop-filter: blur(12px);
   border: 1px solid hsl(var(--primary) / 0.15);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
