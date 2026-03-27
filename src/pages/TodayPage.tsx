@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import yextLogoBlack from "@/assets/yext-logo-black.jpg";
 import yextLogoWhite from "@/assets/yext-logo-white.jpg";
-import { RetroGrid } from "@/components/ui/retro-grid";
+
 
 function daysBetween(a: string, b: Date): number {
   return Math.floor((b.getTime() - new Date(a).getTime()) / 86400000);
@@ -85,8 +85,7 @@ export default function TodayPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
-      <RetroGrid className="fixed inset-0 pointer-events-none opacity-30" />
+    <div className="min-h-screen bg-background text-foreground">
 
       {/* Header */}
       <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border">

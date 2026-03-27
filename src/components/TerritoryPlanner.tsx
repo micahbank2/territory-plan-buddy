@@ -532,7 +532,8 @@ export default function TerritoryPlanner() {
         (p) =>
           p.name.toLowerCase().includes(s) ||
           (p.industry || "").toLowerCase().includes(s) ||
-          (p.notes || "").toLowerCase().includes(s)
+          (p.notes || "").toLowerCase().includes(s) ||
+          (p.contacts || []).some((c: any) => (c.name || "").toLowerCase().includes(s))
       );
     }
     if (fIndustry.length) r = r.filter((p) => fIndustry.includes(p.industry));
@@ -1415,7 +1416,7 @@ export default function TerritoryPlanner() {
                 ref={searchRef}
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search companies, industries..."
+                placeholder="Search accounts, contacts, industries..."
                 className="w-full pl-10 pr-20 py-2.5 text-sm rounded-xl border border-border bg-card/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all backdrop-blur-sm"
                 onFocus={() => {}}
               />
