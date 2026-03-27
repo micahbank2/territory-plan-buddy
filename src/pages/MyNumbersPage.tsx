@@ -571,42 +571,66 @@ export default function MyNumbersPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/40">
-                    <TableHead className="font-semibold text-foreground min-w-[100px]">Month</TableHead>
+                    <TableHead className="font-semibold text-foreground min-w-[100px]">Quarter</TableHead>
                     <TableHead className="font-semibold text-foreground text-right min-w-[110px]">ACV Renewed</TableHead>
                     <TableHead className="font-semibold text-foreground text-right min-w-[120px]">Cumul. Renewed</TableHead>
                     <TableHead className="font-semibold text-foreground text-right min-w-[100px]">Retention %</TableHead>
                     <TableHead className="font-semibold text-foreground text-right min-w-[90px]">Attain %</TableHead>
                     <TableHead className="font-semibold text-foreground text-right min-w-[110px]">Cumul. Payout %</TableHead>
-                    <TableHead className="font-semibold text-foreground text-right min-w-[120px]">Monthly Payout</TableHead>
+                    <TableHead className="font-semibold text-foreground text-right min-w-[120px]">Qtr Payout</TableHead>
                     <TableHead className="font-semibold text-foreground text-right min-w-[90px]">Pipeline</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {entries.map((e, i) => {
-                    const r = renewalCalcs[i];
-                    return (
-                      <TableRow key={e.month}>
-                        <TableCell className="font-medium text-sm">{formatMonth(e.month)}</TableCell>
-                        <TableCell className="text-right">
-                          <EditableCell value={e.renewedAcv} onChange={v => updateEntry(e.month, "renewedAcv", v)} />
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">{fmt(r.cumRenewed)}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">{pct(r.retentionPct)}</TableCell>
-                        <TableCell className="text-right">
-                          <span className={cn("font-mono text-sm",
-                            r.attainment >= 1 ? "text-emerald-600 font-bold" : r.attainment >= 0.7 ? "text-amber-600" : "text-muted-foreground"
-                          )}>{pct(r.attainment)}</span>
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">{pct(r.cumPayoutPct)}</TableCell>
-                        <TableCell className="text-right font-mono text-sm font-semibold">{fmt(r.monthlyPayout)}</TableCell>
-                        <TableCell className="text-right font-mono text-sm text-muted-foreground">{fmt(pipelineByMonth.renew.get(e.month) ?? 0)}</TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {(() => {
+                    // FY27 quarters: Q1=Feb-Apr, Q2=May-Jul, Q3=Aug-Oct, Q4=Nov-Jan
+                    const quarters = [
+                      { label: "Q1 FY27", months: ["2026-02","2026-03","2026-04"] },
+                      { label: "Q2 FY27", months: ["2026-05","2026-06","2026-07"] },
+                      { label: "Q3 FY27", months: ["2026-08","2026-09","2026-10"] },
+                      { label: "Q4 FY27", months: ["2026-11","2026-12","2027-01"] },
+                    ];
+                    const FY27_MONTHS = ["2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10","2026-11","2026-12","2027-01"];
+                    return quarters.map((q, qi) => {
+                      // Sum ACV renewed for this quarter
+                      const qRenewed = q.months.reduce((s, m) => {
+                        const e = entries.find(e => e.month === m);
+                        return s + (e?.renewedAcv ?? 0);
+                      }, 0);
+                      // Cumulative through last month of quarter
+                      const lastMonthIdx = FY27_MONTHS.indexOf(q.months[q.months.length - 1]);
+                      const lastMonthCalc = lastMonthIdx >= 0 ? renewalCalcs[lastMonthIdx] : null;
+                      // Prior quarter last month
+                      const priorLastMonthIdx = qi > 0 ? FY27_MONTHS.indexOf(quarters[qi-1].months[2]) : -1;
+                      const priorCalc = priorLastMonthIdx >= 0 ? renewalCalcs[priorLastMonthIdx] : null;
+                      const qPayout = (lastMonthCalc?.monthlyPayout ?? 0) +
+                        (q.months.slice(0,-1).reduce((s, m) => {
+                          const idx = FY27_MONTHS.indexOf(m);
+                          return s + (idx >= 0 ? renewalCalcs[idx]?.monthlyPayout ?? 0 : 0);
+                        }, 0));
+                      const qPipeline = q.months.reduce((s, m) => s + (pipelineByMonth.renew.get(m) ?? 0), 0);
+                      return (
+                        <TableRow key={q.label}>
+                          <TableCell className="font-semibold text-sm">{q.label}</TableCell>
+                          <TableCell className="text-right font-mono text-sm">{fmt(qRenewed)}</TableCell>
+                          <TableCell className="text-right font-mono text-sm">{fmt(lastMonthCalc?.cumRenewed ?? 0)}</TableCell>
+                          <TableCell className="text-right font-mono text-sm">{pct(lastMonthCalc?.retentionPct ?? 0)}</TableCell>
+                          <TableCell className="text-right">
+                            <span className={cn("font-mono text-sm",
+                              (lastMonthCalc?.attainment ?? 0) >= 1 ? "text-emerald-600 font-bold" : (lastMonthCalc?.attainment ?? 0) >= 0.7 ? "text-amber-600" : "text-muted-foreground"
+                            )}>{pct(lastMonthCalc?.attainment ?? 0)}</span>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm">{pct(lastMonthCalc?.cumPayoutPct ?? 0)}</TableCell>
+                          <TableCell className="text-right font-mono text-sm font-semibold">{fmt(qPayout)}</TableCell>
+                          <TableCell className="text-right font-mono text-sm text-muted-foreground">{fmt(qPipeline)}</TableCell>
+                        </TableRow>
+                      );
+                    });
+                  })()}
                   {/* Totals row */}
                   <TableRow className="bg-muted/30 font-semibold border-t-2 border-border">
                     <TableCell className="text-sm">FY27 Total</TableCell>
-                    <TableCell />
+                    <TableCell className="text-right font-mono text-sm">{fmt(ytdTotals.totalRenewed)}</TableCell>
                     <TableCell className="text-right font-mono text-sm">{fmt(ytdTotals.totalRenewed)}</TableCell>
                     <TableCell className="text-right font-mono text-sm">{pct(renewalRetention)}</TableCell>
                     <TableCell />
