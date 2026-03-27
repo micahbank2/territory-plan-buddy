@@ -1,99 +1,91 @@
 import { useMemo } from "react";
-import { type Opportunity } from "@/hooks/useOpportunities";
-import { DollarSign, TrendingUp, Target, Award } from "lucide-react";
+import { DollarSign, TrendingUp, Target } from "lucide-react";
 
-interface QuotaHeroBoxesProps {
-  opportunities: Opportunity[];
+// Read quota data from the same localStorage the MyNumbersPage uses
+const ENTRIES_KEY = "my_numbers_v2";
+
+interface NumbersEntry {
+  month: string;
+  incrementalQuota: number;
+  incrementalBookings: number;
+  renewedAcv: number;
+  pipelineAcv: number;
+  meetings: number;
+  outreachTouches: number;
 }
 
-// FY27: Feb 2026 – Jan 2027
-const FY_START_MONTH = 1; // February (0-indexed)
-const FY_START_YEAR = 2026;
-const ANNUAL_INCREMENTAL_QUOTA = 615_000;
-const ANNUAL_TI = 95_000;
-const INCREMENTAL_TI_SHARE = 0.65; // 65% of TI
-const RENEWAL_TI_SHARE = 0.35;
-
-// ICR tiers (applied to closed ACV)
-const ICR_TIERS = [
-  { maxPct: 1.00, rate: 0.0803 },
-  { maxPct: 1.25, rate: 0.1004 },
-  { maxPct: Infinity, rate: 0.1406 },
+const FY27_MONTHS = [
+  "2026-02", "2026-03", "2026-04", "2026-05", "2026-06",
+  "2026-07", "2026-08", "2026-09", "2026-10", "2026-11",
+  "2026-12", "2027-01",
 ];
 
-function getFiscalQuarter(date: Date): { fy: number; quarter: number; qStart: Date; qEnd: Date } {
-  const m = date.getMonth();
-  const y = date.getFullYear();
-  // FY quarters: Q1=Feb-Apr, Q2=May-Jul, Q3=Aug-Oct, Q4=Nov-Jan
-  let fyMonth: number; // 0-11 within FY
-  let fy: number;
-  if (m >= FY_START_MONTH) {
-    fyMonth = m - FY_START_MONTH;
-    fy = y + 1; // FY27 starts Feb 2026
-  } else {
-    fyMonth = m + 12 - FY_START_MONTH;
-    fy = y;
+const DEFAULT_QUOTAS: Record<string, number> = {
+  "2026-02": 30000, "2026-03": 30000, "2026-04": 60000,
+  "2026-05": 38000, "2026-06": 38000, "2026-07": 77000,
+  "2026-08": 40000, "2026-09": 40000, "2026-10": 80000,
+  "2026-11": 48000, "2026-12": 48000, "2027-01": 96000,
+};
+
+// ICR tiers for payout estimation
+const ANNUAL_QUOTA = 615_000;
+const ANNUAL_TI = 95_000;
+const INCR_TI = ANNUAL_TI * 0.65;
+
+function loadEntries(): NumbersEntry[] {
+  try {
+    const stored = localStorage.getItem(ENTRIES_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch {}
+  return FY27_MONTHS.map(m => ({
+    month: m, incrementalQuota: DEFAULT_QUOTAS[m] ?? 0,
+    incrementalBookings: 0, renewedAcv: 0, pipelineAcv: 0, meetings: 0, outreachTouches: 0,
+  }));
+}
+
+function getCurrentFYMonth(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = (now.getMonth() + 1).toString().padStart(2, "0");
+  return `${y}-${m}`;
+}
+
+function getFYQuarterMonths(): string[] {
+  const now = new Date();
+  const m = now.getMonth(); // 0-indexed
+  // FY quarters: Q1=Feb-Apr(1-3), Q2=May-Jul(4-6), Q3=Aug-Oct(7-9), Q4=Nov-Jan(10-0)
+  const fyMonth = m >= 1 ? m - 1 : 11; // months into FY (Feb=0, Jan=11)
+  const qStart = Math.floor(fyMonth / 3) * 3; // quarter start in FY months
+  const result: string[] = [];
+  for (let i = 0; i < 3; i++) {
+    const fyM = qStart + i; // FY month index (0=Feb)
+    if (fyM < FY27_MONTHS.length) result.push(FY27_MONTHS[fyM]);
   }
-  const quarter = Math.floor(fyMonth / 3) + 1;
-  // Quarter start/end dates
-  const qStartMonth = FY_START_MONTH + (quarter - 1) * 3;
-  const qStartYear = qStartMonth > 11 ? FY_START_YEAR + 1 : FY_START_YEAR;
-  const normalizedQStart = qStartMonth % 12;
-  const qEndMonth = normalizedQStart + 2;
-  const qEndYear = qEndMonth > 11 ? qStartYear + 1 : qStartYear;
-  const normalizedQEnd = qEndMonth % 12;
-
-  return {
-    fy,
-    quarter,
-    qStart: new Date(qStartYear, normalizedQStart, 1),
-    qEnd: new Date(qEndYear, normalizedQEnd + 1, 0), // last day of end month
-  };
+  return result;
 }
 
-function getFiscalYear(date: Date): { start: Date; end: Date } {
-  return {
-    start: new Date(FY_START_YEAR, FY_START_MONTH, 1),
-    end: new Date(FY_START_YEAR + 1, FY_START_MONTH, 0), // Jan 31 2027
-  };
-}
+function calcPayout(bookings: number, quota: number): number {
+  if (bookings <= 0 || quota <= 0) return 0;
+  // Simplified: use blended ICR based on annual tier structure
+  const tier1Cap = ANNUAL_QUOTA * 0.5;
+  const tier2Cap = ANNUAL_QUOTA * 0.75;
+  const icr1 = (INCR_TI * 0.4) / tier1Cap;
+  const icr2 = (INCR_TI * 0.25) / (tier2Cap - tier1Cap);
+  const icr3 = (INCR_TI * 0.35) / (ANNUAL_QUOTA - tier2Cap);
 
-function getCurrentFiscalMonth(date: Date): { start: Date; end: Date } {
-  return {
-    start: new Date(date.getFullYear(), date.getMonth(), 1),
-    end: new Date(date.getFullYear(), date.getMonth() + 1, 0),
-  };
-}
-
-function isClosedWon(opp: Opportunity): boolean {
-  return opp.stage === "Won" || opp.stage === "Closed Won";
-}
-
-function isIncrementalDeal(opp: Opportunity): boolean {
-  return opp.type === "Net New" || opp.type === "Order Form";
-}
-
-function isInDateRange(closeDate: string, start: Date, end: Date): boolean {
-  if (!closeDate) return false;
-  const d = new Date(closeDate + "T00:00:00");
-  return d >= start && d <= end;
-}
-
-function calculatePayout(closedACV: number, quota: number): number {
-  if (closedACV <= 0 || quota <= 0) return 0;
   let payout = 0;
-  let remaining = closedACV;
-
-  for (const tier of ICR_TIERS) {
-    const tierCap = tier.maxPct * quota;
-    const prevCap = tier === ICR_TIERS[0] ? 0 : ICR_TIERS[ICR_TIERS.indexOf(tier) - 1].maxPct * quota;
-    const tierAmount = Math.min(remaining, tierCap - prevCap);
-    if (tierAmount <= 0) break;
-    payout += tierAmount * tier.rate;
-    remaining -= tierAmount;
-    if (remaining <= 0) break;
+  let remaining = bookings;
+  const t1 = Math.min(remaining, tier1Cap);
+  payout += t1 * icr1;
+  remaining -= t1;
+  if (remaining > 0) {
+    const t2 = Math.min(remaining, tier2Cap - tier1Cap);
+    payout += t2 * icr2;
+    remaining -= t2;
   }
-
+  if (remaining > 0) {
+    payout += remaining * icr3;
+  }
   return Math.round(payout);
 }
 
@@ -148,7 +140,6 @@ function HeroBox({
             </div>
           </div>
         </div>
-        {/* Progress bar */}
         <div className="h-1.5 rounded-full bg-muted overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
@@ -162,55 +153,32 @@ function HeroBox({
   );
 }
 
-export function QuotaHeroBoxes({ opportunities }: QuotaHeroBoxesProps) {
-  const now = new Date();
-
+export function QuotaHeroBoxes() {
   const stats = useMemo(() => {
-    const wonDeals = opportunities.filter(isClosedWon);
-    const incrementalWon = wonDeals.filter(isIncrementalDeal);
+    const entries = loadEntries();
+    const currentMonth = getCurrentFYMonth();
+    const quarterMonths = getFYQuarterMonths();
 
-    // Current fiscal periods
-    const month = getCurrentFiscalMonth(now);
-    const quarter = getFiscalQuarter(now);
-    const year = getFiscalYear(now);
+    // Current month
+    const monthEntry = entries.find(e => e.month === currentMonth);
+    const monthClosed = monthEntry?.incrementalBookings ?? 0;
+    const monthQuota = monthEntry?.incrementalQuota ?? 0;
 
-    // Monthly quotas (incremental only for now)
-    const monthlyQuota = Math.round(ANNUAL_INCREMENTAL_QUOTA / 12);
-    const quarterlyQuota = Math.round(ANNUAL_INCREMENTAL_QUOTA / 4);
+    // Current quarter
+    const quarterEntries = entries.filter(e => quarterMonths.includes(e.month));
+    const quarterClosed = quarterEntries.reduce((s, e) => s + e.incrementalBookings, 0);
+    const quarterQuota = quarterEntries.reduce((s, e) => s + e.incrementalQuota, 0);
 
-    // Closed incremental ACV per period — use incremental_acv if available, else potential_value
-    const getACV = (o: Opportunity) => o.incremental_acv ?? o.potential_value ?? 0;
-
-    const monthClosed = incrementalWon
-      .filter(o => isInDateRange(o.close_date, month.start, month.end))
-      .reduce((s, o) => s + getACV(o), 0);
-
-    const quarterClosed = incrementalWon
-      .filter(o => isInDateRange(o.close_date, quarter.qStart, quarter.qEnd))
-      .reduce((s, o) => s + getACV(o), 0);
-
-    const yearClosed = incrementalWon
-      .filter(o => isInDateRange(o.close_date, year.start, year.end))
-      .reduce((s, o) => s + getACV(o), 0);
+    // Full year
+    const yearClosed = entries.reduce((s, e) => s + e.incrementalBookings, 0);
+    const yearQuota = entries.reduce((s, e) => s + e.incrementalQuota, 0);
 
     return {
-      month: {
-        closed: monthClosed,
-        quota: monthlyQuota,
-        payout: calculatePayout(monthClosed, monthlyQuota),
-      },
-      quarter: {
-        closed: quarterClosed,
-        quota: quarterlyQuota,
-        payout: calculatePayout(quarterClosed, quarterlyQuota),
-      },
-      year: {
-        closed: yearClosed,
-        quota: ANNUAL_INCREMENTAL_QUOTA,
-        payout: calculatePayout(yearClosed, ANNUAL_INCREMENTAL_QUOTA),
-      },
+      month: { closed: monthClosed, quota: monthQuota, payout: calcPayout(monthClosed, monthQuota) },
+      quarter: { closed: quarterClosed, quota: quarterQuota, payout: calcPayout(quarterClosed, quarterQuota) },
+      year: { closed: yearClosed, quota: yearQuota, payout: calcPayout(yearClosed, yearQuota) },
     };
-  }, [opportunities]);
+  }, []);
 
   return (
     <div className="flex gap-4 flex-wrap">

@@ -333,7 +333,7 @@ export default function OpportunitiesPage() {
       {/* Quota Hero Boxes */}
       {!loading && opportunities.length > 0 && (
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-5 pb-0">
-          <QuotaHeroBoxes opportunities={opportunities} />
+          <QuotaHeroBoxes />
         </div>
       )}
 
