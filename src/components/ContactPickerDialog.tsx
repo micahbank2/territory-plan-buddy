@@ -3,10 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Mail, Copy, ChevronDown, ChevronRight, Search, ArrowLeft, Check } from "lucide-react";
+import { MultiSelect } from "@/components/MultiSelect";
+import { Mail, Copy, ChevronDown, ChevronRight, Search, ArrowLeft, Check, Filter } from "lucide-react";
 import { toast } from "sonner";
 import type { Prospect, Contact } from "@/data/prospects";
-import { getLogoUrl } from "@/data/prospects";
+import { INDUSTRIES, STATUSES, TIERS, COMPETITORS, getLogoUrl } from "@/data/prospects";
 import { RoleBadge, StrengthDot } from "@/components/ContactBadges";
 import { buildContactPrompt, type ContactSelection } from "@/lib/buildContactPrompt";
 import type { Signal } from "@/hooks/useSignals";
@@ -27,6 +28,24 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
   const [view, setView] = useState<ViewState>("picking");
   const [promptText, setPromptText] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Filters
+  const [fIndustry, setFIndustry] = useState<string[]>([]);
+  const [fStatus, setFStatus] = useState<string[]>([]);
+  const [fTier, setFTier] = useState<string[]>([]);
+  const [fPriority, setFPriority] = useState<string[]>([]);
+  const [fCompetitor, setFCompetitor] = useState<string[]>([]);
+
+  const hasFilters = fIndustry.length > 0 || fStatus.length > 0 || fTier.length > 0 || fPriority.length > 0 || fCompetitor.length > 0;
+
+  const clearFilters = () => {
+    setFIndustry([]);
+    setFStatus([]);
+    setFTier([]);
+    setFPriority([]);
+    setFCompetitor([]);
+  };
 
   const accountsWithContacts = useMemo(
     () => prospects.filter(p => p.contacts.length > 0),
@@ -34,19 +53,32 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
   );
 
   const filteredAccounts = useMemo(() => {
-    if (!search.trim()) return accountsWithContacts;
-    const q = search.toLowerCase();
-    return accountsWithContacts.filter(p => {
-      if (p.name.toLowerCase().includes(q)) return true;
-      if (p.industry?.toLowerCase().includes(q)) return true;
-      return p.contacts.some(
-        c =>
-          c.name.toLowerCase().includes(q) ||
-          c.title?.toLowerCase().includes(q) ||
-          c.email?.toLowerCase().includes(q),
-      );
-    });
-  }, [accountsWithContacts, search]);
+    let result = accountsWithContacts;
+
+    // Apply filters
+    if (fIndustry.length > 0) result = result.filter(p => fIndustry.includes(p.industry));
+    if (fStatus.length > 0) result = result.filter(p => fStatus.includes(p.status));
+    if (fTier.length > 0) result = result.filter(p => fTier.includes(p.tier));
+    if (fPriority.length > 0) result = result.filter(p => fPriority.includes(p.priority));
+    if (fCompetitor.length > 0) result = result.filter(p => fCompetitor.includes(p.competitor));
+
+    // Apply search
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(p => {
+        if (p.name.toLowerCase().includes(q)) return true;
+        if (p.industry?.toLowerCase().includes(q)) return true;
+        return p.contacts.some(
+          c =>
+            c.name.toLowerCase().includes(q) ||
+            c.title?.toLowerCase().includes(q) ||
+            c.email?.toLowerCase().includes(q),
+        );
+      });
+    }
+
+    return result;
+  }, [accountsWithContacts, search, fIndustry, fStatus, fTier, fPriority, fCompetitor]);
 
   const getVisibleContacts = useCallback(
     (p: Prospect): Contact[] => {
@@ -115,17 +147,34 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
     return map;
   }, [signals]);
 
+  // Build active filter summary for prompt context
+  const activeFilterSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (fStatus.length > 0) parts.push(`Status: ${fStatus.join(", ")}`);
+    if (fIndustry.length > 0) parts.push(`Industry: ${fIndustry.join(", ")}`);
+    if (fTier.length > 0) parts.push(`Tier: ${fTier.join(", ")}`);
+    if (fPriority.length > 0) parts.push(`Priority: ${fPriority.join(", ")}`);
+    if (fCompetitor.length > 0) parts.push(`Competitor: ${fCompetitor.join(", ")}`);
+    return parts;
+  }, [fStatus, fIndustry, fTier, fPriority, fCompetitor]);
+
   const handleGenerate = () => {
-    const selections: ContactSelection[] = [];
+    // Dedup contacts — same name + same prospect = skip duplicates
+    const seen = new Set<string>();
+    const dedupedSelections: ContactSelection[] = [];
+
     for (const p of prospects) {
       const prospectSignals = signalsByProspect.get(p.id) || [];
       for (const c of p.contacts) {
-        if (selected.has(c.id)) {
-          selections.push({ contact: c, prospect: p, signals: prospectSignals });
-        }
+        if (!selected.has(c.id)) continue;
+        const dedupeKey = `${p.id}::${c.name.toLowerCase().trim()}`;
+        if (seen.has(dedupeKey)) continue;
+        seen.add(dedupeKey);
+        dedupedSelections.push({ contact: c, prospect: p, signals: prospectSignals });
       }
     }
-    const prompt = buildContactPrompt(selections);
+
+    const prompt = buildContactPrompt(dedupedSelections, activeFilterSummary);
     setPromptText(prompt);
     setView("preview");
     setCopied(false);
@@ -145,6 +194,8 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
     setExpanded(new Set());
     setPromptText("");
     setCopied(false);
+    clearFilters();
+    setShowFilters(false);
     onOpenChange(false);
   };
 
@@ -169,18 +220,47 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
         {view === "picking" ? (
           <>
             <div className="px-6 pt-3 pb-2 space-y-2 shrink-0">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
-                <Input
-                  placeholder="Search contacts, accounts, or industries..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="pl-8 h-9 text-sm"
-                />
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search contacts, accounts, or industries..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    className="pl-8 h-9 text-sm"
+                  />
+                </div>
+                <Button
+                  variant={showFilters || hasFilters ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowFilters(v => !v)}
+                  className="gap-1.5 h-9 shrink-0"
+                >
+                  <Filter className="w-3.5 h-3.5" />
+                  {hasFilters ? `Filters (${[fIndustry, fStatus, fTier, fPriority, fCompetitor].filter(f => f.length > 0).length})` : "Filter"}
+                </Button>
               </div>
+
+              {/* Filter row */}
+              {showFilters && (
+                <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
+                  <MultiSelect options={INDUSTRIES} selected={fIndustry} onChange={setFIndustry} placeholder="Industry" />
+                  <MultiSelect options={[...STATUSES]} selected={fStatus} onChange={setFStatus} placeholder="Status" />
+                  <MultiSelect options={TIERS.filter(Boolean)} selected={fTier} onChange={setFTier} placeholder="Tier" />
+                  <MultiSelect options={["Hot", "Warm", "Cold", "Dead"]} selected={fPriority} onChange={setFPriority} placeholder="Priority" />
+                  <MultiSelect options={COMPETITORS.filter(Boolean)} selected={fCompetitor} onChange={setFCompetitor} placeholder="Competitor" />
+                  {hasFilters && (
+                    <button onClick={clearFilters} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                      Clear
+                    </button>
+                  )}
+                </div>
+              )}
+
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>
                   <strong className="text-foreground">{selected.size}</strong> selected of {totalVisibleContacts} contacts
+                  {hasFilters && ` (filtered)`}
                 </span>
                 <div className="flex gap-2">
                   <button onClick={selectAll} className="hover:text-foreground transition-colors">Select all</button>
@@ -194,7 +274,7 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
               <div className="space-y-1">
                 {filteredAccounts.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-8">
-                    {search ? "No contacts match your search" : "No accounts have contacts yet"}
+                    {search || hasFilters ? "No contacts match your search/filters" : "No accounts have contacts yet"}
                   </p>
                 )}
                 {filteredAccounts.map(p => {
@@ -224,6 +304,7 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
                         />
                         <span className="font-medium text-sm truncate">{p.name}</span>
                         <span className="text-[10px] text-muted-foreground ml-auto shrink-0">
+                          {p.status !== "Prospect" && <span className={p.status === "Churned" ? "text-destructive" : p.status === "Customer" ? "text-emerald-600" : "text-amber-600"}>{p.status} · </span>}
                           {p.industry}{visibleContacts.length > 0 && ` · ${visibleContacts.length}`}
                         </span>
                       </button>
