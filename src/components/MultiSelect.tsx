@@ -38,8 +38,8 @@ export function MultiSelect({ options, selected, onChange, placeholder }: MultiS
         className={cn(
           "flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-full transition-all",
           selected.length > 0
-            ? "bg-primary text-primary-foreground shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 hover:bg-primary/90"
-            : "bg-muted/80 text-muted-foreground hover:bg-muted hover:text-foreground"
+            ? "bg-primary text-primary-foreground shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/40 hover:bg-primary/90 hover:scale-105"
+            : "bg-muted/80 text-muted-foreground border border-border hover:bg-primary/10 hover:text-primary hover:border-primary/40 hover:shadow-md hover:shadow-primary/10 hover:scale-105"
         )}
       >
         <span className={cn("truncate", selected.length === 0 && "text-muted-foreground")}>
