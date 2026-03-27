@@ -21,6 +21,7 @@ import yextLogoBlack from "@/assets/yext-logo-black.jpg";
 import yextLogoWhite from "@/assets/yext-logo-white.jpg";
 import { useProspects } from "@/hooks/useProspects";
 import { useTerritories } from "@/hooks/useTerritories";
+import { useOpportunities } from "@/hooks/useOpportunities";
 import { MultiSelect } from "@/components/MultiSelect";
 import { ProspectSheet } from "@/components/ProspectSheet";
 import { CSVUploadDialog } from "@/components/CSVUploadDialog";
@@ -108,7 +109,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Command as CmdK, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+// Collapsible removed — Action Items replaced by Quota strip
 
 // --- Saved Views ---
 const VIEWS_KEY = "tp-saved-views";
@@ -392,6 +393,7 @@ export default function TerritoryPlanner() {
   } = useTerritories();
   const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archivedData, loadArchivedData, restore, permanentDelete, seedData, seeding, deleteNote, addNote, addContact, updateContact, removeContact, addInteraction, removeInteraction, addTask, removeTask } = useProspects(activeTerritory);
   const { signals, addSignal, removeSignal, getProspectSignalRelevance } = useSignals(activeTerritory);
+  const { opportunities } = useOpportunities(activeTerritory);
   const { signOut, user } = useAuth();
   const isOwner = user?.email && OWNER_EMAILS.includes(user.email);
   const activeTerrObj = territories.find((t) => t.id === activeTerritory) || null;
@@ -455,7 +457,7 @@ export default function TerritoryPlanner() {
   const [showCompare, setShowCompare] = useState(false);
 
   // Home page cards collapsed state
-  const [cardsOpen, setCardsOpen] = useState(true);
+  // cardsOpen removed — Action Items replaced by Quota strip
 
   // Mobile filter toggle
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -654,6 +656,62 @@ export default function TerritoryPlanner() {
       prospects: data.filter((p) => p.status === "Prospect").length,
     };
   }, [data]);
+
+  // ─── Quota Summary (reads from localStorage, same keys as MyNumbersPage) ───
+  const quotaSummary = useMemo(() => {
+    const FY27_MONTHS = [
+      "2026-02","2026-03","2026-04","2026-05","2026-06","2026-07",
+      "2026-08","2026-09","2026-10","2026-11","2026-12","2027-01",
+    ];
+    const DEFAULT_QUOTAS: Record<string, number> = {
+      "2026-02":30000,"2026-03":30000,"2026-04":60000,"2026-05":38000,
+      "2026-06":38000,"2026-07":77000,"2026-08":40000,"2026-09":40000,
+      "2026-10":80000,"2026-11":48000,"2026-12":48000,"2027-01":96000,
+    };
+    const DEFAULT_SETTINGS = { annualIncrementalQuota: 615000, u4r: 2924263, retentionTarget: 0.86, annualTI: 95000, incrementalSplit: 0.65, renewalSplit: 0.35 };
+
+    let entries: any[];
+    try {
+      const stored = localStorage.getItem("my_numbers_entries");
+      entries = stored ? JSON.parse(stored) : FY27_MONTHS.map(m => ({ month: m, incrementalQuota: DEFAULT_QUOTAS[m] ?? 0, incrementalBookings: 0, renewedAcv: 0 }));
+    } catch { entries = FY27_MONTHS.map(m => ({ month: m, incrementalQuota: DEFAULT_QUOTAS[m] ?? 0, incrementalBookings: 0, renewedAcv: 0 })); }
+
+    let settings: any;
+    try {
+      const stored = localStorage.getItem("my_numbers_settings");
+      settings = stored ? { ...DEFAULT_SETTINGS, ...JSON.parse(stored) } : DEFAULT_SETTINGS;
+    } catch { settings = DEFAULT_SETTINGS; }
+
+    const now = new Date();
+    const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    // FY27 quarter boundaries: Q1=Feb-Apr, Q2=May-Jul, Q3=Aug-Oct, Q4=Nov-Jan
+    const qStarts = ["2026-02", "2026-05", "2026-08", "2026-11"];
+    const curQIdx = qStarts.findLastIndex(q => curMonth >= q);
+    const qStart = qStarts[Math.max(0, curQIdx)];
+    const qEnd = qStarts[curQIdx + 1] || "2027-02";
+
+    const monthEntry = entries.find((e: any) => e.month === curMonth);
+    const monthBooked = monthEntry?.incrementalBookings ?? 0;
+    const monthQuota = monthEntry?.incrementalQuota ?? 0;
+
+    const qEntries = entries.filter((e: any) => e.month >= qStart && e.month < qEnd);
+    const qBooked = qEntries.reduce((s: number, e: any) => s + (e.incrementalBookings ?? 0), 0);
+    const qQuota = qEntries.reduce((s: number, e: any) => s + (e.incrementalQuota ?? 0), 0);
+
+    const ytdBooked = entries.reduce((s: number, e: any) => s + (e.incrementalBookings ?? 0), 0);
+    const ytdQuota = entries.reduce((s: number, e: any) => s + (e.incrementalQuota ?? 0), 0);
+    const ytdRenewed = entries.reduce((s: number, e: any) => s + (e.renewedAcv ?? 0), 0);
+
+    // Pipeline from deals
+    const CLOSED_STAGES = new Set(["Won", "Closed Won", "Closed Lost", "Dead"]);
+    const totalPipeline = opportunities
+      .filter(o => !CLOSED_STAGES.has(o.stage) && o.close_date)
+      .reduce((s, o) => s + (o.type === "Renewal" ? (o.potential_value || 0) : (o.incremental_acv ?? o.potential_value ?? 0)), 0);
+
+    const fmtK = (n: number) => "$" + Math.round(n).toLocaleString();
+
+    return { monthBooked, monthQuota, qBooked, qQuota, ytdBooked, ytdQuota, ytdRenewed, totalPipeline, fmtK, settings };
+  }, [opportunities]);
 
   const doSort = (f: string) => {
     if (sK === f) setSD((d) => (d === "asc" ? "desc" : "asc"));
@@ -1239,138 +1297,91 @@ export default function TerritoryPlanner() {
       </nav>
 
       <div className="px-4 sm:px-8 pt-6 pb-2">
-        {/* Quick Stats Bar */}
-        <div className="flex items-center gap-3 mb-6 overflow-x-auto scrollbar-hide flex-nowrap pb-1">
+        {/* Stat pills */}
+        <div className="flex items-center gap-2.5 mb-6 overflow-x-auto scrollbar-hide flex-nowrap pb-1">
           {([
-            ["📊 Accounts", stats.t, () => { clr(); }, false],
+            ["📊 Total Accounts", stats.t, () => { clr(); }, false],
             ["📍 100+ Locs", stats.o100, () => { setFLocRange((prev) => prev[0] === 100 ? [0, maxLocs] : [100, maxLocs]); }, fLocRange[0] === 100],
-            ["🏢 500+", stats.o500, () => { setFLocRange((prev) => prev[0] === 500 ? [0, maxLocs] : [500, maxLocs]); }, fLocRange[0] === 500],
-            ["🔥 Hot", stats.hot, () => { setFPriority((prev) => prev.includes("Hot") ? prev.filter(x => x !== "Hot") : [...prev, "Hot"]); }, fPriority.includes("Hot")],
-            ["☀️ Warm", stats.warm, () => { setFPriority((prev) => prev.includes("Warm") ? prev.filter(x => x !== "Warm") : [...prev, "Warm"]); }, fPriority.includes("Warm")],
+            ["🏢 500+ Locs", stats.o500, () => { setFLocRange((prev) => prev[0] === 500 ? [0, maxLocs] : [500, maxLocs]); }, fLocRange[0] === 500],
+            ["🎯 Prospects", stats.prospects, () => { setFStatus((prev) => prev.includes("Prospect") ? prev.filter(x => x !== "Prospect") : [...prev, "Prospect"]); }, fStatus.includes("Prospect")],
             ["💀 Churned", stats.ch, () => { setFStatus((prev) => prev.includes("Churned") ? prev.filter(x => x !== "Churned") : [...prev, "Churned"]); }, fStatus.includes("Churned")],
           ] as [string, number, () => void, boolean][]).map(([label, value, fn, active], i) => (
             <button
               key={i}
               onClick={() => fn()}
               className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer group shrink-0 transition-all",
-                active ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/30 hover:bg-muted/50"
+                "flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-3.5 rounded-xl glass-card cursor-pointer group animate-fade-in-up shrink-0",
+                active ? "ring-2 ring-primary/50 glow-blue" : "glow-blue"
               )}
+              style={{ animationDelay: `${i * 50}ms` }}
             >
-              <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors font-medium whitespace-nowrap">{label}</span>
-              <span className="text-base font-black text-foreground">{value}</span>
+              <span className="text-xs sm:text-sm text-muted-foreground group-hover:text-foreground transition-colors font-medium whitespace-nowrap">{label}</span>
+              <span className="text-lg sm:text-xl font-black text-foreground animate-count-up" style={{ animationDelay: `${i * 50 + 200}ms` }}>{value}</span>
             </button>
           ))}
         </div>
 
-        {/* Action Items */}
-        {(homeCards.untouched.length > 0 || homeCards.stale.length > 0 || homeCards.missingCoverage.length > 0) && (
-          <Collapsible open={cardsOpen} onOpenChange={setCardsOpen} className="mb-6">
-            <CollapsibleTrigger asChild>
-              <button className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-3 uppercase tracking-wider">
-                {cardsOpen ? <ChevronUpIcon className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                Action Items
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in-up">
-                {/* Top Scored Never Contacted */}
-                <div className="glass-card rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="p-1.5 rounded-lg bg-primary/10">
-                      <Zap className="w-4 h-4 text-primary" />
-                    </div>
-                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Top Scored — Never Contacted</h3>
+        {/* Quota & Pipeline Strip */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          {(() => {
+            const { monthBooked, monthQuota, qBooked, qQuota, ytdBooked, ytdQuota, totalPipeline, fmtK } = quotaSummary;
+            const monthPct = monthQuota > 0 ? monthBooked / monthQuota : 0;
+            const qPct = qQuota > 0 ? qBooked / qQuota : 0;
+            const ytdPct = ytdQuota > 0 ? ytdBooked / ytdQuota : 0;
+            const pctColor = (p: number) => p >= 1 ? "text-emerald-500" : p >= 0.5 ? "text-amber-500" : "text-muted-foreground";
+            const barColor = (p: number) => p >= 1 ? "bg-emerald-500" : p >= 0.5 ? "bg-amber-500" : "bg-red-400";
+            return (
+              <>
+                <button onClick={() => navigate("/my-numbers")} className="rounded-xl border border-border p-4 bg-gradient-to-br from-blue-500/5 to-blue-500/[0.02] hover:border-blue-500/30 transition-all text-left group">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                    <Target className="w-3.5 h-3.5" /> This Month
                   </div>
-                  <p className="text-[10px] text-muted-foreground mb-2">Highest-potential accounts you haven't reached out to yet.</p>
-                  {homeCards.untouched.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">🎉 All prospects contacted!</p>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {homeCards.untouched.map((p) => (
-                        <button
-                          key={p.id}
-                          onClick={() => setSheetProspectId(p.id)}
-                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors text-left"
-                        >
-                          <LogoImg website={p.website} size={20} customLogo={p.customLogo} />
-                          <span className="text-xs font-medium text-foreground truncate flex-1">{p.name}</span>
-                          <ScoreBadge score={p.score} prospect={p} compact />
-                        </button>
-                      ))}
+                  <p className="text-xl font-black font-mono text-foreground">{fmtK(monthBooked)}</p>
+                  <p className="text-[10px] text-muted-foreground">of {fmtK(monthQuota)} quota</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className={cn("h-full rounded-full transition-all", barColor(monthPct))} style={{ width: `${Math.min(monthPct * 100, 100)}%` }} />
                     </div>
-                  )}
-                </div>
-
-                {/* Stale Accounts */}
-                <div className="glass-card rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="p-1.5 rounded-lg bg-destructive/10">
-                      <AlertTriangle className="w-4 h-4 text-destructive" />
-                    </div>
-                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Stale Accounts (30+ days)</h3>
+                    <span className={cn("text-[10px] font-bold font-mono", pctColor(monthPct))}>{Math.round(monthPct * 100)}%</span>
                   </div>
-                  <p className="text-[10px] text-muted-foreground mb-2">Accounts with no logged activity in the last 30 days.</p>
-                  {homeCards.stale.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">💪 No stale accounts!</p>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {homeCards.stale.map((p) => (
-                        <button
-                          key={p.id}
-                          onClick={() => setSheetProspectId(p.id)}
-                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors text-left"
-                        >
-                          <LogoImg website={p.website} size={20} customLogo={p.customLogo} />
-                          <span className="text-xs font-medium text-foreground truncate flex-1">{p.name}</span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {p.interactions?.length
-                              ? relativeTime(p.interactions[p.interactions.length - 1].date)
-                              : "No activity yet"}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Contact Coverage Gaps */}
-                <div className="glass-card rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="p-1.5 rounded-lg bg-[hsl(var(--warning))]/10">
-                      <Users className="w-4 h-4 text-[hsl(var(--warning))]" />
-                    </div>
-                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Coverage Gaps</h3>
+                </button>
+                <button onClick={() => navigate("/my-numbers")} className="rounded-xl border border-border p-4 bg-gradient-to-br from-violet-500/5 to-violet-500/[0.02] hover:border-violet-500/30 transition-all text-left group">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                    <TrendingUp className="w-3.5 h-3.5" /> This Quarter
                   </div>
-                  <p className="text-[10px] text-muted-foreground mb-2">Accounts with contacts but missing a Champion or Decision Maker.</p>
-                  {homeCards.missingCoverage.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">✅ All accounts have key roles covered</p>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {homeCards.missingCoverage.map((p) => (
-                        <button
-                          key={p.id}
-                          onClick={() => setSheetProspectId(p.id)}
-                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors text-left"
-                        >
-                          <LogoImg website={p.website} size={20} customLogo={p.customLogo} />
-                          <span className="text-xs font-medium text-foreground truncate flex-1">{p.name}</span>
-                          <div className="flex gap-1 shrink-0">
-                            {p.missingRoles.map((role) => (
-                              <span key={role} className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
-                                {role === "Decision Maker" ? "DM" : role}
-                              </span>
-                            ))}
-                          </div>
-                        </button>
-                      ))}
+                  <p className="text-xl font-black font-mono text-foreground">{fmtK(qBooked)}</p>
+                  <p className="text-[10px] text-muted-foreground">of {fmtK(qQuota)} quota</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className={cn("h-full rounded-full transition-all", barColor(qPct))} style={{ width: `${Math.min(qPct * 100, 100)}%` }} />
                     </div>
-                  )}
-                </div>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        )}
+                    <span className={cn("text-[10px] font-bold font-mono", pctColor(qPct))}>{Math.round(qPct * 100)}%</span>
+                  </div>
+                </button>
+                <button onClick={() => navigate("/my-numbers")} className="rounded-xl border border-border p-4 bg-gradient-to-br from-emerald-500/5 to-emerald-500/[0.02] hover:border-emerald-500/30 transition-all text-left group">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                    <DollarSign className="w-3.5 h-3.5" /> YTD Incremental
+                  </div>
+                  <p className="text-xl font-black font-mono text-foreground">{fmtK(ytdBooked)}</p>
+                  <p className="text-[10px] text-muted-foreground">of {fmtK(ytdQuota)} annual quota</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className={cn("h-full rounded-full transition-all", barColor(ytdPct))} style={{ width: `${Math.min(ytdPct * 100, 100)}%` }} />
+                    </div>
+                    <span className={cn("text-[10px] font-bold font-mono", pctColor(ytdPct))}>{Math.round(ytdPct * 100)}%</span>
+                  </div>
+                </button>
+                <button onClick={() => navigate("/opportunities")} className="rounded-xl border border-border p-4 bg-gradient-to-br from-amber-500/5 to-amber-500/[0.02] hover:border-amber-500/30 transition-all text-left group">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                    <BarChart3 className="w-3.5 h-3.5" /> Active Pipeline
+                  </div>
+                  <p className="text-xl font-black font-mono text-foreground">{fmtK(totalPipeline)}</p>
+                  <p className="text-[10px] text-muted-foreground">{opportunities.filter(o => !["Won","Closed Won","Closed Lost","Dead"].includes(o.stage)).length} open deals</p>
+                </button>
+              </>
+            );
+          })()}
+        </div>
 
         {/* Saved Views */}
         {savedViews.length > 0 && (
