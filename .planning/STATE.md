@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Awaiting schema change (Supabase dashboard action)
-stopped_at: Phase 4 UI-SPEC approved
-last_updated: "2026-03-30T19:29:16.375Z"
-last_activity: 2026-03-26
+status: executing
+stopped_at: Completed 04-ai-capabilities 04-01-PLAN.md
+last_updated: "2026-03-30T19:59:04.112Z"
+last_activity: 2026-03-30
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 6
+  completed_plans: 5
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** The app must never silently lose data. Every edit must either persist to Supabase or visibly fail with a clear error.
-**Current focus:** Phase 01 — data-integrity-security
+**Current focus:** Phase 04 — ai-capabilities
 
 ## Current Position
 
-Phase: 2
-Plan: Not started
-Status: Awaiting schema change (Supabase dashboard action)
-Last activity: 2026-03-26
+Phase: 04 (ai-capabilities) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-03-30
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-data-integrity-security P02 | 21min | 2 tasks | 7 files |
 | Phase 01-data-integrity-security P03 | 143s | 2 tasks | 5 files |
 | Phase 01-data-integrity-security P04 | 170s | 3 tasks | 3 files |
+| Phase 04-ai-capabilities P01 | 8min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,8 @@ Recent decisions affecting current work:
 - [Phase 01-data-integrity-security]: Direct single-row CRUD for interactions/notes/tasks replaces delete-all + re-insert; callers migrated in ProspectSheet and ProspectPage
 - [Phase 01-data-integrity-security]: Use DOMPurify allowlist for XSS prevention; meeting-prep routed through Edge Function to remove VITE_ANTHROPIC_API_KEY from client bundle
 - [Phase 01-data-integrity-security P04]: deleted_at filter in app queries only (.is('deleted_at', null)) — NOT in RLS policy to avoid WITH CHECK violation on soft-delete UPDATE
+- [Phase 04-ai-capabilities]: STATUSES constant added to prospects.ts (was quirky-buck only) to enable ContactPickerDialog status filter on main
+- [Phase 04-ai-capabilities]: savePendingBatch called in handleGenerate (not handleCopy) so batch persists before clipboard copy
 
 ### Pending Todos
 
@@ -85,6 +88,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T19:29:16.369Z
-Stopped at: Phase 4 UI-SPEC approved
-Resume file: .planning/phases/04-ai-capabilities/04-UI-SPEC.md
+Last session: 2026-03-30T19:59:04.109Z
+Stopped at: Completed 04-ai-capabilities 04-01-PLAN.md
+Resume file: None

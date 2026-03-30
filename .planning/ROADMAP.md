@@ -70,7 +70,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Bring ContactPickerDialog from quirky-buck to main + create pendingBatch persistence layer (AI-01, AI-02)
+- [x] 04-01-PLAN.md — Bring ContactPickerDialog from quirky-buck to main + create pendingBatch persistence layer (AI-01, AI-02)
 - [ ] 04-02-PLAN.md — PendingOutreachDialog, badge on Draft Emails button, bulk Mark Contacted action (AI-03, AI-04)
 
 ## Progress
@@ -83,4 +83,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Data Integrity & Security | 4/4 | Complete (checkpoint pending) | 2026-03-26 |
 | 2. TanStack Query Migration | 0/? | Not started | - |
 | 3. Component Decomposition & UX Polish | 0/? | Not started | - |
-| 4. AI Capabilities | 0/2 | Planned | - |
+| 4. AI Capabilities | 1/2 | In Progress|  |

@@ -40,8 +40,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### AI Capabilities
 
-- [ ] **AI-01**: User can click a button in ProspectSheet to generate a draft cold email using prospect context (name, industry, location count, competitor, contacts, recent interactions)
-- [ ] **AI-02**: Generated email displays inline in ProspectSheet with a copy-to-clipboard button
+- [x] **AI-01**: User can click a button in ProspectSheet to generate a draft cold email using prospect context (name, industry, location count, competitor, contacts, recent interactions)
+- [x] **AI-02**: Generated email displays inline in ProspectSheet with a copy-to-clipboard button
 - [ ] **AI-03**: User can click a button in ProspectSheet to research a prospect (company intel, digital presence, recent news)
 - [ ] **AI-04**: Research results display inline in ProspectSheet with key findings surfaced
 
@@ -101,7 +101,7 @@ Explicitly excluded. Documented to prevent scope creep.
 | PERF-02 | Phase 2 | Pending |
 | PERF-03 | Phase 2 | Pending |
 | PERF-04 | Phase 2 | Pending |
-| AI-01 | Phase 4 | Pending |
-| AI-02 | Phase 4 | Pending |
+| AI-01 | Phase 4 | Complete |
+| AI-02 | Phase 4 | Complete |
 | AI-03 | Phase 4 | Pending |
 | AI-04 | Phase 4 | Pending |
