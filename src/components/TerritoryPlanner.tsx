@@ -832,7 +832,7 @@ export default function TerritoryPlanner() {
         await addInteraction(entry.prospectId, {
           type: "Email",
           date: today,
-          notes: "Cold outreach via Draft Emails",
+          notes: `Cold outreach to ${entry.contactName}${entry.contactTitle ? ` (${entry.contactTitle})` : ""} via Draft Emails`,
         });
       })
     );
@@ -863,12 +863,12 @@ export default function TerritoryPlanner() {
     try {
       await Promise.all(
         ids.map(async (id) => {
+          const p = data.find((x) => x.id === id);
           await addInteraction(id, {
             type: "Email",
             date: today,
-            notes: "Cold outreach via Draft Emails",
+            notes: `Bulk outreach to ${p?.name || "account"} via Mark Contacted`,
           });
-          const p = data.find((x) => x.id === id);
           if (p?.outreach === "Not Started") {
             await update(id, { outreach: "Actively Prospecting" });
           } else if (p) {
