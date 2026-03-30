@@ -10,6 +10,8 @@ import type { Prospect, Contact } from "@/data/prospects";
 import { INDUSTRIES, STATUSES, TIERS, COMPETITORS, getLogoUrl } from "@/data/prospects";
 import { RoleBadge, StrengthDot } from "@/components/ContactBadges";
 import { buildContactPrompt, type ContactSelection } from "@/lib/buildContactPrompt";
+import { savePendingBatch } from "@/lib/pendingBatch";
+import type { PendingBatchEntry } from "@/lib/pendingBatch";
 import type { Signal } from "@/hooks/useSignals";
 
 interface ContactPickerDialogProps {
@@ -178,6 +180,19 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
     setPromptText(prompt);
     setView("preview");
     setCopied(false);
+
+    // Save pending outreach batch to localStorage for post-outreach tracking
+    const batchEntries: PendingBatchEntry[] = dedupedSelections.map(s => ({
+      contactId: s.contact.id,
+      contactName: s.contact.name,
+      contactTitle: s.contact.title || "",
+      prospectId: s.prospect.id,
+      prospectName: s.prospect.name,
+    }));
+    savePendingBatch({
+      entries: batchEntries,
+      savedAt: new Date().toISOString(),
+    });
   };
 
   const handleCopy = () => {
