@@ -16,7 +16,8 @@ interface PendingOutreachDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   batch: PendingBatch | null;
-  onMarkSent: (checkedEntries: PendingBatchEntry[]) => Promise<void>;
+  onMarkSent: (checkedEntries: PendingBatchEntry[], remainingEntries: PendingBatchEntry[]) => Promise<void>;
+  onSkipContacts: (skippedEntries: PendingBatchEntry[], remainingEntries: PendingBatchEntry[]) => void;
   onStartNewDraft: () => void;
   onDiscard: () => void;
 }
@@ -26,6 +27,7 @@ export function PendingOutreachDialog({
   onOpenChange,
   batch,
   onMarkSent,
+  onSkipContacts,
   onStartNewDraft,
   onDiscard,
 }: PendingOutreachDialogProps) {
@@ -72,13 +74,25 @@ export function PendingOutreachDialog({
     setSaving(true);
     try {
       const toSend = entries.filter((e) => checked.has(e.contactId));
-      await onMarkSent(toSend);
+      const remaining = entries.filter((e) => !checked.has(e.contactId));
+      await onMarkSent(toSend, remaining);
       setChecked(new Set());
+      // Close dialog — parent handles batch update
       onOpenChange(false);
     } catch {
       // Error toast handled by parent
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSkipChecked = () => {
+    const toSkip = entries.filter((e) => checked.has(e.contactId));
+    const remaining = entries.filter((e) => !checked.has(e.contactId));
+    onSkipContacts(toSkip, remaining);
+    setChecked(new Set());
+    if (remaining.length === 0) {
+      onOpenChange(false);
     }
   };
 
@@ -165,23 +179,35 @@ export function PendingOutreachDialog({
                 className="text-xs text-muted-foreground underline cursor-pointer hover:text-destructive transition-colors"
                 onClick={onDiscard}
               >
-                Didn't send these
+                Discard all
               </span>
             </div>
           </>
         )}
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
-          </Button>
-          <Button
-            variant="default"
-            onClick={handleMarkSent}
-            disabled={checked.size === 0 || saving || entries.length === 0}
-          >
-            {saving ? "Saving..." : "Mark as Sent"}
-          </Button>
+        <DialogFooter className="flex-row gap-2 sm:justify-between">
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>
+              Close
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleSkipChecked}
+              disabled={checked.size === 0 || saving || entries.length === 0}
+              className="text-muted-foreground"
+            >
+              Didn't send ({checked.size})
+            </Button>
+            <Button
+              variant="default"
+              onClick={handleMarkSent}
+              disabled={checked.size === 0 || saving || entries.length === 0}
+            >
+              {saving ? "Saving..." : `Mark as Sent (${checked.size})`}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

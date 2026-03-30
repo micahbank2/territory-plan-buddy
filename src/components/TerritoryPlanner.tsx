@@ -33,7 +33,7 @@ import { PasteImportDialog } from "@/components/PasteImportDialog";
 import { ExportDialog } from "@/components/ExportDialog";
 import { ContactPickerDialog } from "@/components/ContactPickerDialog";
 import { PendingOutreachDialog } from "@/components/PendingOutreachDialog";
-import { loadPendingBatch, clearPendingBatch } from "@/lib/pendingBatch";
+import { loadPendingBatch, clearPendingBatch, savePendingBatch } from "@/lib/pendingBatch";
 import type { PendingBatch, PendingBatchEntry } from "@/lib/pendingBatch";
 import { EnrichmentQueue } from "@/components/EnrichmentQueue";
 import { AIReadinessBadge } from "@/components/AIReadinessCard";
@@ -824,7 +824,7 @@ export default function TerritoryPlanner() {
   };
 
   // --- Mark Sent handler (PendingOutreachDialog) ---
-  const handleMarkSent = async (entries: PendingBatchEntry[]) => {
+  const handleMarkSent = async (entries: PendingBatchEntry[], remaining: PendingBatchEntry[]) => {
     const today = new Date().toISOString().split("T")[0];
     const prospectIds = new Set(entries.map((e) => e.prospectId));
 
@@ -851,9 +851,29 @@ export default function TerritoryPlanner() {
       })
     );
 
-    clearPendingBatch();
-    setPendingBatch(null);
-    toast.success(`Logged ${entries.length} outreach interactions.`);
+    // Keep remaining contacts in batch, or clear if none left
+    if (remaining.length > 0) {
+      const updated = { entries: remaining, savedAt: new Date().toISOString() };
+      savePendingBatch(updated);
+      setPendingBatch(updated);
+    } else {
+      clearPendingBatch();
+      setPendingBatch(null);
+    }
+    toast.success(`Logged ${entries.length} outreach interaction${entries.length !== 1 ? "s" : ""}.${remaining.length > 0 ? ` ${remaining.length} still pending.` : ""}`);
+  };
+
+  // --- Skip contacts handler (remove from batch without logging) ---
+  const handleSkipContacts = (skipped: PendingBatchEntry[], remaining: PendingBatchEntry[]) => {
+    if (remaining.length > 0) {
+      const updated = { entries: remaining, savedAt: new Date().toISOString() };
+      savePendingBatch(updated);
+      setPendingBatch(updated);
+    } else {
+      clearPendingBatch();
+      setPendingBatch(null);
+    }
+    toast.success(`Removed ${skipped.length} contact${skipped.length !== 1 ? "s" : ""} — no outreach logged.${remaining.length > 0 ? ` ${remaining.length} still pending.` : ""}`);
   };
 
   // --- Bulk Mark Contacted handler ---
@@ -2326,6 +2346,10 @@ export default function TerritoryPlanner() {
         }}
         prospects={data}
         signals={signals || []}
+        onPromptGenerated={() => {
+          setPendingBatch(loadPendingBatch());
+          setTimeout(() => setShowPendingOutreach(true), 150);
+        }}
       />
 
       <PendingOutreachDialog
@@ -2336,6 +2360,7 @@ export default function TerritoryPlanner() {
         }}
         batch={pendingBatch}
         onMarkSent={handleMarkSent}
+        onSkipContacts={handleSkipContacts}
         onStartNewDraft={() => {
           setShowPendingOutreach(false);
           setShowContactPicker(true);

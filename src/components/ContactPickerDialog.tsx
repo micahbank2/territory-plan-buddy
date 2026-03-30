@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MultiSelect } from "@/components/MultiSelect";
-import { Mail, Copy, ChevronDown, ChevronRight, Search, ArrowLeft, Check, Filter } from "lucide-react";
+import { Mail, Copy, ChevronDown, ChevronRight, Search, ArrowLeft, ArrowRight, Check, Filter, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import type { Prospect, Contact } from "@/data/prospects";
 import { INDUSTRIES, STATUSES, TIERS, COMPETITORS, getLogoUrl } from "@/data/prospects";
@@ -19,11 +19,12 @@ interface ContactPickerDialogProps {
   onOpenChange: (open: boolean) => void;
   prospects: Prospect[];
   signals: Signal[];
+  onPromptGenerated?: () => void;
 }
 
-type ViewState = "picking" | "preview";
+type ViewState = "picking" | "preview" | "guidance";
 
-export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: ContactPickerDialogProps) {
+export function ContactPickerDialog({ open, onOpenChange, prospects, signals, onPromptGenerated }: ContactPickerDialogProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -200,6 +201,8 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
     setCopied(true);
     toast.success(`Prompt copied — ${selected.size} contact${selected.size !== 1 ? "s" : ""} ready for Claude`);
     setTimeout(() => setCopied(false), 2000);
+    // Transition to guidance view after copy
+    setTimeout(() => setView("guidance"), 300);
   };
 
   const handleClose = () => {
@@ -212,6 +215,20 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
     clearFilters();
     setShowFilters(false);
     onOpenChange(false);
+  };
+
+  const handleGuidanceNext = () => {
+    // Close this dialog and signal parent to open pending outreach
+    setView("picking");
+    setSearch("");
+    setSelected(new Set());
+    setExpanded(new Set());
+    setPromptText("");
+    setCopied(false);
+    clearFilters();
+    setShowFilters(false);
+    onOpenChange(false);
+    onPromptGenerated?.();
   };
 
   const isExpanded = (id: string) => {
@@ -228,7 +245,7 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
         <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Mail className="w-4 h-4 text-primary" />
-            {view === "picking" ? "Select Contacts for Email Drafting" : "Prompt Preview"}
+            {view === "picking" ? "Select Contacts for Email Drafting" : view === "preview" ? "Prompt Preview" : "Next Steps"}
           </DialogTitle>
         </DialogHeader>
 
@@ -369,7 +386,7 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
               </Button>
             </div>
           </>
-        ) : (
+        ) : view === "preview" ? (
           <>
             <div className="px-6 pt-3 pb-2 flex items-center justify-between shrink-0">
               <button
@@ -399,6 +416,30 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals }: 
               </Button>
             </div>
           </>
+        ) : (
+          /* Guidance view — shown after copying prompt */
+          <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center space-y-6">
+            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+              <Sparkles className="w-7 h-7 text-primary" />
+            </div>
+            <div className="space-y-2 max-w-sm">
+              <h3 className="text-lg font-semibold">Prompt copied!</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Paste it into Claude, ChatGPT, or your AI tool of choice to generate personalized emails for your {selected.size} contact{selected.size !== 1 ? "s" : ""}.
+              </p>
+              <p className="text-xs text-muted-foreground/70">
+                When you're done sending, come back to mark who you actually emailed.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 w-full max-w-xs">
+              <Button onClick={handleGuidanceNext} className="gap-2 w-full">
+                Review Contacts <ArrowRight className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleClose} className="text-muted-foreground">
+                I'll do this later
+              </Button>
+            </div>
+          </div>
         )}
       </DialogContent>
     </Dialog>
