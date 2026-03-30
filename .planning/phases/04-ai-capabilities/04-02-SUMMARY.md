@@ -22,7 +22,7 @@ decisions:
 metrics:
   duration: "8min"
   completed: "2026-03-30"
-  tasks: 2
+  tasks: 3
   files: 3
 ---
 
@@ -36,6 +36,7 @@ metrics:
 |------|------|--------|-------|
 | 1 | Create PendingOutreachDialog with mark-as-sent logic | 9fb95c6 | PendingOutreachDialog.tsx, PendingOutreachDialog.test.tsx |
 | 2 | Wire badge, PendingOutreachDialog, and bulk Mark Contacted into TerritoryPlanner | 856cd23 | TerritoryPlanner.tsx |
+| 3 | Human verification of complete workflow + contact-name enhancement | a31f06a | TerritoryPlanner.tsx |
 
 ## What Was Built
 
@@ -61,6 +62,13 @@ metrics:
 - Inline confirmation: "Log Email + bump stage for N accounts?" with Confirm/Cancel
 - `handleBulkMarkContacted`: logs Email interaction per selected prospect, bumps Not Started → Actively Prospecting, clears selection, fires "Logged outreach for N accounts." toast
 - Confirmation resets automatically when selection changes (useEffect on `selected.size`)
+
+### Task 3: Human Verification + Enhancement
+- User verified full workflow end-to-end — approved
+- User requested: interaction notes should include contact/account names instead of generic text
+- Mark as Sent now logs "Cold outreach to Jane Smith (VP Marketing) via Draft Emails"
+- Bulk Mark Contacted now logs "Bulk outreach to Shake Shack via Mark Contacted"
+- Commit: a31f06a
 
 ## Deviations from Plan
 
