@@ -113,6 +113,7 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Command as CmdK, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -1258,9 +1259,24 @@ export default function TerritoryPlanner() {
 
             <div className="hidden md:block w-px h-6 bg-border mx-1" />
 
-            {/* Draft Emails */}
-            <Button variant="outline" onClick={() => setShowContactPicker(true)} className="gap-2 hidden sm:inline-flex h-9 px-4 text-sm font-semibold border-primary/30 hover:bg-primary/5 hover:border-primary/50">
+            {/* Draft Emails — routes to PendingOutreachDialog when batch exists */}
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (pendingBatch && pendingBatch.entries.length > 0) {
+                  setShowPendingOutreach(true);
+                } else {
+                  setShowContactPicker(true);
+                }
+              }}
+              className="gap-2 hidden sm:inline-flex h-9 px-4 text-sm font-semibold border-primary/30 hover:bg-primary/5 hover:border-primary/50 relative"
+            >
               <Mail className="w-4 h-4" /> Draft Emails
+              {pendingBatch && pendingBatch.entries.length > 0 && (
+                <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 min-w-[20px] px-1 text-[10px]">
+                  {pendingBatch.entries.length}
+                </Badge>
+              )}
             </Button>
 
             {/* Share */}
@@ -1318,8 +1334,19 @@ export default function TerritoryPlanner() {
                   <DropdownMenuItem onClick={() => setShowEnrich(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
                     <Sparkles className="w-4 h-4 text-muted-foreground" /> Enrich
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShowContactPicker(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
+                  <DropdownMenuItem onClick={() => {
+                    if (pendingBatch && pendingBatch.entries.length > 0) {
+                      setShowPendingOutreach(true);
+                    } else {
+                      setShowContactPicker(true);
+                    }
+                  }} className="gap-3 px-4 py-2 rounded-md text-sm">
                     <Mail className="w-4 h-4 text-muted-foreground" /> Draft Emails
+                    {pendingBatch && pendingBatch.entries.length > 0 && (
+                      <Badge variant="destructive" className="ml-auto h-5 min-w-[20px] px-1 text-[10px]">
+                        {pendingBatch.entries.length}
+                      </Badge>
+                    )}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="my-1" />
                   <DropdownMenuItem onClick={() => setShowAdd(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
