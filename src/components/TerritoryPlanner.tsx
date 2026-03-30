@@ -31,6 +31,7 @@ import { BulkOutreachQueue } from "@/components/BulkOutreachQueue";
 import { ContactPickerDialog } from "@/components/ContactPickerDialog";
 import { PasteImportDialog } from "@/components/PasteImportDialog";
 import { ExportDialog } from "@/components/ExportDialog";
+import { ContactPickerDialog } from "@/components/ContactPickerDialog";
 import { EnrichmentQueue } from "@/components/EnrichmentQueue";
 import { AIReadinessBadge } from "@/components/AIReadinessCard";
 import { SignalIndicator } from "@/components/SignalsSection";
@@ -83,6 +84,7 @@ import {
   CalendarDays,
   TrendingUp,
   ShieldCheck,
+  Mail,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -2196,6 +2198,13 @@ export default function TerritoryPlanner() {
       )}
 
       <ExportDialog open={showExport} onOpenChange={setShowExport} prospects={filtered} />
+
+      <ContactPickerDialog
+        open={showContactPicker}
+        onOpenChange={setShowContactPicker}
+        prospects={data}
+        signals={signals || []}
+      />
 
     </div>
   );
