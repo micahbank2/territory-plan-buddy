@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 1: Data Integrity & Security** - Fix silent data loss, direct CRUD for sub-collections, real soft delete, XSS sanitization, and API key moved to Edge Function
 - [ ] **Phase 2: TanStack Query Migration** - Migrate all data fetching and mutations to TanStack Query with structural rollback, cache invalidation, and lazy sub-collection loading
 - [ ] **Phase 3: Component Decomposition & UX Polish** - Decompose TerritoryPlanner god component, add tabbed ProspectSheet layout
-- [ ] **Phase 4: AI Capabilities** - Draft emails post-outreach tracking: batch persistence, pending outreach badge, mark-as-sent dialog, bulk Mark Contacted action
+- [x] **Phase 4: AI Capabilities** - Draft emails post-outreach tracking: batch persistence, pending outreach badge, mark-as-sent dialog, bulk Mark Contacted action (completed 2026-03-30)
 
 ## Phase Details
 
@@ -71,7 +71,7 @@ Plans:
 
 Plans:
 - [x] 04-01-PLAN.md — Bring ContactPickerDialog from quirky-buck to main + create pendingBatch persistence layer (AI-01, AI-02)
-- [ ] 04-02-PLAN.md — PendingOutreachDialog, badge on Draft Emails button, bulk Mark Contacted action (AI-03, AI-04)
+- [x] 04-02-PLAN.md — PendingOutreachDialog, badge on Draft Emails button, bulk Mark Contacted action (AI-03, AI-04)
 
 ## Progress
 
@@ -83,4 +83,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Data Integrity & Security | 4/4 | Complete (checkpoint pending) | 2026-03-26 |
 | 2. TanStack Query Migration | 0/? | Not started | - |
 | 3. Component Decomposition & UX Polish | 0/? | Not started | - |
-| 4. AI Capabilities | 1/2 | In Progress|  |
+| 4. AI Capabilities | 2/2 | Complete   | 2026-03-30 |
