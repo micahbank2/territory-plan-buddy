@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 1: Data Integrity & Security** - Fix silent data loss, direct CRUD for sub-collections, real soft delete, XSS sanitization, and API key moved to Edge Function
 - [ ] **Phase 2: TanStack Query Migration** - Migrate all data fetching and mutations to TanStack Query with structural rollback, cache invalidation, and lazy sub-collection loading
 - [ ] **Phase 3: Component Decomposition & UX Polish** - Decompose TerritoryPlanner god component, add tabbed ProspectSheet layout
-- [ ] **Phase 4: AI Capabilities** - Cold email drafting and prospect research tools inside the AITab created in Phase 3
+- [ ] **Phase 4: AI Capabilities** - Draft emails post-outreach tracking: batch persistence, pending outreach badge, mark-as-sent dialog, bulk Mark Contacted action
 
 ## Phase Details
 
@@ -60,15 +60,18 @@ Plans:
 **UI hint**: yes
 
 ### Phase 4: AI Capabilities
-**Goal**: Users can generate a personalized cold email draft and research a prospect's company intel without leaving the app
+**Goal**: Close the loop on the draft emails workflow with post-outreach tracking — pending batch persistence, badge indicator, mark-as-sent dialog, and bulk Mark Contacted action
 **Depends on**: Phase 3
 **Requirements**: AI-01, AI-02, AI-03, AI-04
 **Success Criteria** (what must be TRUE):
-  1. Clicking "Draft Email" in the AI tab generates a cold email using the prospect's name, industry, location count, competitor, contacts, and recent interactions — result appears inline with a copy button
-  2. Clicking "Research Prospect" in the AI tab returns a structured company intel summary (digital presence, recent signals, key findings) inline in the sheet
-  3. Both AI actions are non-blocking — the tab remains usable while a response streams in, and an error message displays if the Edge Function call fails
-**Plans**: TBD
-**UI hint**: yes
+  1. Generating a prompt in ContactPickerDialog saves the selected contacts as a pending outreach batch in localStorage
+  2. Draft Emails button shows a badge with pending contact count; clicking it opens PendingOutreachDialog where user can mark contacts as sent (logging Email interactions and bumping outreach stages)
+  3. Bulk "Mark Contacted" action in the table selection bar logs Email interactions and bumps stages for all selected prospects
+**Plans**: 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Bring ContactPickerDialog from quirky-buck to main + create pendingBatch persistence layer (AI-01, AI-02)
+- [ ] 04-02-PLAN.md — PendingOutreachDialog, badge on Draft Emails button, bulk Mark Contacted action (AI-03, AI-04)
 
 ## Progress
 
@@ -80,4 +83,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Data Integrity & Security | 4/4 | Complete (checkpoint pending) | 2026-03-26 |
 | 2. TanStack Query Migration | 0/? | Not started | - |
 | 3. Component Decomposition & UX Polish | 0/? | Not started | - |
-| 4. AI Capabilities | 0/? | Not started | - |
+| 4. AI Capabilities | 0/2 | Planned | - |
