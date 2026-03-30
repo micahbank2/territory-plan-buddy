@@ -18,6 +18,7 @@ interface PendingOutreachDialogProps {
   batch: PendingBatch | null;
   onMarkSent: (checkedEntries: PendingBatchEntry[]) => Promise<void>;
   onStartNewDraft: () => void;
+  onDiscard: () => void;
 }
 
 export function PendingOutreachDialog({
@@ -26,6 +27,7 @@ export function PendingOutreachDialog({
   batch,
   onMarkSent,
   onStartNewDraft,
+  onDiscard,
 }: PendingOutreachDialogProps) {
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
@@ -151,12 +153,19 @@ export function PendingOutreachDialog({
               </div>
             </ScrollArea>
 
-            <div className="pt-1">
+            <div className="pt-1 flex items-center gap-3">
               <span
                 className="text-xs text-muted-foreground underline cursor-pointer hover:text-foreground transition-colors"
                 onClick={onStartNewDraft}
               >
                 Start new draft
+              </span>
+              <span className="text-xs text-border">|</span>
+              <span
+                className="text-xs text-muted-foreground underline cursor-pointer hover:text-destructive transition-colors"
+                onClick={onDiscard}
+              >
+                Didn't send these
               </span>
             </div>
           </>

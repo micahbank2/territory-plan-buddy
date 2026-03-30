@@ -2340,6 +2340,12 @@ export default function TerritoryPlanner() {
           setShowPendingOutreach(false);
           setShowContactPicker(true);
         }}
+        onDiscard={() => {
+          clearPendingBatch();
+          setPendingBatch(null);
+          setShowPendingOutreach(false);
+          toast.success("Batch cleared — no outreach logged.");
+        }}
       />
 
     </div>
