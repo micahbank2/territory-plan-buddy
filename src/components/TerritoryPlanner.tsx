@@ -32,8 +32,12 @@ import { ContactPickerDialog } from "@/components/ContactPickerDialog";
 import { PasteImportDialog } from "@/components/PasteImportDialog";
 import { ExportDialog } from "@/components/ExportDialog";
 import { ContactPickerDialog } from "@/components/ContactPickerDialog";
+import { PendingOutreachDialog } from "@/components/PendingOutreachDialog";
+import { loadPendingBatch, clearPendingBatch } from "@/lib/pendingBatch";
+import type { PendingBatch, PendingBatchEntry } from "@/lib/pendingBatch";
 import { EnrichmentQueue } from "@/components/EnrichmentQueue";
 import { AIReadinessBadge } from "@/components/AIReadinessCard";
+import { Badge } from "@/components/ui/badge";
 import { SignalIndicator } from "@/components/SignalsSection";
 import { AddProspectDialog } from "@/components/AddProspectDialog";
 import { RetroGrid } from "@/components/ui/retro-grid";
@@ -486,9 +490,19 @@ export default function TerritoryPlanner() {
   }, [showArchive, loadArchivedData]);
   // Share territory dialog
   const [showShare, setShowShare] = useState(false);
+  // Pending outreach dialog
+  const [pendingBatch, setPendingBatch] = useState<PendingBatch | null>(null);
+  const [showPendingOutreach, setShowPendingOutreach] = useState(false);
+  // Bulk mark contacted confirmation
+  const [showBulkContactedConfirm, setShowBulkContactedConfirm] = useState(false);
   // New territory dialog
   const [showNewTerritory, setShowNewTerritory] = useState(false);
   const [newTerritoryName, setNewTerritoryName] = useState("");
+
+  // Load pending outreach batch from localStorage on mount
+  useEffect(() => {
+    setPendingBatch(loadPendingBatch());
+  }, []);
 
   // Keyboard shortcut for Cmd+K → command palette
   useEffect(() => {
@@ -501,6 +515,11 @@ export default function TerritoryPlanner() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
+
+  // Reset bulk contacted confirmation when selection changes
+  useEffect(() => {
+    setShowBulkContactedConfirm(false);
+  }, [selected.size]);
 
   // Duplicate detection on new name
   useEffect(() => {
@@ -801,6 +820,68 @@ export default function TerritoryPlanner() {
     const updated = savedViews.filter((v) => v.id !== id);
     setSavedViews(updated);
     saveViews(updated);
+  };
+
+  // --- Mark Sent handler (PendingOutreachDialog) ---
+  const handleMarkSent = async (entries: PendingBatchEntry[]) => {
+    const today = new Date().toISOString().split("T")[0];
+    const prospectIds = new Set(entries.map((e) => e.prospectId));
+
+    await Promise.all(
+      entries.map(async (entry) => {
+        await addInteraction(entry.prospectId, {
+          type: "Email",
+          date: today,
+          notes: "Cold outreach via Draft Emails",
+        });
+      })
+    );
+
+    // Bump outreach stage and refresh last_touched for each unique prospect
+    await Promise.all(
+      Array.from(prospectIds).map(async (pid) => {
+        const prospect = data.find((p) => p.id === pid);
+        if (!prospect) return;
+        if (prospect.outreach === "Not Started") {
+          await update(pid, { outreach: "Actively Prospecting" });
+        } else {
+          await update(pid, { outreach: prospect.outreach });
+        }
+      })
+    );
+
+    clearPendingBatch();
+    setPendingBatch(null);
+    toast.success(`Logged ${entries.length} outreach interactions.`);
+  };
+
+  // --- Bulk Mark Contacted handler ---
+  const handleBulkMarkContacted = async () => {
+    const today = new Date().toISOString().split("T")[0];
+    const ids = Array.from(selected);
+
+    try {
+      await Promise.all(
+        ids.map(async (id) => {
+          await addInteraction(id, {
+            type: "Email",
+            date: today,
+            notes: "Cold outreach via Draft Emails",
+          });
+          const p = data.find((x) => x.id === id);
+          if (p?.outreach === "Not Started") {
+            await update(id, { outreach: "Actively Prospecting" });
+          } else if (p) {
+            await update(id, { outreach: p.outreach });
+          }
+        })
+      );
+      toast.success(`Logged outreach for ${ids.length} accounts.`);
+      setSelected(new Set());
+    } catch {
+      toast.error("Failed to log outreach for some accounts. Reload to verify.");
+    }
+    setShowBulkContactedConfirm(false);
   };
 
   // --- Bulk Actions ---
@@ -1601,6 +1682,17 @@ export default function TerritoryPlanner() {
             <Button size="sm" variant="outline" onClick={() => setShowBulkOutreach(true)} className="text-xs h-7 gap-1">
               <Sparkles className="w-3 h-3" /> Generate Outreach ({selected.size})
             </Button>
+            {!showBulkContactedConfirm ? (
+              <Button size="sm" variant="outline" onClick={() => setShowBulkContactedConfirm(true)} className="text-xs h-7 gap-1">
+                <Mail className="w-3 h-3" /> Mark Contacted
+              </Button>
+            ) : (
+              <span className="flex items-center gap-2 text-xs">
+                <span className="text-muted-foreground">Log Email + bump stage for {selected.size} accounts?</span>
+                <Button size="sm" variant="default" onClick={handleBulkMarkContacted} className="text-xs h-7">Confirm</Button>
+                <Button size="sm" variant="ghost" onClick={() => setShowBulkContactedConfirm(false)} className="text-xs h-7">Cancel</Button>
+              </span>
+            )}
             <Button size="sm" variant="destructive" onClick={() => setShowBulkDelete(true)} className="text-xs h-7 gap-1 ml-auto delete-glow">
               <Trash2 className="w-3 h-3" /> Delete
             </Button>
@@ -2201,9 +2293,26 @@ export default function TerritoryPlanner() {
 
       <ContactPickerDialog
         open={showContactPicker}
-        onOpenChange={setShowContactPicker}
+        onOpenChange={(open) => {
+          setShowContactPicker(open);
+          if (!open) setPendingBatch(loadPendingBatch());
+        }}
         prospects={data}
         signals={signals || []}
+      />
+
+      <PendingOutreachDialog
+        open={showPendingOutreach}
+        onOpenChange={(open) => {
+          setShowPendingOutreach(open);
+          if (!open) setPendingBatch(loadPendingBatch());
+        }}
+        batch={pendingBatch}
+        onMarkSent={handleMarkSent}
+        onStartNewDraft={() => {
+          setShowPendingOutreach(false);
+          setShowContactPicker(true);
+        }}
       />
 
     </div>
