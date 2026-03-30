@@ -1189,7 +1189,7 @@ export default function TerritoryPlanner() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button className="gap-2 bg-primary hover:bg-primary/90 font-bold h-9 px-5 text-sm shadow-sm">
-                  <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Add Data</span><span className="sm:hidden">Add</span>
+                  <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Import / Export</span><span className="sm:hidden">Data</span>
                   <ChevronDown className="w-3.5 h-3.5 ml-0.5 opacity-70" />
                 </Button>
               </DropdownMenuTrigger>
@@ -1206,6 +1206,10 @@ export default function TerritoryPlanner() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowPasteImport(true)} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
                   <ClipboardPaste className="w-4 h-4 text-muted-foreground shrink-0" /> Paste Import
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-1" />
+                <DropdownMenuItem onClick={exportCSV} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
+                  <Download className="w-4 h-4 text-muted-foreground shrink-0" /> Export CSV
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -1243,6 +1247,9 @@ export default function TerritoryPlanner() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowPasteImport(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
                     <ClipboardPaste className="w-4 h-4 text-muted-foreground" /> Paste Import
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportCSV} className="gap-3 px-4 py-2 rounded-md text-sm">
+                    <Download className="w-4 h-4 text-muted-foreground" /> Export CSV
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowShare(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
                     <Share2 className="w-4 h-4 text-muted-foreground" /> Share Territory
