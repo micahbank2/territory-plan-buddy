@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MultiSelect } from "@/components/MultiSelect";
-import { Mail, Copy, ChevronDown, ChevronRight, Search, ArrowLeft, ArrowRight, Check, Filter, Sparkles } from "lucide-react";
+import { Mail, Copy, ChevronDown, ChevronRight, Search, ArrowLeft, ArrowRight, Check, Filter, Sparkles, Star } from "lucide-react";
 import { toast } from "sonner";
 import type { Prospect, Contact } from "@/data/prospects";
 import { INDUSTRIES, STATUSES, TIERS, COMPETITORS, getLogoUrl } from "@/data/prospects";
@@ -357,6 +357,7 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals, on
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-sm font-medium truncate">{c.name}</span>
                                   <RoleBadge role={c.role} />
+                                  {c.starred && <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" title="Starred" />}
                                 </div>
                                 <div className="flex items-center gap-2 mt-0.5">
                                   {c.title && <span className="text-[11px] text-muted-foreground truncate">{c.title}</span>}

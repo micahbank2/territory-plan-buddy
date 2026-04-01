@@ -182,6 +182,18 @@ After all emails, add a **Research Notes** section summarizing what you found fo
         }
       }
 
+      // Notes
+      if (p.noteLog?.length) {
+        const recentNotes = p.noteLog.slice(-3);
+        lines.push("");
+        lines.push("**Account Notes:**");
+        for (const n of recentNotes) {
+          const dateStr = n.timestamp ? new Date(n.timestamp).toLocaleDateString() : "";
+          const text = n.text.replace(/<[^>]*>/g, "").trim();
+          if (text) lines.push(`- ${dateStr ? `${dateStr}: ` : ""}${text}`);
+        }
+      }
+
       // Signals
       if (signals.length > 0) {
         lines.push("");

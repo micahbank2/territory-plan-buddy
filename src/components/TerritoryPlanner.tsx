@@ -40,6 +40,7 @@ import { AIReadinessBadge } from "@/components/AIReadinessCard";
 import { Badge } from "@/components/ui/badge";
 import { SignalIndicator } from "@/components/SignalsSection";
 import { AddProspectDialog } from "@/components/AddProspectDialog";
+import { AddContactDialog } from "@/components/AddContactDialog";
 import { RetroGrid } from "@/components/ui/retro-grid";
 import { useSignals } from "@/hooks/useSignals";
 
@@ -438,6 +439,7 @@ export default function TerritoryPlanner() {
 
   // Quick Add
   const [showAdd, setShowAdd] = useState(false);
+  const [showAddContact, setShowAddContact] = useState(false);
   const [newName, setNewName] = useState("");
   const [newWebsite, setNewWebsite] = useState("");
   const [newIndustry, setNewIndustry] = useState("");
@@ -1316,7 +1318,7 @@ export default function TerritoryPlanner() {
                 <DropdownMenuItem onClick={() => setShowAdd(true)} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
                   <Building2 className="w-4 h-4 text-muted-foreground shrink-0" /> Add Account
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {/* TODO: add single contact flow */}} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
+                <DropdownMenuItem onClick={() => setShowAddContact(true)} className="gap-3 px-4 py-2.5 rounded-md text-sm cursor-pointer font-medium">
                   <Users className="w-4 h-4 text-muted-foreground shrink-0" /> Add Contact
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-1" />
@@ -2031,6 +2033,14 @@ export default function TerritoryPlanner() {
         existingNames={data.map((p) => p.name)}
         inputClass={inputClass}
         selectClass={selectClass}
+      />
+
+      {/* --- Add Contact Dialog --- */}
+      <AddContactDialog
+        open={showAddContact}
+        onOpenChange={setShowAddContact}
+        prospects={data}
+        addContact={addContact}
       />
 
       {/* --- Save View Dialog --- */}

@@ -12,6 +12,7 @@ import { SafeHTML } from "@/components/SafeHTML";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { AIReadinessCard } from "@/components/AIReadinessCard";
 import { SignalsSection } from "@/components/SignalsSection";
+import { ContactPickerDialog } from "@/components/ContactPickerDialog";
 import { type Signal } from "@/hooks/useSignals";
 import { cn, normalizeUrl } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -131,6 +132,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
   const [outreachDraft, setOutreachDraft] = useState("");
   const [outreachLoading, setOutreachLoading] = useState(false);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
+  const [showDraftPicker, setShowDraftPicker] = useState(false);
   // Meeting prep state
   const [meetingPrepBrief, setMeetingPrepBrief] = useState("");
   const [meetingPrepLoading, setMeetingPrepLoading] = useState(false);
@@ -562,8 +564,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
               className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1">
               Open full page <ArrowRight className="w-3 h-3" />
             </button>
-            <button onClick={generateOutreach} className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 ml-4">
-              <Sparkles className="w-3 h-3" /> Draft Outreach
+            <button onClick={() => setShowDraftPicker(true)} className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 ml-4">
+              <Mail className="w-3 h-3" /> Draft Email
             </button>
             <button onClick={generateMeetingPrep} className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 ml-3">
               <FileText className="w-3 h-3" /> Meeting Prep
@@ -1029,6 +1031,14 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
             </div>
           )}
         </div>
+
+      {/* Account-level Email Draft Picker */}
+      <ContactPickerDialog
+        open={showDraftPicker}
+        onOpenChange={setShowDraftPicker}
+        prospects={[prospect]}
+        signals={signals || []}
+      />
 
       {/* Outreach Draft Dialog */}
       <Dialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
