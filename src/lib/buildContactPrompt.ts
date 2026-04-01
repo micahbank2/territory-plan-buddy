@@ -58,25 +58,6 @@ Position Yext around: AI search visibility, multi-location brand consistency, lo
     header += `\n\n**Selection Context:** These contacts were filtered by: ${filterSummary.join(" | ")}. Keep this context in mind when crafting emails — the filtering criteria reflects Micah's outreach strategy for this batch.`;
   }
 
-  header += `
-
-## STEP 1: RESEARCH EACH ACCOUNT
-
-Before writing any email, search the web for each account below and look for:
-- **New marketing hires** — CMO, VP Marketing, Director of Digital, Head of SEO, etc. (recent job changes in the last 6 months)
-- **Location growth** — new store openings, expansion announcements, franchise growth, new markets
-- **SEO & digital marketing moves** — website redesigns, new local pages, Google Business Profile changes, review management shifts
-- **Marketing initiatives** — new campaigns, rebrands, loyalty programs, app launches, digital transformation announcements
-- **Leadership changes** — new CEO, COO, CTO, or any C-suite moves
-- **Competitive signals** — mentions of SOCi, Birdeye, Uberall, Chatmeter, or other listing/reputation vendors
-
-**Also research each contact individually:**
-- Check their LinkedIn profile for recent posts, job changes, or shared content
-- Look for conference talks, podcast appearances, or published articles
-- Note any personal interests or causes that could make the email more human
-
-Use what you find to make each email hyper-relevant. If you find something specific, lead with it.`;
-
   // Add tone guidance based on account statuses in selection
   const toneGuidance = buildToneGuidance(selections, filterSummary);
   if (toneGuidance) {
@@ -84,35 +65,39 @@ Use what you find to make each email hyper-relevant. If you find something speci
   }
 
   header += `
-## STEP 2: WRITE EMAILS
+## CONTEXT IS YOUR RESEARCH
 
-For each contact below, write one personalized first-touch cold email.
+The account data below is your pre-loaded research. Treat every field — signals, AI readiness, notes, interactions, competitor, contact role — as intelligence you already have. Use it to build the hook. Do not re-summarize it; use it.
+
+## WRITE EMAILS
+
+For each contact below, write one personalized first-touch cold email using the cold-email-ae skill framework.
 
 **Rules:**
-- Lead with a specific, researched insight about their business — NOT a generic opener
-- Under 150 words for the email body
-- Reference the account's specific context (industry, location count, competitor situation)
-- Low-friction CTA (quick question, not a demo request)
-- Conversational tone, not corporate
-- If AI readiness data or signals are available, weave them in naturally
-- If you found recent news/hires/growth in your research, use it as the hook
-- Match the tone to the account's status (see TONE GUIDANCE above if provided)
+- 50–80 words max for the email body (tighter is better)
+- Lead with an illumination question or timeline hook — pick the sharpest one for this account
+- One-sentence solution framed as an outcome, not features
+- Non-assumptive CTA — give them the freedom to say no
+- Match tone to account status (see TONE GUIDANCE above if provided)
+- Weave in signals, AI readiness, or contact notes naturally if present
+- End the email the moment the ask is made — nothing after the CTA
 
 ## OUTPUT FORMAT
 
-Return a clean, structured artifact. For EACH contact, use this exact format:
+Return a clean artifact. For EACH contact:
 
 ---
 
 **To:** [Full Name] <[email@domain.com]>
-**Subject:** [Short, compelling subject line — not generic, reference something specific]
+**Subject:** [2–5 words, specific, lowercase preferred]
 
-[Email body here — under 150 words, no signature block]
+[Email body — 50–80 words, 3 blocks max]
+
+Micah Bank | Yext
 
 ---
 
-If a contact has no email on file, write "EMAIL NEEDED" in the To field but still write the email.
-After all emails, add a **Research Notes** section summarizing what you found for each account (bullet points).`;
+If a contact has no email on file, write "EMAIL NEEDED" in the To field but still write the email.`;
 
   sections.push(header);
 
