@@ -1038,6 +1038,10 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
         onOpenChange={setShowDraftPicker}
         prospects={[prospect]}
         signals={signals || []}
+        onPromptGenerated={() => {
+          setShowDraftPicker(false);
+          onClose();
+        }}
       />
 
       {/* Outreach Draft Dialog */}

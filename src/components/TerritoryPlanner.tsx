@@ -507,6 +507,20 @@ export default function TerritoryPlanner() {
     setPendingBatch(loadPendingBatch());
   }, []);
 
+  // Refresh pending batch when ProspectSheet closes (draft may have been generated from there)
+  useEffect(() => {
+    if (!sheetProspectId) {
+      const batch = loadPendingBatch();
+      const prevCount = pendingBatch?.entries.length ?? 0;
+      const newCount = batch?.entries.length ?? 0;
+      setPendingBatch(batch);
+      // Only auto-open PendingOutreachDialog if new contacts were added
+      if (batch && newCount > prevCount) {
+        setTimeout(() => setShowPendingOutreach(true), 200);
+      }
+    }
+  }, [sheetProspectId]);
+
   // Keyboard shortcut for Cmd+K → command palette
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
