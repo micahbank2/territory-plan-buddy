@@ -14,6 +14,20 @@ import { savePendingBatch } from "@/lib/pendingBatch";
 import type { PendingBatchEntry } from "@/lib/pendingBatch";
 import type { Signal } from "@/hooks/useSignals";
 
+function lastContactedLabel(p: Prospect): { text: string; className: string } {
+  const dates: string[] = [];
+  if (p.lastTouched) dates.push(p.lastTouched);
+  for (const i of p.interactions || []) if (i.date) dates.push(i.date);
+  if (dates.length === 0) return { text: "Never contacted", className: "text-muted-foreground/50" };
+  const latest = dates.sort().at(-1)!;
+  const diffDays = Math.floor((Date.now() - new Date(latest).getTime()) / 86400000);
+  if (diffDays <= 0) return { text: "Today", className: "text-emerald-600 dark:text-emerald-400" };
+  if (diffDays < 7) return { text: `${diffDays}d ago`, className: "text-emerald-600 dark:text-emerald-400" };
+  if (diffDays < 30) return { text: `${diffDays}d ago`, className: "text-amber-500" };
+  const months = Math.floor(diffDays / 30);
+  return { text: months === 1 ? "1mo ago" : `${months}mo ago`, className: "text-rose-500" };
+}
+
 interface ContactPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -343,7 +357,9 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals, on
 
                       {open && (
                         <div className="border-t border-border">
-                          {visibleContacts.map(c => (
+                          {visibleContacts.map(c => {
+                            const { text: lastText, className: lastCls } = lastContactedLabel(p);
+                            return (
                             <label
                               key={c.id}
                               className="flex items-center gap-2.5 px-3 py-1.5 pl-10 hover:bg-muted/30 cursor-pointer transition-colors"
@@ -362,11 +378,13 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals, on
                                 <div className="flex items-center gap-2 mt-0.5">
                                   {c.title && <span className="text-[11px] text-muted-foreground truncate">{c.title}</span>}
                                   {c.email && <span className="text-[11px] text-muted-foreground/60 truncate">{c.email}</span>}
+                                  <span className={`text-[10px] font-medium shrink-0 ${lastCls}`}>{lastText}</span>
                                 </div>
                               </div>
                               <StrengthDot strength={c.relationshipStrength} />
                             </label>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>
