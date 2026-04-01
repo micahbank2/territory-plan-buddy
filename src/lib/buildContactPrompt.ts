@@ -140,6 +140,7 @@ After all emails, add a **Research Notes** section summarizing what you found fo
       if (contact.role && contact.role !== "Unknown") lines.push(`**Role:** ${contact.role}`);
       if (contact.relationshipStrength && contact.relationshipStrength !== "Unknown") lines.push(`**Relationship:** ${contact.relationshipStrength}`);
       if (contact.linkedinUrl) lines.push(`**LinkedIn:** ${contact.linkedinUrl}`);
+      if (contact.notes?.trim()) lines.push(`**Contact Notes:** ${contact.notes.trim()}`);
 
       // Account context
       lines.push("");
