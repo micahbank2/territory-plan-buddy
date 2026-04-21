@@ -2,8 +2,7 @@ import { Link } from "react-router-dom";
 import { Brain, Upload, Shield, Share2, BarChart3, Zap, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RetroGrid } from "@/components/ui/retro-grid";
-import yextLogoBlack from "@/assets/yext-logo-black.jpg";
-import yextLogoWhite from "@/assets/yext-logo-white.jpg";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 const features = [
   {
@@ -56,8 +55,7 @@ export default function LandingPage() {
       {/* Nav */}
       <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <img src={yextLogoBlack} alt="Yext" className="h-8 dark:hidden" />
-          <img src={yextLogoWhite} alt="Yext" className="hidden h-8 dark:block" />
+          <Wordmark className="text-xl" />
           <Link to="/auth">
             <Button variant="outline" size="sm">
               Sign In
@@ -75,7 +73,7 @@ export default function LandingPage() {
             Territory Planning
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl">
-            The prospecting command center for Yext AEs. Score prospects, track signals, enrich data, and share territories — all in one place.
+            The prospecting command center for modern AEs. Score prospects, track signals, enrich data, and share territories — all in one place.
           </p>
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link to="/auth?signup=true">

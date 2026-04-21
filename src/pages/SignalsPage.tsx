@@ -12,8 +12,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MultiSelect } from "@/components/MultiSelect";
-import yextLogoBlack from "@/assets/yext-logo-black.jpg";
-import yextLogoWhite from "@/assets/yext-logo-white.jpg";
 
 const RELEVANCE_COLORS: Record<string, string> = {
   Hot: "text-destructive",
@@ -97,7 +95,6 @@ export default function SignalsPage() {
         <div className="px-4 sm:px-8 py-4 sm:py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-              <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-8 sm:h-10 w-auto object-contain shrink-0" />
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-foreground">Signals Feed</h1>

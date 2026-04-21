@@ -6,8 +6,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import yextLogoBlack from "@/assets/yext-logo-black.jpg";
-import yextLogoWhite from "@/assets/yext-logo-white.jpg";
 import { RetroGrid } from "@/components/ui/retro-grid";
 
 export default function AuthPage() {
@@ -67,8 +65,6 @@ export default function AuthPage() {
       <RetroGrid className="opacity-50" />
       <div className="w-full max-w-sm space-y-8 relative z-10">
         <div className="text-center space-y-3">
-          <img src={yextLogoBlack} alt="Yext" className="h-10 mx-auto dark:hidden" />
-          <img src={yextLogoWhite} alt="Yext" className="hidden h-10 mx-auto dark:block" />
           <h1 className="text-3xl font-black gradient-text">Territory Planner</h1>
           <p className="text-sm text-muted-foreground">
             {forgotMode ? "Enter your email to reset your password" : isSignUp ? "Create your account" : "Sign in to your account"}
