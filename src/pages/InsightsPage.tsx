@@ -13,8 +13,6 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { MultiSelect } from "@/components/MultiSelect";
-import yextLogoBlack from "@/assets/yext-logo-black.jpg";
-import yextLogoWhite from "@/assets/yext-logo-white.jpg";
 import { RetroGrid } from "@/components/ui/retro-grid";
 
 const STAGE_COLORS = [
@@ -228,7 +226,7 @@ export default function InsightsPage() {
 
   return (
     <div className="bg-background min-h-screen text-foreground yext-grid-bg">
-      {/* Yext Header */}
+      {/* Header */}
       <header className="yext-gradient border-b border-primary/10 px-4 sm:px-8 py-5 relative overflow-hidden">
         
         <div className="flex items-center justify-between relative z-10">
@@ -236,7 +234,6 @@ export default function InsightsPage() {
             <button onClick={() => navigate("/")} className="p-1.5 rounded-md hover:bg-primary/10 transition-colors">
               <ArrowLeft className="w-4 h-4 text-foreground/60" />
             </button>
-            <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-8 w-auto object-contain" />
             <div className="flex items-center gap-3">
               <BarChart3 className="w-5 h-5 text-primary" />
               <h1 className="text-2xl font-black gradient-text">Insights</h1>
