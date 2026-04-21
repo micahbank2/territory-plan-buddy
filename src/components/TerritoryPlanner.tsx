@@ -17,8 +17,7 @@ import {
   type Prospect,
   type EnrichedProspect,
 } from "@/data/prospects";
-import yextLogoBlack from "@/assets/yext-logo-black.jpg";
-import yextLogoWhite from "@/assets/yext-logo-white.jpg";
+import { Wordmark } from "@/components/brand/Wordmark";
 import { useProspects } from "@/hooks/useProspects";
 import { useTerritories } from "@/hooks/useTerritories";
 import { useOpportunities } from "@/hooks/useOpportunities";
@@ -174,7 +173,7 @@ function getAgingLabel(interactions: Prospect["interactions"]): string {
   return `${days} days ago`;
 }
 
-// --- Pipeline colors (updated for Yext palette) ---
+// --- Pipeline colors ---
 const STAGE_COLORS: Record<string, string> = {
   "Not Started": "hsl(225, 15%, 50%)",
   "Actively Prospecting": "hsl(236, 64%, 57%)",
@@ -1100,7 +1099,7 @@ export default function TerritoryPlanner() {
     return (
       <div className="bg-background min-h-screen flex items-center justify-center yext-grid-bg">
         <div className="text-center space-y-6 max-w-md px-4">
-          <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-10 mx-auto" />
+          <Wordmark className="text-2xl block mx-auto" />
           <h1 className="text-3xl font-black text-foreground">Welcome to Territory Planner</h1>
           <p className="text-muted-foreground">{isOwner ? "You don't have any prospects yet. Would you like to start with the FY27 seed data (309 accounts)?" : "You don't have any prospects yet. Add your first prospect to get started!"}</p>
           <div className="flex gap-3 justify-center">
@@ -1192,7 +1191,7 @@ export default function TerritoryPlanner() {
         <div className="h-14 px-4 sm:px-8 flex items-center gap-4">
           {/* Left: Logo + territory */}
           <div className="flex items-center gap-3 min-w-0 shrink-0">
-            <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-7 w-auto object-contain shrink-0" />
+            <Wordmark className="text-base shrink-0" />
             <div className="hidden sm:flex items-center gap-2 text-muted-foreground">
               <span className="text-border">/</span>
               {territories.length > 1 ? (

@@ -477,7 +477,7 @@ export default function ProspectPage() {
 
   return (
     <div className="bg-background min-h-screen yext-grid-bg">
-      {/* Yext Header */}
+      {/* Header */}
       <header className="yext-gradient border-b border-primary/10 px-4 sm:px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate("/")} className="p-1.5 rounded-md hover:bg-primary/10 transition-colors">
