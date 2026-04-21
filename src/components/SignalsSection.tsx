@@ -51,7 +51,7 @@ const SIGNAL_TYPE_TIPS: Record<string, string> = {
   "New Locations": "Specific location openings announced. Each new location needs listings, pages, and local SEO.",
   "Funding Round": "Received new investment. More budget available for growth tools and infrastructure.",
   "Tech Vendor Evaluation": "Actively evaluating new technology vendors. Could be in an RFP process or informal research phase.",
-  "Website Redesign": "Rebuilding their website or digital properties. Good time to pitch Yext Pages or Search.",
+  "Website Redesign": "Rebuilding their website or digital properties. Good time to pitch a discovery conversation.",
   "Other": "Any other relevant trigger event not covered above.",
 };
 
@@ -183,7 +183,7 @@ export function SignalsSection({ prospect, signals, onAdd, onRemove, territoryId
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g., Previously oversaw Yext implementation at Domino's. Likely familiar with the platform and its value."
+            placeholder="e.g., Previously oversaw a similar implementation at another brand. Likely familiar with the platform and its value."
             className={cn(inputClass, "text-xs resize-none")}
             rows={2}
           />

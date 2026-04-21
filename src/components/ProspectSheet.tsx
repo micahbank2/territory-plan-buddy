@@ -417,7 +417,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
   <div class="meta">${today} · Prepared by Territory Plan Buddy</div>
 </div>
 <div class="content">${meetingPrepBrief.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}</div>
-<div class="footer">Generated for Yext · ${prospect.industry || ""} · ${prospect.locationCount ? prospect.locationCount + " locations" : ""}</div>
+<div class="footer">${prospect.industry || ""}${prospect.industry && prospect.locationCount ? " · " : ""}${prospect.locationCount ? prospect.locationCount + " locations" : ""}</div>
 </body></html>`);
     printWindow.document.close();
     setTimeout(() => { printWindow.print(); }, 300);
@@ -889,7 +889,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                     </select>
                   </div>
                 </div>
-                <textarea value={newContact.notes || ""} onChange={e => setNewContact({...newContact, notes: e.target.value})} placeholder="Notes (e.g. CMO previously at a Yext customer)" className={cn(inputClass, "text-xs py-1.5 resize-none")} rows={2} />
+                <textarea value={newContact.notes || ""} onChange={e => setNewContact({...newContact, notes: e.target.value})} placeholder="Notes (e.g. CMO previously at a customer account)" className={cn(inputClass, "text-xs py-1.5 resize-none")} rows={2} />
                 <div className="flex gap-2">
                   <button onClick={addContact} className="px-3 py-1.5 bg-primary text-primary-foreground text-xs rounded-md hover:bg-primary/90">Add</button>
                   <button onClick={() => { setShowAddContact(false); setNewContact({}); }} className="px-3 py-1.5 bg-muted text-muted-foreground text-xs rounded-md">Cancel</button>
