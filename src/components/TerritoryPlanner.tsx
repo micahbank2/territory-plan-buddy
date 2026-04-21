@@ -723,7 +723,10 @@ export default function TerritoryPlanner() {
     const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     // FY27 quarter boundaries: Q1=Feb-Apr, Q2=May-Jul, Q3=Aug-Oct, Q4=Nov-Jan
     const qStarts = ["2026-02", "2026-05", "2026-08", "2026-11"];
-    const curQIdx = qStarts.findLastIndex(q => curMonth >= q);
+    let curQIdx = -1;
+    for (let i = qStarts.length - 1; i >= 0; i--) {
+      if (curMonth >= qStarts[i]) { curQIdx = i; break; }
+    }
     const qStart = qStarts[Math.max(0, curQIdx)];
     const qEnd = qStarts[curQIdx + 1] || "2027-02";
 

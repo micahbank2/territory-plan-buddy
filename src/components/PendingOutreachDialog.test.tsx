@@ -36,6 +36,8 @@ const defaultProps = {
   batch: sampleBatch,
   onMarkSent: vi.fn().mockResolvedValue(undefined),
   onStartNewDraft: vi.fn(),
+  onSkipContacts: vi.fn(),
+  onDiscard: vi.fn(),
 };
 
 describe("PendingOutreachDialog", () => {
