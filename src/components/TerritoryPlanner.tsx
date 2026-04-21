@@ -36,6 +36,7 @@ import { loadPendingBatch, clearPendingBatch, savePendingBatch } from "@/lib/pen
 import type { PendingBatch, PendingBatchEntry } from "@/lib/pendingBatch";
 import { EnrichmentQueue } from "@/components/EnrichmentQueue";
 import { AIReadinessBadge } from "@/components/AIReadinessCard";
+import { Badge } from "@/components/ui/badge";
 import { SignalIndicator } from "@/components/SignalsSection";
 import { AddProspectDialog } from "@/components/AddProspectDialog";
 import { AddContactDialog } from "@/components/AddContactDialog";
