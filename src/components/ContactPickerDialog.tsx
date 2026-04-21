@@ -373,7 +373,7 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals, on
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-sm font-medium truncate">{c.name}</span>
                                   <RoleBadge role={c.role} />
-                                  {c.starred && <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" title="Starred" />}
+                                  {c.starred && <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" aria-label="Starred" />}
                                 </div>
                                 <div className="flex items-center gap-2 mt-0.5">
                                   {c.title && <span className="text-[11px] text-muted-foreground truncate">{c.title}</span>}
