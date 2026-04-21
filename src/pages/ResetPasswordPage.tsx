@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import yextLogoBlack from "@/assets/yext-logo-black.jpg";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -43,7 +42,6 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4 yext-grid-bg">
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center space-y-3">
-          <img src={yextLogoBlack} alt="Yext" className="h-10 mx-auto dark:hidden" />
           <h1 className="text-3xl font-black text-foreground">Reset Password</h1>
           <p className="text-sm text-muted-foreground">
             {ready ? "Enter your new password below." : "Processing recovery link..."}

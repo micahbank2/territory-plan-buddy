@@ -9,8 +9,6 @@ import {
   ArrowLeft, AlertTriangle, Clock, UserX, BarChart3, Building2,
   ExternalLink, CheckCircle, ChevronRight,
 } from "lucide-react";
-import yextLogoBlack from "@/assets/yext-logo-black.jpg";
-import yextLogoWhite from "@/assets/yext-logo-white.jpg";
 
 
 function daysBetween(a: string, b: Date): number {
@@ -95,7 +93,6 @@ export default function TodayPage() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3">
-              <img src={theme === "dark" ? yextLogoWhite : yextLogoBlack} alt="Yext" className="h-5 object-contain" />
               <h1 className="text-lg font-bold tracking-tight">Today</h1>
             </div>
           </div>
