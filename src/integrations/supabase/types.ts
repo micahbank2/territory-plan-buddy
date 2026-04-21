@@ -87,6 +87,7 @@ export type Database = {
         Row: {
           email: string
           id: string
+          linkedin_url: string | null
           name: string
           notes: string
           phone: string
@@ -100,6 +101,7 @@ export type Database = {
         Insert: {
           email?: string
           id?: string
+          linkedin_url?: string | null
           name?: string
           notes?: string
           phone?: string
@@ -113,6 +115,7 @@ export type Database = {
         Update: {
           email?: string
           id?: string
+          linkedin_url?: string | null
           name?: string
           notes?: string
           phone?: string
@@ -291,6 +294,7 @@ export type Database = {
       }
       prospects: {
         Row: {
+          active_acv: number | null
           ai_readiness_data: Json | null
           ai_readiness_grade: string | null
           ai_readiness_score: number | null
@@ -319,6 +323,7 @@ export type Database = {
           website: string
         }
         Insert: {
+          active_acv?: number | null
           ai_readiness_data?: Json | null
           ai_readiness_grade?: string | null
           ai_readiness_score?: number | null
@@ -347,6 +352,7 @@ export type Database = {
           website?: string
         }
         Update: {
+          active_acv?: number | null
           ai_readiness_data?: Json | null
           ai_readiness_grade?: string | null
           ai_readiness_score?: number | null
