@@ -31,7 +31,6 @@ import { BulkOutreachQueue } from "@/components/BulkOutreachQueue";
 import { ContactPickerDialog } from "@/components/ContactPickerDialog";
 import { PasteImportDialog } from "@/components/PasteImportDialog";
 import { ExportDialog } from "@/components/ExportDialog";
-import { ContactPickerDialog } from "@/components/ContactPickerDialog";
 import { PendingOutreachDialog } from "@/components/PendingOutreachDialog";
 import { loadPendingBatch, clearPendingBatch, savePendingBatch } from "@/lib/pendingBatch";
 import type { PendingBatch, PendingBatchEntry } from "@/lib/pendingBatch";
@@ -89,7 +88,6 @@ import {
   CalendarDays,
   TrendingUp,
   ShieldCheck,
-  Mail,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -114,7 +112,6 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Command as CmdK, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
