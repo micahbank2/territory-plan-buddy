@@ -61,7 +61,7 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md — Responsive Sheet/Drawer swap for ProspectSheet + test scaffolds (closes audit gap, sets up plan 02 RED targets)
 - [x] 03-02-PLAN.md — Tabbed ProspectSheet IA with lifted sheetTab state in coordinator (UX-01, UX-02)
-- [ ] 03-03-PLAN.md — Extract ProspectFilterBar, BulkActionBar, TerritoryDialogGroup; drive TerritoryPlanner under 400 lines (UX-03, UX-04)
+- [x] 03-03-PLAN.md — Extract ProspectFilterBar, BulkActionBar, TerritoryDialogGroup; drive TerritoryPlanner under 400 lines (UX-03, UX-04)
 
 **UI hint**: yes
 
