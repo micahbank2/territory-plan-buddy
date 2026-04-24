@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 Phase: 04
 Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-03-30
+Last activity: 2026-04-24 - Completed quick task 260424-m9y: Kill the archive UI — convert to hard-delete with strong confirmation
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -84,9 +84,15 @@ None yet.
 
 ### Blockers/Concerns
 
-- **Phase 1 (soft delete):** Supabase RLS policy must be tested with authenticated client before shipping — applying `deleted_at IS NULL` to UPDATE WITH CHECK will block the archive write itself; apply only to SELECT policies
+- **Phase 1 (soft delete):** ~~Supabase RLS policy must be tested with authenticated client before shipping — applying `deleted_at IS NULL` to UPDATE WITH CHECK will block the archive write itself; apply only to SELECT policies~~ RESOLVED 2026-04-24 via quick task 260424-m9y — archive UI killed, hard-delete with confirmation chosen over soft-delete.
 - **Phase 2 (TanStack Query):** Verify `.throwOnError()` behavior with Supabase JS v2 before migrating mutations — without it `onError` never fires
 - **Phase 4 (streaming):** Validate streaming Edge Function setup against existing `draft-outreach` function before building new AI Edge Functions
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260424-m9y | Kill the archive UI — convert to hard-delete with strong confirmation | 2026-04-24 | f20cf8a | [260424-m9y-kill-the-archive-ui-convert-to-hard-dele](./quick/260424-m9y-kill-the-archive-ui-convert-to-hard-dele/) |
 
 ## Session Continuity
 
