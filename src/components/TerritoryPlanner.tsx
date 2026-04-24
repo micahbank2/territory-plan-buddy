@@ -60,7 +60,6 @@ import {
   List,
   Trash2,
   AlertTriangle,
-  Archive,
   Save,
   X,
   Command,
@@ -396,7 +395,7 @@ export default function TerritoryPlanner() {
     territories, activeTerritory, members, myRole, loading: terrLoading,
     switchTerritory, renameTerritory, inviteMember, removeMember, updateMemberRole, createTerritory,
   } = useTerritories();
-  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, archivedData, loadArchivedData, restore, permanentDelete, seedData, seeding, deleteNote, addNote, addContact, updateContact, removeContact, addInteraction, removeInteraction, addTask, removeTask } = useProspects(activeTerritory);
+  const { data, ok, reset, add, update, remove, bulkUpdate, bulkRemove, bulkAdd, bulkMerge, seedData, seeding, deleteNote, addNote, addContact, updateContact, removeContact, addInteraction, removeInteraction, addTask, removeTask } = useProspects(activeTerritory);
   const { signals, addSignal, removeSignal, getProspectSignalRelevance } = useSignals(activeTerritory);
   const { opportunities } = useOpportunities(activeTerritory);
   const { signOut, user } = useAuth();
@@ -482,11 +481,9 @@ export default function TerritoryPlanner() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetInput, setResetInput] = useState("");
 
-  // Archive viewer
-  const [showArchive, setShowArchive] = useState(false);
-  useEffect(() => {
-    if (showArchive) loadArchivedData();
-  }, [showArchive, loadArchivedData]);
+  // Single-row delete confirm
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const prospectToDelete = deleteConfirmId ? data.find(p => p.id === deleteConfirmId) : null;
   // Share territory dialog
   const [showShare, setShowShare] = useState(false);
   // Pending outreach dialog
@@ -1264,17 +1261,6 @@ export default function TerritoryPlanner() {
                 </TooltipTrigger>
                 <TooltipContent side="bottom" sideOffset={8}><p>{theme === "dark" ? "Light mode" : "Dark mode"}</p></TooltipContent>
               </Tooltip>
-              <Tooltip delayDuration={150}>
-                <TooltipTrigger asChild>
-                  <button onClick={() => setShowArchive(true)} className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors relative">
-                    <Archive className="h-3.5 w-3.5" />
-                    {archivedData.length > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full flex items-center justify-center">{archivedData.length}</span>
-                    )}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8}><p>Archive</p></TooltipContent>
-              </Tooltip>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
@@ -1409,9 +1395,6 @@ export default function TerritoryPlanner() {
                     {theme === "dark" ? "Light Mode" : "Dark Mode"}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="my-1" />
-                  <DropdownMenuItem onClick={() => setShowArchive(true)} className="gap-3 px-4 py-2 rounded-md text-sm">
-                    <Archive className="w-4 h-4 text-muted-foreground" /> Archive {archivedData.length > 0 && `(${archivedData.length})`}
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => { setResetInput(""); setResetDialogOpen(true); }} className="text-destructive gap-3 px-4 py-2 rounded-md text-sm">
                     <RotateCcw className="w-4 h-4" /> Reset Data
                   </DropdownMenuItem>
@@ -2076,11 +2059,39 @@ export default function TerritoryPlanner() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {selected.size} prospects?</AlertDialogTitle>
-            <AlertDialogDescription>This action cannot be undone. These prospects will be permanently removed.</AlertDialogDescription>
+            <AlertDialogDescription>This permanently deletes {selected.size} prospects and all their contacts, interactions, notes, and tasks. This cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete All</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* --- Single-Row Delete Confirm --- */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(v) => { if (!v) setDeleteConfirmId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {prospectToDelete?.name || "this prospect"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes this prospect and all its contacts, interactions, notes, and tasks. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteConfirmId) {
+                  remove(deleteConfirmId);
+                  setSheetProspectId(null);
+                  toast("🗑️ Prospect deleted");
+                }
+                setDeleteConfirmId(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Permanently
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -2177,7 +2188,7 @@ export default function TerritoryPlanner() {
         onClose={() => setSheetProspectId(null)}
         data={data}
         update={update}
-        remove={(id) => { remove(id); setSheetProspectId(null); toast("📦 Prospect archived"); }}
+        remove={(id) => setDeleteConfirmId(id)}
         deleteNote={deleteNote}
         addContact={addContact}
         updateContact={updateContact}
@@ -2254,49 +2265,6 @@ export default function TerritoryPlanner() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Archive Dialog */}
-      <Dialog open={showArchive} onOpenChange={setShowArchive}>
-        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Archive className="w-4 h-4" /> Archive
-              {archivedData.length > 0 && <span className="text-xs text-muted-foreground font-normal">({archivedData.length} items)</span>}
-            </DialogTitle>
-            <DialogDescription>Deleted prospects are stored here. Restore or permanently remove them.</DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
-            {archivedData.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground text-sm">
-                <Archive className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                No archived prospects
-              </div>
-            ) : (
-              archivedData.map((p) => (
-                <div key={p.id + "-" + p.archivedAt} className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-border hover:bg-accent/50 transition-colors">
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-foreground truncate">{p.name}</div>
-                    <div className="text-[10px] text-muted-foreground">
-                      Archived {relativeTime(p.archivedAt)}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { restore(p.id); toast.success(`✅ "${p.name}" restored`); }}>
-                      Restore
-                    </Button>
-                    <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => { permanentDelete(p.id); toast(`🗑️ "${p.name}" permanently deleted`); }}>
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowArchive(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Share Territory Dialog */}
       <ShareTerritoryDialog
