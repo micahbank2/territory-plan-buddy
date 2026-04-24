@@ -22,6 +22,8 @@ import { useProspects } from "@/hooks/useProspects";
 import { useTerritories } from "@/hooks/useTerritories";
 import { useOpportunities } from "@/hooks/useOpportunities";
 import { MultiSelect } from "@/components/MultiSelect";
+import { ProspectFilterBar, type FilterState } from "@/components/ProspectFilterBar";
+import { BulkActionBar } from "@/components/BulkActionBar";
 import { ProspectSheet } from "@/components/ProspectSheet";
 import { CSVUploadDialog } from "@/components/CSVUploadDialog";
 import { ShareTerritoryDialog } from "@/components/ShareTerritoryDialog";
@@ -115,43 +117,7 @@ import { Command as CmdK, CommandInput, CommandList, CommandEmpty, CommandGroup,
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 // Collapsible removed — Action Items replaced by Quota strip
 
-// --- Saved Views ---
-const VIEWS_KEY = "tp-saved-views";
-interface SavedView {
-  id: string;
-  name: string;
-  filters: {
-    q: string;
-    fIndustry: string[];
-    fStatus: string[];
-    fCompetitor: string[];
-    fTier: string[];
-    fLocRange: [number, number];
-    fOutreach: string[];
-    fPriority: string[];
-    fDataFilter?: string[];
-  };
-}
-
-const DATA_FILTER_OPTIONS = [
-  "Has Contacts", "No Contacts",
-  "Has Notes", "No Notes",
-  "Has Interactions", "No Interactions",
-  "Has Tasks", "No Tasks",
-  "Has AI Readiness", "No AI Readiness",
-  "Has Website", "No Website",
-];
-function loadViews(): SavedView[] {
-  try {
-    const raw = localStorage.getItem(VIEWS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-function saveViews(views: SavedView[]) {
-  localStorage.setItem(VIEWS_KEY, JSON.stringify(views));
-}
+// Saved Views, DATA_FILTER_OPTIONS, loadViews, saveViews are owned by ProspectFilterBar.
 
 // --- Aging helper ---
 function getAgingClass(interactions: Prospect["interactions"]): string {
@@ -405,32 +371,38 @@ export default function TerritoryPlanner() {
   const canManageTerritory = myRole === "owner";
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const searchRef = useRef<HTMLInputElement>(null);
-  const [q, setQ] = useState("");
-  const [fIndustry, setFIndustry] = useState<string[]>([]);
-  const [fStatus, setFStatus] = useState<string[]>([]);
-  const [fCompetitor, setFCompetitor] = useState<string[]>([]);
-  const [fTier, setFTier] = useState<string[]>([]);
-  const [fLocRange, setFLocRange] = useState<[number, number]>([0, 0]);
-  const [fOutreach, setFOutreach] = useState<string[]>([]);
-  const [fPriority, setFPriority] = useState<string[]>([]);
-  const [fDataFilter, setFDataFilter] = useState<string[]>([]);
+  // Consolidated filter state — owned by coordinator, controlled via ProspectFilterBar
+  const [filterState, setFilterState] = useState<FilterState>({
+    q: "",
+    fIndustry: [],
+    fStatus: [],
+    fCompetitor: [],
+    fTier: [],
+    fLocRange: [0, 0],
+    fOutreach: [],
+    fPriority: [],
+    fDataFilter: [],
+  });
+  const { q, fIndustry, fStatus, fCompetitor, fTier, fLocRange, fOutreach, fPriority, fDataFilter } = filterState;
+  const setQ = (val: string) => setFilterState((s) => ({ ...s, q: val }));
+  const setFLocRange = (val: [number, number] | ((prev: [number, number]) => [number, number])) =>
+    setFilterState((s) => ({
+      ...s,
+      fLocRange: typeof val === "function" ? (val as any)(s.fLocRange) : val,
+    }));
+  const setFStatus = (val: string[] | ((prev: string[]) => string[])) =>
+    setFilterState((s) => ({
+      ...s,
+      fStatus: typeof val === "function" ? (val as any)(s.fStatus) : val,
+    }));
   const [sK, setSK] = useState<string>("ps");
   const [sD, setSD] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
 
-  // Bulk selection
+  // Bulk selection — bulk action UI state lives in BulkActionBar
   const [selected, setSelected] = useState<Set<any>>(new Set());
-  const [bulkStage, setBulkStage] = useState("");
-  const [bulkTier, setBulkTier] = useState("");
-  const [bulkIndustry, setBulkIndustry] = useState("");
-  const [bulkPriority, setBulkPriority] = useState("");
-  const [bulkCompetitor, setBulkCompetitor] = useState("");
-  const [showBulkEdit, setShowBulkEdit] = useState(false);
-  const [showBulkOutreach, setShowBulkOutreach] = useState(false);
   const [showContactPicker, setShowContactPicker] = useState(false);
-  const [bulkConfirm, setBulkConfirm] = useState<{ label: string; action: () => void } | null>(null);
 
   // Quick Add
   const [showAdd, setShowAdd] = useState(false);
@@ -443,15 +415,6 @@ export default function TerritoryPlanner() {
   const [newTier, setNewTier] = useState("");
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
-  // Saved views
-  const [savedViews, setSavedViews] = useState<SavedView[]>(loadViews);
-  const [showSaveView, setShowSaveView] = useState(false);
-  const [viewName, setViewName] = useState("");
-  const [activeViewId, setActiveViewId] = useState<string | null>(null);
-
-  // Bulk delete confirm
-  const [showBulkDelete, setShowBulkDelete] = useState(false);
-
   // Command Palette
   const [cmdOpen, setCmdOpen] = useState(false);
 
@@ -461,11 +424,6 @@ export default function TerritoryPlanner() {
   // Comparison view
   const [showCompare, setShowCompare] = useState(false);
 
-  // Home page cards collapsed state
-  // cardsOpen removed — Action Items replaced by Quota strip
-
-  // Mobile filter toggle
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const isMobile = useIsMobile();
 
   // Slide-over panel
@@ -495,8 +453,6 @@ export default function TerritoryPlanner() {
   // Pending outreach dialog
   const [pendingBatch, setPendingBatch] = useState<PendingBatch | null>(null);
   const [showPendingOutreach, setShowPendingOutreach] = useState(false);
-  // Bulk mark contacted confirmation
-  const [showBulkContactedConfirm, setShowBulkContactedConfirm] = useState(false);
   // New territory dialog
   const [showNewTerritory, setShowNewTerritory] = useState(false);
   const [newTerritoryName, setNewTerritoryName] = useState("");
@@ -531,11 +487,6 @@ export default function TerritoryPlanner() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
-
-  // Reset bulk contacted confirmation when selection changes
-  useEffect(() => {
-    setShowBulkContactedConfirm(false);
-  }, [selected.size]);
 
   // Duplicate detection on new name
   useEffect(() => {
@@ -761,10 +712,18 @@ export default function TerritoryPlanner() {
   };
 
   const clr = () => {
-    setQ(""); setFIndustry([]); setFOutreach([]); setFStatus([]); setFCompetitor([]); setFTier([]); setFPriority([]); setFDataFilter([]); setFLocRange([0, maxLocs]);
+    setFilterState({
+      q: "",
+      fIndustry: [],
+      fStatus: [],
+      fCompetitor: [],
+      fTier: [],
+      fLocRange: [0, maxLocs],
+      fOutreach: [],
+      fPriority: [],
+      fDataFilter: [],
+    });
   };
-
-  const hasFilters = fIndustry.length || fOutreach.length || fStatus.length || fCompetitor.length || fTier.length || fPriority.length || fDataFilter.length || locFilterActive;
 
   const toggleSelect = (id: any) => {
     setSelected((prev) => {
@@ -799,47 +758,7 @@ export default function TerritoryPlanner() {
   // --- CSV Export ---
   const exportCSV = () => setShowExport(true);
 
-  // --- Save View ---
-  const handleSaveView = () => {
-    if (!viewName.trim()) return;
-    const view: SavedView = {
-      id: Date.now().toString(),
-      name: viewName.trim(),
-      filters: { q, fIndustry, fStatus, fCompetitor, fTier, fLocRange, fOutreach, fPriority, fDataFilter },
-    };
-    const updated = [...savedViews, view];
-    setSavedViews(updated);
-    saveViews(updated);
-    setShowSaveView(false);
-    setViewName("");
-    toast.success("💾 View saved!", { description: `"${view.name}" is ready to use` });
-  };
-
-  const loadView = (v: SavedView) => {
-    setQ(v.filters.q); setFIndustry(v.filters.fIndustry); setFStatus(v.filters.fStatus);
-    setFCompetitor(v.filters.fCompetitor); setFTier(v.filters.fTier);
-    setFLocRange(v.filters.fLocRange || [0, maxLocs]);
-    setFOutreach(v.filters.fOutreach);
-    setFPriority(v.filters.fPriority || []);
-    setFDataFilter(v.filters.fDataFilter || []);
-    setActiveViewId(v.id);
-    toast(`📂 Loaded "${v.name}"`);
-  };
-
-  const toggleView = (v: SavedView) => {
-    if (activeViewId === v.id) {
-      clr();
-      setActiveViewId(null);
-    } else {
-      loadView(v);
-    }
-  };
-
-  const deleteView = (id: string) => {
-    const updated = savedViews.filter((v) => v.id !== id);
-    setSavedViews(updated);
-    saveViews(updated);
-  };
+  // Save View / loadView / toggleView / deleteView handlers moved to ProspectFilterBar.
 
   // --- Mark Sent handler (PendingOutreachDialog) ---
   const handleMarkSent = async (entries: PendingBatchEntry[], remaining: PendingBatchEntry[]) => {
@@ -900,104 +819,9 @@ export default function TerritoryPlanner() {
     toast.success(`Removed ${skipped.length} contact${skipped.length !== 1 ? "s" : ""} — no outreach logged.${remaining.length > 0 ? ` ${remaining.length} still pending.` : ""}`);
   };
 
-  // --- Bulk Mark Contacted handler ---
-  const handleBulkMarkContacted = async () => {
-    const today = new Date().toISOString().split("T")[0];
-    const ids = Array.from(selected);
-
-    try {
-      await Promise.all(
-        ids.map(async (id) => {
-          const p = data.find((x) => x.id === id);
-          await addInteraction(id, {
-            type: "Email",
-            date: today,
-            notes: `Bulk outreach to ${p?.name || "account"} via Mark Contacted`,
-          });
-          if (p?.outreach === "Not Started") {
-            await update(id, { outreach: "Actively Prospecting" });
-          } else if (p) {
-            await update(id, { outreach: p.outreach });
-          }
-        })
-      );
-      toast.success(`Logged outreach for ${ids.length} accounts.`);
-      setSelected(new Set());
-    } catch {
-      toast.error("Failed to log outreach for some accounts. Reload to verify.");
-    }
-    setShowBulkContactedConfirm(false);
-  };
-
-  // --- Bulk Actions ---
-  const confirmAndApplyBulk = (label: string, action: () => void) => {
-    setBulkConfirm({ label: `Apply [${label}] to ${selected.size} selected prospects?`, action });
-  };
-
-  const handleBulkStage = () => {
-    if (!bulkStage || selected.size === 0) return;
-    confirmAndApplyBulk(`Outreach: ${bulkStage}`, () => {
-      bulkUpdate(Array.from(selected), { outreach: bulkStage });
-      toast.success(`Updated ${selected.size} prospects`, { description: `Outreach → ${bulkStage}` });
-      setSelected(new Set()); setBulkStage("");
-    });
-  };
-
-  const handleBulkTier = () => {
-    if (!bulkTier || selected.size === 0) return;
-    confirmAndApplyBulk(`Tier: ${bulkTier}`, () => {
-      bulkUpdate(Array.from(selected), { tier: bulkTier });
-      toast.success(`Updated ${selected.size} prospects`, { description: `Tier → ${bulkTier}` });
-      setSelected(new Set()); setBulkTier("");
-    });
-  };
-
-  const handleBulkIndustry = () => {
-    if (!bulkIndustry || selected.size === 0) return;
-    confirmAndApplyBulk(`Industry: ${bulkIndustry}`, () => {
-      bulkUpdate(Array.from(selected), { industry: bulkIndustry } as any);
-      toast.success(`Updated ${selected.size} prospects`, { description: `Industry → ${bulkIndustry}` });
-      setSelected(new Set()); setBulkIndustry("");
-    });
-  };
-
-  const handleBulkPriority = () => {
-    if (!bulkPriority || selected.size === 0) return;
-    const val = bulkPriority === "__none__" ? "" : bulkPriority;
-    confirmAndApplyBulk(`Priority: ${val || "None"}`, () => {
-      bulkUpdate(Array.from(selected), { priority: val });
-      toast.success(`Updated ${selected.size} prospects`, { description: `Priority → ${val || "None"}` });
-      setSelected(new Set()); setBulkPriority("");
-    });
-  };
-
-  const handleBulkCompetitor = () => {
-    if (!bulkCompetitor || selected.size === 0) return;
-    const val = bulkCompetitor === "__none__" ? "" : bulkCompetitor;
-    confirmAndApplyBulk(`Competitor: ${val || "None"}`, () => {
-      bulkUpdate(Array.from(selected), { competitor: val } as any);
-      toast.success(`Updated ${selected.size} prospects`, { description: `Competitor → ${val || "None"}` });
-      setSelected(new Set()); setBulkCompetitor("");
-    });
-  };
-
-  const handleBulkEditApply = (changes: Record<string, string | number | null>) => {
-    const labels = Object.entries(changes).map(([k, v]) => `${k}: ${v}`).join(", ");
-    confirmAndApplyBulk(labels, () => {
-      bulkUpdate(Array.from(selected), changes as any);
-      toast.success(`Updated ${selected.size} prospects`);
-      setSelected(new Set());
-      setShowBulkEdit(false);
-    });
-  };
-
-  const handleBulkDelete = () => {
-    const count = selected.size;
-    bulkRemove(Array.from(selected));
-    toast("🗑️ Cleaned up!", { description: `${count} prospects removed` });
-    setSelected(new Set());
-    setShowBulkDelete(false);
-  };
+  // Bulk action handlers (handleBulkStage, handleBulkTier, handleBulkIndustry, handleBulkPriority,
+  // handleBulkCompetitor, handleBulkEditApply, handleBulkDelete, handleBulkMarkContacted) and their
+  // associated state moved to BulkActionBar component.
 
   const selectAllFiltered = () => {
     setSelected(new Set(filtered.map((p) => p.id)));
@@ -1554,208 +1378,27 @@ export default function TerritoryPlanner() {
           })()}
         </div>}
 
-        {/* Saved Views */}
-        {savedViews.length > 0 && (
-          <div className="flex items-center gap-2 mb-4 flex-wrap">
-            <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Views:</span>
-            {savedViews.map((v) => (
-              <div key={v.id} className="flex items-center gap-1 group">
-                <button onClick={() => toggleView(v)} className={cn("px-3 py-1 text-xs rounded-full border transition-all font-medium",
-                  activeViewId === v.id
-                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                    : "border-primary/30 bg-primary/5 text-primary hover:bg-primary/15 glow-blue"
-                )}>
-                  {v.name}
-                </button>
-                <button onClick={() => deleteView(v.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded-full hover:bg-destructive/10">
-                  <X className="w-3 h-3 text-destructive" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
       </div>
 
-      {/* Search + Filters - Sticky */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pb-3 space-y-3 px-4 sm:px-8 pt-3 border-b border-border/30 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                ref={searchRef}
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search accounts, contacts, industries..."
-                className="w-full pl-10 pr-20 py-2.5 text-sm rounded-xl border border-border bg-card/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all backdrop-blur-sm"
-                onFocus={() => {}}
-              />
-              {q && (
-                <button
-                  onClick={() => setQ("")}
-                  className="absolute right-14 top-1/2 -translate-y-1/2 p-0.5 rounded-md hover:bg-muted transition-colors"
-                >
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-              )}
-              <button
-                onClick={() => setCmdOpen(true)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground bg-muted rounded border border-border hover:bg-accent hover:border-primary/30 transition-all cursor-pointer"
-              >
-                <Command className="w-2.5 h-2.5" />K
-              </button>
-            </div>
-            {/* Mobile filter toggle */}
-            <button
-              onClick={() => setFiltersOpen(!filtersOpen)}
-              className={cn(
-                "md:hidden inline-flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium rounded-xl border transition-all shrink-0",
-                filtersOpen || hasFilters
-                  ? "border-primary/40 bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              Filters
-              {hasFilters && <span className="w-2 h-2 rounded-full bg-primary" />}
-            </button>
-          </div>
+      <ProspectFilterBar
+        value={filterState}
+        onChange={setFilterState}
+        prospects={data}
+        onReset={() => { setSelected(new Set()); setPage(1); }}
+        onCommandPaletteOpen={() => setCmdOpen(true)}
+      />
 
-          {/* Filter dropdowns - always visible on desktop, toggleable on mobile */}
-          <div className={cn(
-            "items-center gap-3 flex-wrap",
-            isMobile ? (filtersOpen ? "grid grid-cols-2 gap-3" : "hidden") : "flex"
-          )}>
-            <MultiSelect options={INDUSTRIES} selected={fIndustry} onChange={setFIndustry} placeholder="Industry" />
-            <MultiSelect options={STAGES} selected={fOutreach} onChange={setFOutreach} placeholder="Outreach" />
-            <MultiSelect options={[...STATUSES]} selected={fStatus} onChange={setFStatus} placeholder="Status" />
-            <MultiSelect options={COMPETITORS.filter(Boolean)} selected={fCompetitor} onChange={setFCompetitor} placeholder="Competitor" />
-            <MultiSelect options={TIERS.filter(Boolean)} selected={fTier} onChange={setFTier} placeholder="Tier" />
-            <MultiSelect options={["Hot", "Warm", "Cold", "Dead"]} selected={fPriority} onChange={setFPriority} placeholder="Priority" />
-            <MultiSelect options={DATA_FILTER_OPTIONS} selected={fDataFilter} onChange={setFDataFilter} placeholder="Has / Missing" />
-
-            {/* Location Range Slider */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className={cn(
-                  "inline-flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-full transition-all",
-                  locFilterActive
-                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/40 hover:bg-primary/90 hover:scale-105"
-                    : "bg-muted/80 text-muted-foreground border border-border hover:bg-primary/10 hover:text-primary hover:border-primary/40 hover:shadow-md hover:shadow-primary/10 hover:scale-105"
-                )}>
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
-                  {locFilterActive
-                    ? `${fLocRange[0].toLocaleString()}–${fLocRange[1].toLocaleString()} locs`
-                    : "Locations"}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-72 p-4" align="start">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-foreground">Location Count</span>
-                    {locFilterActive && (
-                      <button
-                        onClick={() => setFLocRange([0, maxLocs])}
-                        className="text-[10px] text-primary hover:underline"
-                      >
-                        Reset
-                      </button>
-                    )}
-                  </div>
-                  <Slider
-                    value={fLocRange}
-                    onValueChange={(val) => setFLocRange(val as [number, number])}
-                    min={0}
-                    max={maxLocs}
-                    step={maxLocs > 500 ? 10 : maxLocs > 100 ? 5 : 1}
-                    minStepsBetweenThumbs={1}
-                    className="w-full"
-                  />
-                  <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                    <span>{fLocRange[0].toLocaleString()}</span>
-                    <span>{fLocRange[1].toLocaleString()}</span>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            {hasFilters && (
-              <>
-                <button onClick={clr} className="px-3 py-2 text-xs font-medium rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/5 transition-all">
-                  Clear
-                </button>
-                <button onClick={() => setShowSaveView(true)} className="px-3 py-2 text-xs font-medium rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition-all gap-1 inline-flex items-center glow-blue">
-                  <Save className="w-3 h-3" /> Save View
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Bulk action bar */}
-        {selected.size > 0 && (
-          <div className="mx-4 sm:mx-8 mt-4 p-3 rounded-xl border border-primary/20 bg-primary/5 flex items-center gap-3 flex-wrap animate-fade-in-up backdrop-blur-sm">
-            <span className="text-sm font-semibold text-primary">{selected.size} selected</span>
-            {hasFilters && selected.size < filtered.length && (
-              <button onClick={selectAllFiltered} className="text-xs text-primary hover:underline font-medium">
-                Select all {filtered.length} filtered
-              </button>
-            )}
-            <div className="w-px h-6 bg-border" />
-            <select value={bulkStage} onChange={(e) => { setBulkStage(e.target.value); }} className="px-2 py-1 text-xs rounded-md border border-border bg-background text-foreground">
-              <option value="">Stage...</option>
-              {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-            {bulkStage && <Button size="sm" variant="outline" onClick={handleBulkStage} className="text-xs h-7">Apply</Button>}
-            <select value={bulkTier} onChange={(e) => setBulkTier(e.target.value)} className="px-2 py-1 text-xs rounded-md border border-border bg-background text-foreground">
-              <option value="">Tier...</option>
-              {TIERS.filter(Boolean).map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-            {bulkTier && <Button size="sm" variant="outline" onClick={handleBulkTier} className="text-xs h-7">Apply</Button>}
-            <select value={bulkIndustry} onChange={(e) => setBulkIndustry(e.target.value)} className="px-2 py-1 text-xs rounded-md border border-border bg-background text-foreground">
-              <option value="">Industry...</option>
-              {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
-            </select>
-            {bulkIndustry && <Button size="sm" variant="outline" onClick={handleBulkIndustry} className="text-xs h-7">Apply</Button>}
-            <select value={bulkPriority} onChange={(e) => setBulkPriority(e.target.value)} className="px-2 py-1 text-xs rounded-md border border-border bg-background text-foreground">
-              <option value="">Priority...</option>
-              <option value="__none__">None</option>
-              <option value="Hot">Hot</option>
-              <option value="Warm">Warm</option>
-              <option value="Cold">Cold</option>
-              <option value="Dead">Dead</option>
-            </select>
-            {bulkPriority && <Button size="sm" variant="outline" onClick={handleBulkPriority} className="text-xs h-7">Apply</Button>}
-            <select value={bulkCompetitor} onChange={(e) => setBulkCompetitor(e.target.value)} className="px-2 py-1 text-xs rounded-md border border-border bg-background text-foreground">
-              <option value="">Competitor...</option>
-              <option value="__none__">None</option>
-              {COMPETITORS.filter(Boolean).map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            {bulkCompetitor && <Button size="sm" variant="outline" onClick={handleBulkCompetitor} className="text-xs h-7">Apply</Button>}
-            <div className="w-px h-6 bg-border" />
-            <Button size="sm" variant="outline" onClick={() => setShowBulkEdit(true)} className="text-xs h-7 gap-1">
-              <SlidersHorizontal className="w-3 h-3" /> Bulk Edit
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowBulkOutreach(true)} className="text-xs h-7 gap-1">
-              <Sparkles className="w-3 h-3" /> Generate Outreach ({selected.size})
-            </Button>
-            {!showBulkContactedConfirm ? (
-              <Button size="sm" variant="outline" onClick={() => setShowBulkContactedConfirm(true)} className="text-xs h-7 gap-1">
-                <Mail className="w-3 h-3" /> Mark Contacted
-              </Button>
-            ) : (
-              <span className="flex items-center gap-2 text-xs">
-                <span className="text-muted-foreground">Log Email + bump stage for {selected.size} accounts?</span>
-                <Button size="sm" variant="default" onClick={handleBulkMarkContacted} className="text-xs h-7">Confirm</Button>
-                <Button size="sm" variant="ghost" onClick={() => setShowBulkContactedConfirm(false)} className="text-xs h-7">Cancel</Button>
-              </span>
-            )}
-            <Button size="sm" variant="destructive" onClick={() => setShowBulkDelete(true)} className="text-xs h-7 gap-1 ml-auto delete-glow">
-              <Trash2 className="w-3 h-3" /> Delete
-            </Button>
-            <button onClick={() => setSelected(new Set())} className="text-xs text-muted-foreground hover:text-foreground transition-colors">Deselect</button>
-          </div>
-        )}
+      <BulkActionBar
+        selected={selected as Set<string>}
+        prospects={data}
+        filteredCount={filtered.length}
+        onClearSelection={() => setSelected(new Set())}
+        onSelectAllFiltered={selectAllFiltered}
+        bulkUpdate={async (ids, changes) => { await bulkUpdate(ids, changes as any); }}
+        bulkRemove={async (ids) => { await bulkRemove(ids); }}
+        addInteractionDirect={addInteraction}
+        update={async (id, changes) => { await update(id, changes); }}
+      />
 
       {/* TABLE VIEW */}
       {viewMode === "table" && (
@@ -2051,34 +1694,7 @@ export default function TerritoryPlanner() {
         addContact={addContact}
       />
 
-      {/* --- Save View Dialog --- */}
-      <Dialog open={showSaveView} onOpenChange={setShowSaveView}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Save Current View</DialogTitle>
-            <DialogDescription>Save your current filters as a named view for quick access.</DialogDescription>
-          </DialogHeader>
-          <input value={viewName} onChange={(e) => setViewName(e.target.value)} placeholder="View name (e.g. Hot Tier 1)" className={inputClass} onKeyDown={(e) => e.key === "Enter" && handleSaveView()} />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSaveView(false)}>Cancel</Button>
-            <Button onClick={handleSaveView} disabled={!viewName.trim()}>Save View</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* --- Bulk Delete Confirm --- */}
-      <AlertDialog open={showBulkDelete} onOpenChange={setShowBulkDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selected.size} prospects?</AlertDialogTitle>
-            <AlertDialogDescription>This permanently deletes {selected.size} prospects and all their contacts, interactions, notes, and tasks. This cannot be undone.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete All</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Save View Dialog and Bulk Delete Confirm now mounted inside ProspectFilterBar / BulkActionBar. */}
 
       {/* --- Single-Row Delete Confirm --- */}
       <AlertDialog open={!!deleteConfirmId} onOpenChange={(v) => { if (!v) setDeleteConfirmId(null); }}>
@@ -2108,20 +1724,7 @@ export default function TerritoryPlanner() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* --- Bulk Edit Dialog --- */}
-      <BulkEditDialog
-        open={showBulkEdit}
-        onOpenChange={setShowBulkEdit}
-        selectedCount={selected.size}
-        onApply={handleBulkEditApply}
-      />
-
-      {/* --- Bulk Outreach Queue --- */}
-      <BulkOutreachQueue
-        open={showBulkOutreach}
-        onOpenChange={setShowBulkOutreach}
-        prospects={data.filter(p => selected.has(p.id))}
-      />
+      {/* BulkEditDialog, BulkOutreachQueue, and Bulk Confirm AlertDialog mounted inside BulkActionBar. */}
 
       {/* --- Contact Picker for Email Drafting --- */}
       <ContactPickerDialog
@@ -2130,20 +1733,6 @@ export default function TerritoryPlanner() {
         prospects={data}
         signals={signals}
       />
-
-      {/* --- Bulk Confirm --- */}
-      <AlertDialog open={!!bulkConfirm} onOpenChange={(v) => { if (!v) setBulkConfirm(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Bulk Update</AlertDialogTitle>
-            <AlertDialogDescription>{bulkConfirm?.label}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setBulkConfirm(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { bulkConfirm?.action(); setBulkConfirm(null); }}>Confirm</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* --- Comparison View --- */}
       <Dialog open={showCompare} onOpenChange={setShowCompare}>
