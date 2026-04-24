@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 04-ai-capabilities 04-02-PLAN.md — awaiting Task 3 human verify
-last_updated: "2026-03-30T20:30:16.589Z"
-last_activity: 2026-03-30
+status: executing
+stopped_at: Completed 03-component-decomposition-ux-polish 03-01-PLAN.md
+last_updated: "2026-04-24T21:32:02.919Z"
+last_activity: 2026-04-24
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 9
+  completed_plans: 7
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** The app must never silently lose data. Every edit must either persist to Supabase or visibly fail with a clear error.
-**Current focus:** Phase 04 — ai-capabilities
+**Current focus:** Phase 03 — component-decomposition-ux-polish
 
 ## Current Position
 
-Phase: 04
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-04-24 - Completed quick task 260424-m9y: Kill the archive UI — convert to hard-delete with strong confirmation
+Phase: 03 (component-decomposition-ux-polish) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-04-24
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -58,6 +58,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-data-integrity-security P04 | 170s | 3 tasks | 3 files |
 | Phase 04-ai-capabilities P01 | 8min | 2 tasks | 6 files |
 | Phase 04-ai-capabilities P02 | 8min | 2 tasks | 3 files |
+| Phase 03-component-decomposition-ux-polish P01 | 143s | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,9 @@ Recent decisions affecting current work:
 - [Phase 04-ai-capabilities]: STATUSES constant added to prospects.ts (was quirky-buck only) to enable ContactPickerDialog status filter on main
 - [Phase 04-ai-capabilities]: savePendingBatch called in handleGenerate (not handleCopy) so batch persists before clipboard copy
 - [Phase 04-ai-capabilities]: dompurify was missing from node_modules (in package.json but not installed); fixed as Rule 3 deviation to unblock build
+- [Phase 03-component-decomposition-ux-polish]: ProspectSheet wraps in useIsMobile() ? Drawer : Sheet — pattern matched verbatim from OpportunitySheet:450-466; CLAUDE.md claim now true
+- [Phase 03-component-decomposition-ux-polish]: Plan 01 uses it.skip() for tests with real bodies (activated by impl task) and it.todo() for tests requiring props that don't exist yet (Plan 02 fills bodies)
+- [Phase 03-component-decomposition-ux-polish]: Per-test useIsMobile mock via vi.mock() — global matchMedia mock only flips one direction, not enough for both branches
 
 ### Pending Todos
 
@@ -97,6 +101,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T20:06:05.645Z
-Stopped at: Completed 04-ai-capabilities 04-02-PLAN.md — awaiting Task 3 human verify
+Last session: 2026-04-24T21:32:02.916Z
+Stopped at: Completed 03-component-decomposition-ux-polish 03-01-PLAN.md
 Resume file: None
