@@ -80,7 +80,8 @@ export function PendingOutreachDialog({
       // Close dialog — parent handles batch update
       onOpenChange(false);
     } catch {
-      // Error toast handled by parent
+      // Parent (TerritoryPlanner.handleMarkSent) toasts the error.
+      // We keep the dialog open and let the user retry.
     } finally {
       setSaving(false);
     }
@@ -116,19 +117,21 @@ export function PendingOutreachDialog({
         ) : (
           <>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span
+              <button
+                type="button"
                 className="cursor-pointer hover:text-foreground transition-colors"
                 onClick={toggleAll}
               >
                 {allChecked ? "Deselect All" : "Select All"}
-              </span>
+              </button>
               <span className="text-border">|</span>
-              <span
+              <button
+                type="button"
                 className="cursor-pointer hover:text-foreground transition-colors"
                 onClick={() => setChecked(new Set(entries.map((e) => e.contactId)))}
               >
                 Mark all as sent
-              </span>
+              </button>
             </div>
 
             <ScrollArea className="max-h-[400px] pr-2">
@@ -168,19 +171,21 @@ export function PendingOutreachDialog({
             </ScrollArea>
 
             <div className="pt-1 flex items-center gap-3">
-              <span
+              <button
+                type="button"
                 className="text-xs text-muted-foreground underline cursor-pointer hover:text-foreground transition-colors"
                 onClick={onStartNewDraft}
               >
                 Start new draft
-              </span>
+              </button>
               <span className="text-xs text-border">|</span>
-              <span
+              <button
+                type="button"
                 className="text-xs text-muted-foreground underline cursor-pointer hover:text-destructive transition-colors"
                 onClick={onDiscard}
               >
                 Discard all
-              </span>
+              </button>
             </div>
           </>
         )}

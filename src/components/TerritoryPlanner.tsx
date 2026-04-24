@@ -840,39 +840,45 @@ export default function TerritoryPlanner() {
     const today = new Date().toISOString().split("T")[0];
     const prospectIds = new Set(entries.map((e) => e.prospectId));
 
-    await Promise.all(
-      entries.map(async (entry) => {
-        await addInteraction(entry.prospectId, {
-          type: "Email",
-          date: today,
-          notes: `Cold outreach to ${entry.contactName}${entry.contactTitle ? ` (${entry.contactTitle})` : ""} via Draft Emails`,
-        });
-      })
-    );
+    try {
+      await Promise.all(
+        entries.map(async (entry) => {
+          await addInteraction(entry.prospectId, {
+            type: "Email",
+            date: today,
+            notes: `Cold outreach to ${entry.contactName}${entry.contactTitle ? ` (${entry.contactTitle})` : ""} via Draft Emails`,
+          });
+        })
+      );
 
-    // Bump outreach stage and refresh last_touched for each unique prospect
-    await Promise.all(
-      Array.from(prospectIds).map(async (pid) => {
-        const prospect = data.find((p) => p.id === pid);
-        if (!prospect) return;
-        if (prospect.outreach === "Not Started") {
-          await update(pid, { outreach: "Actively Prospecting" });
-        } else {
-          await update(pid, { outreach: prospect.outreach });
-        }
-      })
-    );
+      // Bump outreach stage and refresh last_touched for each unique prospect
+      await Promise.all(
+        Array.from(prospectIds).map(async (pid) => {
+          const prospect = data.find((p) => p.id === pid);
+          if (!prospect) return;
+          if (prospect.outreach === "Not Started") {
+            await update(pid, { outreach: "Actively Prospecting" });
+          } else {
+            await update(pid, { outreach: prospect.outreach });
+          }
+        })
+      );
 
-    // Keep remaining contacts in batch, or clear if none left
-    if (remaining.length > 0) {
-      const updated = { entries: remaining, savedAt: new Date().toISOString() };
-      savePendingBatch(updated);
-      setPendingBatch(updated);
-    } else {
-      clearPendingBatch();
-      setPendingBatch(null);
+      // Keep remaining contacts in batch, or clear if none left
+      if (remaining.length > 0) {
+        const updated = { entries: remaining, savedAt: new Date().toISOString() };
+        savePendingBatch(updated);
+        setPendingBatch(updated);
+      } else {
+        clearPendingBatch();
+        setPendingBatch(null);
+      }
+      toast.success(`Logged ${entries.length} outreach interaction${entries.length !== 1 ? "s" : ""}.${remaining.length > 0 ? ` ${remaining.length} still pending.` : ""}`);
+    } catch (err) {
+      console.error("Failed to mark outreach sent:", err);
+      toast.error("Failed to log some interactions. Check your connection and try again.");
+      throw err;
     }
-    toast.success(`Logged ${entries.length} outreach interaction${entries.length !== 1 ? "s" : ""}.${remaining.length > 0 ? ` ${remaining.length} still pending.` : ""}`);
   };
 
   // --- Skip contacts handler (remove from batch without logging) ---
