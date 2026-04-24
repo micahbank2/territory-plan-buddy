@@ -71,8 +71,7 @@ describe("ProspectSheet — responsive wrapper", () => {
   });
 
   // Test A: When matchMedia reports mobile, ProspectSheet renders inside a vaul Drawer.
-  // Activated by Task 2 (it.skip → it). Body is real so it just needs to be flipped on.
-  it.skip("renders a Drawer when isMobile is true", () => {
+  it("renders a Drawer when isMobile is true", () => {
     mockedUseIsMobile.mockReturnValue(true);
     const { baseElement } = renderSheet();
     // vaul Drawer adds a [data-vaul-drawer] attribute to its content element
@@ -83,8 +82,7 @@ describe("ProspectSheet — responsive wrapper", () => {
   });
 
   // Test B: When matchMedia reports desktop, ProspectSheet renders inside a shadcn Sheet (right side).
-  // Activated by Task 2.
-  it.skip("renders a Sheet (right side) when isMobile is false", () => {
+  it("renders a Sheet (right side) when isMobile is false", () => {
     mockedUseIsMobile.mockReturnValue(false);
     const { baseElement } = renderSheet();
     // shadcn Sheet (Radix Dialog Content with side="right" applied to className)
@@ -100,8 +98,7 @@ describe("ProspectSheet — responsive wrapper", () => {
 
   // Test C: On desktop, body should not be locked with overflow:hidden the way the old
   // Dialog did. Sheet uses its own scroll container so body scroll remains free.
-  // Activated by Task 2.
-  it.skip("does not apply overflow:hidden to document.body on desktop", () => {
+  it("does not apply overflow:hidden to document.body on desktop", () => {
     mockedUseIsMobile.mockReturnValue(false);
     renderSheet();
     // jsdom does not always replicate Radix's scroll-lock side-effects, but the

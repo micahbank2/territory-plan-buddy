@@ -24,6 +24,9 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -83,7 +86,8 @@ function SheetLogoImg({ website, size = 32, customLogo }: { website?: string; si
 
 export function ProspectSheet({ prospectId, onClose, data, update, remove, deleteNote, addContact: addContactDirect, updateContact: updateContactDirect, removeContact: removeContactDirect, addInteraction: addInteractionDirect, removeInteraction: removeInteractionDirect, addNote: addNoteDirect, addTaskDirect, removeTaskDirect, signals = [], addSignal, removeSignal, territoryId }: ProspectSheetProps) {
   const navigate = useNavigate();
-  
+  const isMobile = useIsMobile();
+
   const prospect = useMemo(() => data.find(p => p.id === prospectId), [data, prospectId]);
   const prospectSignals = useMemo(() => signals.filter(s => s.prospect_id === prospectId), [signals, prospectId]);
 
@@ -1131,11 +1135,21 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
       </div>
   );
 
+  if (isMobile) {
+    return (
+      <Drawer direction="right" open={isOpen} onOpenChange={handleOpenChange}>
+        <DrawerContent direction="right" className="w-full h-full">
+          {sheetContent}
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+    <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+      <SheetContent side="right" className="w-full sm:w-[700px] sm:max-w-[50vw] p-0 flex flex-col">
         {sheetContent}
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
