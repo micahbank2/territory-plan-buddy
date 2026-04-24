@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-component-decomposition-ux-polish 03-01-PLAN.md
-last_updated: "2026-04-24T21:32:02.919Z"
+stopped_at: Completed 03-component-decomposition-ux-polish 03-02-PLAN.md
+last_updated: "2026-04-24T21:40:59.400Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 ## Current Position
 
 Phase: 03 (component-decomposition-ux-polish) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-24
 
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 04-ai-capabilities P01 | 8min | 2 tasks | 6 files |
 | Phase 04-ai-capabilities P02 | 8min | 2 tasks | 3 files |
 | Phase 03-component-decomposition-ux-polish P01 | 143s | 2 tasks | 3 files |
+| Phase 03-component-decomposition-ux-polish P02 | 6m 11s | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,9 @@ Recent decisions affecting current work:
 - [Phase 03-component-decomposition-ux-polish]: ProspectSheet wraps in useIsMobile() ? Drawer : Sheet — pattern matched verbatim from OpportunitySheet:450-466; CLAUDE.md claim now true
 - [Phase 03-component-decomposition-ux-polish]: Plan 01 uses it.skip() for tests with real bodies (activated by impl task) and it.todo() for tests requiring props that don't exist yet (Plan 02 fills bodies)
 - [Phase 03-component-decomposition-ux-polish]: Per-test useIsMobile mock via vi.mock() — global matchMedia mock only flips one direction, not enough for both branches
+- [Phase 03-component-decomposition-ux-polish]: sheetTab lifted to TerritoryPlanner — controlled activeTab/onTabChange props are required for UX-02 tab persistence across prospectId switches
+- [Phase 03-component-decomposition-ux-polish]: Optional controlled tab props with internal useState fallback — ProspectPage uses uncontrolled, TerritoryPlanner uses controlled, single component handles both
+- [Phase 03-component-decomposition-ux-polish]: Radix Tabs test pattern — pointerDown + mouseDown + click sequence required (fireEvent.click alone does not commit Roving Focus selection in jsdom)
 
 ### Pending Todos
 
@@ -101,6 +105,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-24T21:32:02.916Z
-Stopped at: Completed 03-component-decomposition-ux-polish 03-01-PLAN.md
+Last session: 2026-04-24T21:40:53.431Z
+Stopped at: Completed 03-component-decomposition-ux-polish 03-02-PLAN.md
 Resume file: None
