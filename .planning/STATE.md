@@ -93,6 +93,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260424-m9y | Kill the archive UI — convert to hard-delete with strong confirmation | 2026-04-24 | f20cf8a | [260424-m9y-kill-the-archive-ui-convert-to-hard-dele](./quick/260424-m9y-kill-the-archive-ui-convert-to-hard-dele/) |
+| 260424-mn5 | Fix 3 UI audit findings — silent mark-sent, clickable spans, arbitrary type sizes | 2026-04-24 | 40ecea5 | [260424-mn5-fix-3-ui-audit-findings-silent-mark-sent](./quick/260424-mn5-fix-3-ui-audit-findings-silent-mark-sent/) |
 
 ## Session Continuity
 
