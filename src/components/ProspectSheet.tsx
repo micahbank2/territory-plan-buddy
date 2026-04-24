@@ -1173,8 +1173,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
 
   if (isMobile) {
     return (
-      <Drawer direction="right" open={isOpen} onOpenChange={handleOpenChange}>
-        <DrawerContent direction="right" className="w-full h-full">
+      <Drawer open={isOpen} onOpenChange={handleOpenChange}>
+        <DrawerContent className="h-[95vh] p-0 flex flex-col">
           {sheetContent}
         </DrawerContent>
       </Drawer>
