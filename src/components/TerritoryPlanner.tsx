@@ -470,6 +470,12 @@ export default function TerritoryPlanner() {
 
   // Slide-over panel
   const [sheetProspectId, setSheetProspectId] = useState<any>(null);
+  // Tab state lifted from ProspectSheet — persists across prospect switches, resets on close (UX-02)
+  const [sheetTab, setSheetTab] = useState<string>("overview");
+  const handleSheetClose = useCallback(() => {
+    setSheetProspectId(null);
+    setSheetTab("overview");
+  }, []);
 
   // CSV Upload
   const [showUpload, setShowUpload] = useState(false);
@@ -2191,7 +2197,7 @@ export default function TerritoryPlanner() {
       {/* Prospect Slide-Over Sheet */}
       <ProspectSheet
         prospectId={sheetProspectId}
-        onClose={() => setSheetProspectId(null)}
+        onClose={handleSheetClose}
         data={data}
         update={update}
         remove={(id) => setDeleteConfirmId(id)}
@@ -2208,6 +2214,8 @@ export default function TerritoryPlanner() {
         addSignal={addSignal}
         removeSignal={removeSignal}
         territoryId={activeTerritory}
+        activeTab={sheetTab}
+        onTabChange={setSheetTab}
       />
 
       {/* CSV Upload Dialog */}

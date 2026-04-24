@@ -82,8 +82,11 @@ describe("ProspectSheet — tabs (Plan 02 targets)", () => {
     // Activity tab trigger is selected
     const activityTrigger = screen.getByRole("tab", { name: /activity/i });
     expect(activityTrigger).toHaveAttribute("data-state", "active");
-    // Activity-specific content visible
-    expect(screen.getByText(/log activity/i)).toBeInTheDocument();
+    // Activity panel itself is rendered visible (Radix tabpanel role)
+    const activityPanel = screen.getByRole("tabpanel");
+    expect(activityPanel).toBeInTheDocument();
+    // Activity-specific section header present (h3 "Log Activity" lives only in Activity panel)
+    expect(screen.getAllByText(/log activity/i).length).toBeGreaterThan(0);
   });
 
   // Test F — UX-02 SC-3 persistence: switching prospectId while keeping the same
@@ -134,7 +137,11 @@ describe("ProspectSheet — tabs (Plan 02 targets)", () => {
   it("calls onTabChange with the tab value when a tab trigger is clicked", () => {
     const onTabChange = vi.fn();
     renderSheet({ activeTab: "overview", onTabChange });
-    fireEvent.click(screen.getByRole("tab", { name: /tasks/i }));
+    const tasksTrigger = screen.getByRole("tab", { name: /tasks/i });
+    // Radix Tabs (Roving Focus) listens for pointerdown + mousedown + click
+    fireEvent.pointerDown(tasksTrigger, { button: 0, ctrlKey: false });
+    fireEvent.mouseDown(tasksTrigger, { button: 0 });
+    fireEvent.click(tasksTrigger);
     expect(onTabChange).toHaveBeenCalledWith("tasks");
   });
 });

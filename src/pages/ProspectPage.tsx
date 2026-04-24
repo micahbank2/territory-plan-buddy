@@ -63,6 +63,7 @@ import { SignalsSection } from "@/components/SignalsSection";
 import { useSignals } from "@/hooks/useSignals";
 import { useTerritories } from "@/hooks/useTerritories";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // --- Logo with upload ---
 function LogoImg({
@@ -323,6 +324,8 @@ export default function ProspectPage() {
   const [localCustomCompetitor, setLocalCustomCompetitor] = useState("");
   const [newTaskText, setNewTaskText] = useState("");
   const [newTaskDate, setNewTaskDate] = useState("");
+  // Tab state for IA consistency with ProspectSheet (no persistence needed on full-page route)
+  const [activeTab, setActiveTab] = useState<string>("overview");
 
   useEffect(() => {
     if (prospect) {
@@ -572,8 +575,18 @@ export default function ProspectPage() {
 
       <div className="max-w-5xl mx-auto p-4 sm:p-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: Details */}
-          <div className="lg:col-span-2 space-y-6">
+          {/* Left: Details — Tabbed IA matching ProspectSheet (Overview / Activity / Contacts / Tasks) */}
+          <div className="lg:col-span-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid grid-cols-4 w-full mb-4">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="activity">Activity</TabsTrigger>
+                <TabsTrigger value="contacts">Contacts</TabsTrigger>
+                <TabsTrigger value="tasks">Tasks</TabsTrigger>
+              </TabsList>
+
+              {/* OVERVIEW: Account Details, Signals, AI Readiness */}
+              <TabsContent value="overview" className="space-y-6 mt-0">
             {/* Account Info */}
             <div className="glass-card rounded-xl p-5 space-y-4 animate-fade-in-up">
               <h2 className="text-sm font-semibold text-foreground">Account Details</h2>
@@ -628,138 +641,6 @@ export default function ProspectPage() {
               </div>
             </div>
 
-            {/* Tasks */}
-            <div className="glass-card rounded-xl p-5 space-y-4 animate-fade-in-up" style={{ animationDelay: "75ms" }}>
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-primary/10">
-                  <Target className="w-4 h-4 text-primary" />
-                </div>
-                <h2 className="text-sm font-semibold text-foreground">Tasks</h2>
-              </div>
-              {/* Add task form */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Field label="Action">
-                  <input
-                    value={newTaskText}
-                    onChange={(e) => setNewTaskText(e.target.value)}
-                    placeholder="e.g. Send follow-up email"
-                    className={inputClass}
-                    onKeyDown={e => e.key === "Enter" && handleAddTask()}
-                  />
-                </Field>
-                <Field label="Due Date">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button className={cn(inputClass, "flex items-center gap-2 text-left", !newTaskDate && "text-muted-foreground")}>
-                        <CalendarIcon className="w-4 h-4 shrink-0" />
-                        {newTaskDate ? format(new Date(newTaskDate), "PPP") : "Pick a date"}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={newTaskDate ? new Date(newTaskDate) : undefined}
-                        onSelect={(date) => setNewTaskDate(date ? date.toISOString().split("T")[0] : "")}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </Field>
-              </div>
-              {newTaskText.trim() && (
-                <button onClick={handleAddTask}
-                  className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 font-medium">
-                  <Plus className="w-3 h-3" /> Add Task
-                </button>
-              )}
-              {/* Open tasks list */}
-              {(prospect.tasks || []).length > 0 && (
-                <div className="space-y-1.5 pt-3 border-t border-border">
-                  <label className="text-[10px] font-semibold text-muted-foreground uppercase">Open Tasks</label>
-                  {(prospect.tasks || [])
-                    .slice()
-                    .sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999"))
-                    .map(task => {
-                      const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
-                      return (
-                        <div key={task.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-primary/5 group">
-                          <button onClick={() => completeTask(task)} className="shrink-0 w-4 h-4 rounded border border-primary/40 hover:bg-primary/20 flex items-center justify-center transition-colors" title="Mark complete">
-                            <Check className="w-2.5 h-2.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </button>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-xs text-foreground">{task.text}</span>
-                          </div>
-                          {task.dueDate && (
-                            <span className={cn("text-[10px] shrink-0", isOverdue ? "text-destructive font-semibold" : "text-muted-foreground")}>
-                              {isOverdue ? "⚠️ " : ""}{task.dueDate}
-                            </span>
-                          )}
-                          <button onClick={() => handleRemoveTask(task.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10">
-                            <X className="w-3 h-3 text-destructive" />
-                          </button>
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
-            </div>
-
-            {/* Notes */}
-            <div className="glass-card rounded-xl p-5 space-y-4 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
-              <h2 className="text-sm font-semibold text-foreground">Notes</h2>
-              <div className="flex gap-2">
-                <input
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  placeholder="Add a note..."
-                  className={cn(inputClass, "flex-1")}
-                  onKeyDown={(e) => e.key === "Enter" && submitNote()}
-                />
-                <Button size="sm" onClick={submitNote} disabled={!newNote.trim()} className="glow-blue">Add</Button>
-              </div>
-              {(prospect.noteLog || []).length > 0 && (
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {[...(prospect.noteLog || [])].reverse().map((note) => (
-                    <div key={note.id} className="group p-3 rounded-lg bg-muted/50 border border-border relative">
-                      <p className="text-xs text-foreground pr-6">{note.text}</p>
-                      <div className="flex items-center gap-1 mt-1.5">
-                        <Clock className="w-2.5 h-2.5 text-muted-foreground" />
-                        <span className="text-[10px] text-muted-foreground">{relativeTime(note.timestamp)}</span>
-                      </div>
-                      <button
-                        onClick={() => { deleteNote(prospect.id, note.id); toast.success("Note deleted"); }}
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
-                        title="Delete note"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {prospect.notes && (
-                <div className="pt-3 border-t border-border">
-                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Legacy Notes</label>
-                  <textarea
-                    value={prospect.notes || ""}
-                    onChange={(e) => update(prospect.id, { notes: e.target.value })}
-                    rows={3}
-                    className={cn(inputClass, "resize-y mt-1")}
-                  />
-                </div>
-              )}
-              <Field label="Location Source / Notes">
-                <textarea
-                  value={prospect.locationNotes || ""}
-                  onChange={(e) => update(prospect.id, { locationNotes: e.target.value })}
-                  rows={2}
-                  className={cn(inputClass, "resize-y")}
-                  placeholder="Where did the location data come from?"
-                />
-              </Field>
-            </div>
-
             {/* Signals */}
             <div className="glass-card rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: "170ms" }}>
               <SignalsSection
@@ -775,54 +656,200 @@ export default function ProspectPage() {
             <div className="glass-card rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: "180ms" }}>
               <AIReadinessCard prospect={prospect} onUpdate={(id, u) => update(id, u)} />
             </div>
+              </TabsContent>
 
-            {/* Activity Timeline */}
-            <div className="glass-card rounded-xl p-5 space-y-3 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
-              <h2 className="text-sm font-semibold text-foreground">Activity Timeline</h2>
-              <div className="flex gap-3">
-                <select value={interactionType} onChange={(e) => setInteractionType(e.target.value)} className={cn(selectClass, "w-40")}>
-                  {INTERACTION_TYPES.filter((t) => t !== "Task Completed").map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
-                <input
-                  value={interactionNotes}
-                  onChange={(e) => setInteractionNotes(e.target.value)}
-                  placeholder="What happened?"
-                  className={cn(inputClass, "flex-1")}
-                  onKeyDown={(e) => e.key === "Enter" && logInteraction()}
-                />
-                <Button onClick={logInteraction} size="sm" className="glow-blue">Log</Button>
-              </div>
-              {(prospect.interactions || []).length > 0 && (
-                <div className="relative mt-4">
-                  <div className="absolute left-[15px] top-0 bottom-0 w-px bg-primary/20" />
-                  <div className="space-y-4">
-                    {[...(prospect.interactions || [])].reverse().map((i, idx) => (
-                      <div key={i.id} className="flex items-start gap-3 relative animate-slide-in-right" style={{ animationDelay: `${idx * 50}ms` }}>
-                        <div className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10",
-                          i.type === "Email" ? "bg-primary/10 text-primary" :
-                          i.type === "Call" ? "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]" :
-                          i.type === "Task Completed" ? "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]" :
-                          "bg-secondary text-secondary-foreground"
-                        )}>
-                          <InteractionIcon type={i.type} />
-                        </div>
-                        <div className="flex-1 pb-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-foreground">{i.type}</span>
-                            <span className="text-[10px] text-muted-foreground">{relativeTime(i.date)}</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">{i.notes}</p>
-                        </div>
-                      </div>
-                    ))}
+              {/* ACTIVITY: Notes, Activity Timeline */}
+              <TabsContent value="activity" className="space-y-6 mt-0">
+                {/* Notes */}
+                <div className="glass-card rounded-xl p-5 space-y-4 animate-fade-in-up">
+                  <h2 className="text-sm font-semibold text-foreground">Notes</h2>
+                  <div className="flex gap-2">
+                    <input
+                      value={newNote}
+                      onChange={(e) => setNewNote(e.target.value)}
+                      placeholder="Add a note..."
+                      className={cn(inputClass, "flex-1")}
+                      onKeyDown={(e) => e.key === "Enter" && submitNote()}
+                    />
+                    <Button size="sm" onClick={submitNote} disabled={!newNote.trim()} className="glow-blue">Add</Button>
                   </div>
+                  {(prospect.noteLog || []).length > 0 && (
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {[...(prospect.noteLog || [])].reverse().map((note) => (
+                        <div key={note.id} className="group p-3 rounded-lg bg-muted/50 border border-border relative">
+                          <p className="text-xs text-foreground pr-6">{note.text}</p>
+                          <div className="flex items-center gap-1 mt-1.5">
+                            <Clock className="w-2.5 h-2.5 text-muted-foreground" />
+                            <span className="text-[10px] text-muted-foreground">{relativeTime(note.timestamp)}</span>
+                          </div>
+                          <button
+                            onClick={() => { deleteNote(prospect.id, note.id); toast.success("Note deleted"); }}
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                            title="Delete note"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {prospect.notes && (
+                    <div className="pt-3 border-t border-border">
+                      <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Legacy Notes</label>
+                      <textarea
+                        value={prospect.notes || ""}
+                        onChange={(e) => update(prospect.id, { notes: e.target.value })}
+                        rows={3}
+                        className={cn(inputClass, "resize-y mt-1")}
+                      />
+                    </div>
+                  )}
+                  <Field label="Location Source / Notes">
+                    <textarea
+                      value={prospect.locationNotes || ""}
+                      onChange={(e) => update(prospect.id, { locationNotes: e.target.value })}
+                      rows={2}
+                      className={cn(inputClass, "resize-y")}
+                      placeholder="Where did the location data come from?"
+                    />
+                  </Field>
                 </div>
-              )}
-              {(prospect.interactions || []).length === 0 && (
-                <p className="text-xs text-muted-foreground py-4 text-center">No interactions logged yet.</p>
-              )}
-            </div>
+
+                {/* Activity Timeline */}
+                <div className="glass-card rounded-xl p-5 space-y-3 animate-fade-in-up">
+                  <h2 className="text-sm font-semibold text-foreground">Activity Timeline</h2>
+                  <div className="flex gap-3">
+                    <select value={interactionType} onChange={(e) => setInteractionType(e.target.value)} className={cn(selectClass, "w-40")}>
+                      {INTERACTION_TYPES.filter((t) => t !== "Task Completed").map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <input
+                      value={interactionNotes}
+                      onChange={(e) => setInteractionNotes(e.target.value)}
+                      placeholder="What happened?"
+                      className={cn(inputClass, "flex-1")}
+                      onKeyDown={(e) => e.key === "Enter" && logInteraction()}
+                    />
+                    <Button onClick={logInteraction} size="sm" className="glow-blue">Log</Button>
+                  </div>
+                  {(prospect.interactions || []).length > 0 && (
+                    <div className="relative mt-4">
+                      <div className="absolute left-[15px] top-0 bottom-0 w-px bg-primary/20" />
+                      <div className="space-y-4">
+                        {[...(prospect.interactions || [])].reverse().map((i, idx) => (
+                          <div key={i.id} className="flex items-start gap-3 relative animate-slide-in-right" style={{ animationDelay: `${idx * 50}ms` }}>
+                            <div className={cn(
+                              "w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10",
+                              i.type === "Email" ? "bg-primary/10 text-primary" :
+                              i.type === "Call" ? "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]" :
+                              i.type === "Task Completed" ? "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]" :
+                              "bg-secondary text-secondary-foreground"
+                            )}>
+                              <InteractionIcon type={i.type} />
+                            </div>
+                            <div className="flex-1 pb-4">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-foreground">{i.type}</span>
+                                <span className="text-[10px] text-muted-foreground">{relativeTime(i.date)}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5">{i.notes}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {(prospect.interactions || []).length === 0 && (
+                    <p className="text-xs text-muted-foreground py-4 text-center">No interactions logged yet.</p>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* CONTACTS: pointer to right sidebar (full-page route keeps the sidebar layout) */}
+              <TabsContent value="contacts" className="mt-0">
+                <div className="glass-card rounded-xl p-5 animate-fade-in-up">
+                  <p className="text-sm text-muted-foreground">
+                    Contacts are listed in the sidebar on the right. Use that panel to add, edit, or remove contacts.
+                  </p>
+                </div>
+              </TabsContent>
+
+              {/* TASKS: Add task form + Open tasks list */}
+              <TabsContent value="tasks" className="mt-0">
+                <div className="glass-card rounded-xl p-5 space-y-4 animate-fade-in-up">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-primary/10">
+                      <Target className="w-4 h-4 text-primary" />
+                    </div>
+                    <h2 className="text-sm font-semibold text-foreground">Tasks</h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field label="Action">
+                      <input
+                        value={newTaskText}
+                        onChange={(e) => setNewTaskText(e.target.value)}
+                        placeholder="e.g. Send follow-up email"
+                        className={inputClass}
+                        onKeyDown={e => e.key === "Enter" && handleAddTask()}
+                      />
+                    </Field>
+                    <Field label="Due Date">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className={cn(inputClass, "flex items-center gap-2 text-left", !newTaskDate && "text-muted-foreground")}>
+                            <CalendarIcon className="w-4 h-4 shrink-0" />
+                            {newTaskDate ? format(new Date(newTaskDate), "PPP") : "Pick a date"}
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={newTaskDate ? new Date(newTaskDate) : undefined}
+                            onSelect={(date) => setNewTaskDate(date ? date.toISOString().split("T")[0] : "")}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </Field>
+                  </div>
+                  {newTaskText.trim() && (
+                    <button onClick={handleAddTask}
+                      className="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 font-medium">
+                      <Plus className="w-3 h-3" /> Add Task
+                    </button>
+                  )}
+                  {(prospect.tasks || []).length > 0 && (
+                    <div className="space-y-1.5 pt-3 border-t border-border">
+                      <label className="text-[10px] font-semibold text-muted-foreground uppercase">Open Tasks</label>
+                      {(prospect.tasks || [])
+                        .slice()
+                        .sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999"))
+                        .map(task => {
+                          const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
+                          return (
+                            <div key={task.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-primary/5 group">
+                              <button onClick={() => completeTask(task)} className="shrink-0 w-4 h-4 rounded border border-primary/40 hover:bg-primary/20 flex items-center justify-center transition-colors" title="Mark complete">
+                                <Check className="w-2.5 h-2.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </button>
+                              <div className="flex-1 min-w-0">
+                                <span className="text-xs text-foreground">{task.text}</span>
+                              </div>
+                              {task.dueDate && (
+                                <span className={cn("text-[10px] shrink-0", isOverdue ? "text-destructive font-semibold" : "text-muted-foreground")}>
+                                  {isOverdue ? "⚠️ " : ""}{task.dueDate}
+                                </span>
+                              )}
+                              <button onClick={() => handleRemoveTask(task.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10">
+                                <X className="w-3 h-3 text-destructive" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
 
           {/* Right: Contacts + Meta */}

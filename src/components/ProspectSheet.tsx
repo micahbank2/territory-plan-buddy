@@ -30,6 +30,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface ProspectSheetProps {
   prospectId: any;
@@ -50,6 +51,10 @@ interface ProspectSheetProps {
   addSignal?: (signal: Omit<Signal, "id" | "created_at" | "user_id">) => Promise<Signal | null>;
   removeSignal?: (id: string) => Promise<void>;
   territoryId?: string | null;
+  /** Controlled tab value (one of: overview | activity | contacts | tasks). Falls back to internal state when undefined. */
+  activeTab?: string;
+  /** Controlled tab change handler. Required when activeTab is provided to make Tabs controlled. */
+  onTabChange?: (tab: string) => void;
 }
 
 const STAGE_EMOJI: Record<string, string> = {
@@ -84,9 +89,14 @@ function SheetLogoImg({ website, size = 32, customLogo }: { website?: string; si
   return <img src={url} alt="" className="rounded-lg bg-muted object-contain" style={{ width: size, height: size }} onError={() => setErr(true)} />;
 }
 
-export function ProspectSheet({ prospectId, onClose, data, update, remove, deleteNote, addContact: addContactDirect, updateContact: updateContactDirect, removeContact: removeContactDirect, addInteraction: addInteractionDirect, removeInteraction: removeInteractionDirect, addNote: addNoteDirect, addTaskDirect, removeTaskDirect, signals = [], addSignal, removeSignal, territoryId }: ProspectSheetProps) {
+export function ProspectSheet({ prospectId, onClose, data, update, remove, deleteNote, addContact: addContactDirect, updateContact: updateContactDirect, removeContact: removeContactDirect, addInteraction: addInteractionDirect, removeInteraction: removeInteractionDirect, addNote: addNoteDirect, addTaskDirect, removeTaskDirect, signals = [], addSignal, removeSignal, territoryId, activeTab, onTabChange }: ProspectSheetProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+
+  // Tab state — controlled if activeTab/onTabChange are provided, internal otherwise (e.g. ProspectPage usage)
+  const [internalTab, setInternalTab] = useState<string>("overview");
+  const tab = activeTab ?? internalTab;
+  const setTab = onTabChange ?? setInternalTab;
 
   const prospect = useMemo(() => data.find(p => p.id === prospectId), [data, prospectId]);
   const prospectSignals = useMemo(() => signals.filter(s => s.prospect_id === prospectId), [signals, prospectId]);
@@ -577,10 +587,19 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
           </div>
         </div>
 
-        {/* Content */}
-        <div className="px-6 py-5 space-y-5">
+        {/* Content — Tabbed IA (Overview / Activity / Contacts / Tasks) */}
+        <Tabs value={tab} onValueChange={setTab} className="px-6 py-5">
+          <TabsList className="grid grid-cols-4 w-full mb-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="contacts">Contacts</TabsTrigger>
+            <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          </TabsList>
+
+          {/* OVERVIEW TAB: Account Details, Research, Signals, AI Readiness, Location Notes */}
+          <TabsContent value="overview" className="space-y-5 mt-0 animate-fade-in-up">
           {/* Account Details */}
-          <div className="space-y-3 animate-fade-in-up">
+          <div className="space-y-3">
             <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Account Details</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
@@ -666,7 +685,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
 
           {/* Account Research — top of sheet, compact until clicked */}
           {addSignal && (
-            <div className="animate-fade-in-up" style={{ animationDelay: "30ms" }}>
+            <div>
               {!researchRan && !researchLoading ? (
                 <button
                   onClick={runResearch}
@@ -753,8 +772,38 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
             </div>
           )}
 
+          {/* Signals — moved here from below for Overview tab */}
+          {addSignal && removeSignal && (
+            <div>
+              <SignalsSection
+                prospect={prospect}
+                signals={prospectSignals}
+                onAdd={addSignal}
+                onRemove={removeSignal}
+                territoryId={territoryId}
+                compact
+              />
+            </div>
+          )}
+
+          {/* AI Readiness */}
+          <div>
+            <AIReadinessCard prospect={prospect} onUpdate={update} compact />
+          </div>
+
+          {/* Location Notes */}
+          {prospect.locationNotes && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Location Notes</h3>
+              <p className="text-sm text-foreground/80 bg-muted/50 p-3 rounded-lg border border-border">{prospect.locationNotes}</p>
+            </div>
+          )}
+          </TabsContent>
+
+          {/* ACTIVITY TAB: Log Activity widget, Notes, Activity Timeline */}
+          <TabsContent value="activity" className="space-y-5 mt-0 animate-fade-in-up">
           {/* Log Activity — unified widget */}
-          <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "50ms" }}>
+          <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Target className="w-4 h-4 text-primary" />
               <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Log Activity</h3>
@@ -804,39 +853,10 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                 Log Activity{showFollowUp && newTaskText.trim() ? " + Create Task" : ""}
               </Button>
             </div>
-
-            {/* Open tasks list */}
-            {(prospect.tasks || []).length > 0 && (
-              <div className="space-y-1.5 pt-2 border-t border-border">
-                <label className="text-xs font-semibold text-muted-foreground uppercase">Open Tasks</label>
-                {(prospect.tasks || [])
-                  .slice()
-                  .sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999"))
-                  .map(task => {
-                    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
-                    return (
-                      <div key={task.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-primary/5 group">
-                        <button onClick={() => completeTask(task)} className="shrink-0 w-4 h-4 rounded border border-primary/40 hover:bg-primary/20 flex items-center justify-center transition-colors" title="Mark complete">
-                          <Check className="w-2.5 h-2.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </button>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm text-foreground">{task.text}</span>
-                        </div>
-                        {task.dueDate && (
-                          <span className={cn("text-xs shrink-0", isOverdue ? "text-destructive font-semibold" : "text-muted-foreground")}>
-                            {isOverdue ? "⚠️ " : ""}{task.dueDate}
-                          </span>
-                        )}
-                        <button onClick={() => removeTask(task.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10">
-                          <X className="w-3 h-3 text-destructive" />
-                        </button>
-                      </div>
-                    );
-                  })}
-              </div>
-            )}
           </div>
-          <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
+
+          {/* Notes */}
+          <div className="space-y-3">
             <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Notes</h3>
             <RichTextEditor
               content={newNote}
@@ -866,8 +886,37 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
             )}
           </div>
 
-          {/* Contacts */}
-          <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "150ms" }}>
+          {/* Activity Timeline */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Activity Timeline</h3>
+            {(prospect.interactions || []).length > 0 && (
+              <div className="relative mt-2">
+                <div className="absolute left-[13px] top-0 bottom-0 w-px bg-primary/20" />
+                <div className="space-y-3">
+                  {[...(prospect.interactions || [])].reverse().map((i, idx) => (
+                    <div key={i.id} className="flex items-start gap-2.5 relative animate-slide-in-right" style={{ animationDelay: `${idx * 40}ms` }}>
+                      <div className={cn("w-7 h-7 rounded-full flex items-center justify-center shrink-0 z-10",
+                        i.type === "Email" ? "bg-primary/10 text-primary" :
+                        i.type === "Call" ? "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]" :
+                        i.type === "Task Completed" ? "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]" :
+                        "bg-secondary text-secondary-foreground"
+                      )}><InteractionIcon type={i.type} /></div>
+                      <div>
+                         <div className="flex items-center gap-2"><span className="text-sm font-semibold text-foreground">{i.type}</span><span className="text-xs text-muted-foreground">{relativeTime(i.date)}</span></div>
+                        {i.notes && <p className="text-sm text-foreground/80 mt-0.5">{i.notes}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {(prospect.interactions || []).length === 0 && <p className="text-sm text-muted-foreground text-center py-3">No interactions logged yet.</p>}
+          </div>
+          </TabsContent>
+
+          {/* CONTACTS TAB: Contacts list + add/edit form */}
+          <TabsContent value="contacts" className="space-y-5 mt-0 animate-fade-in-up">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Contacts</h3>
               <button onClick={() => setShowAddContact(!showAddContact)} className="p-1 rounded-md hover:bg-primary/10"><Plus className="w-3.5 h-3.5 text-primary" /></button>
@@ -998,61 +1047,48 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
             ); })}
             {(prospect.contacts || []).length === 0 && !showAddContact && <p className="text-sm text-muted-foreground">No contacts yet.</p>}
           </div>
+          </TabsContent>
 
-          {/* Signals */}
-          {addSignal && removeSignal && (
-            <div className="animate-fade-in-up" style={{ animationDelay: "170ms" }}>
-              <SignalsSection
-                prospect={prospect}
-                signals={prospectSignals}
-                onAdd={addSignal}
-                onRemove={removeSignal}
-                territoryId={territoryId}
-                compact
-              />
+          {/* TASKS TAB: Open tasks list (extracted from Log Activity) */}
+          <TabsContent value="tasks" className="space-y-5 mt-0 animate-fade-in-up">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Open Tasks</h3>
             </div>
-          )}
-
-          {/* AI Readiness */}
-          <div className="animate-fade-in-up" style={{ animationDelay: "180ms" }}>
-            <AIReadinessCard prospect={prospect} onUpdate={update} compact />
-          </div>
-
-          {/* Activity Timeline */}
-          <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "200ms" }}>
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Activity Timeline</h3>
-            {(prospect.interactions || []).length > 0 && (
-              <div className="relative mt-2">
-                <div className="absolute left-[13px] top-0 bottom-0 w-px bg-primary/20" />
-                <div className="space-y-3">
-                  {[...(prospect.interactions || [])].reverse().map((i, idx) => (
-                    <div key={i.id} className="flex items-start gap-2.5 relative animate-slide-in-right" style={{ animationDelay: `${idx * 40}ms` }}>
-                      <div className={cn("w-7 h-7 rounded-full flex items-center justify-center shrink-0 z-10",
-                        i.type === "Email" ? "bg-primary/10 text-primary" :
-                        i.type === "Call" ? "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]" :
-                        i.type === "Task Completed" ? "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]" :
-                        "bg-secondary text-secondary-foreground"
-                      )}><InteractionIcon type={i.type} /></div>
-                      <div>
-                         <div className="flex items-center gap-2"><span className="text-sm font-semibold text-foreground">{i.type}</span><span className="text-xs text-muted-foreground">{relativeTime(i.date)}</span></div>
-                        {i.notes && <p className="text-sm text-foreground/80 mt-0.5">{i.notes}</p>}
+            {(prospect.tasks || []).length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">No open tasks. Add one from the Activity tab.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {(prospect.tasks || [])
+                  .slice()
+                  .sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999"))
+                  .map(task => {
+                    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
+                    return (
+                      <div key={task.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-primary/5 group">
+                        <button onClick={() => completeTask(task)} className="shrink-0 w-4 h-4 rounded border border-primary/40 hover:bg-primary/20 flex items-center justify-center transition-colors" title="Mark complete">
+                          <Check className="w-2.5 h-2.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm text-foreground">{task.text}</span>
+                        </div>
+                        {task.dueDate && (
+                          <span className={cn("text-xs shrink-0", isOverdue ? "text-destructive font-semibold" : "text-muted-foreground")}>
+                            {isOverdue ? "⚠️ " : ""}{task.dueDate}
+                          </span>
+                        )}
+                        <button onClick={() => removeTask(task.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10">
+                          <X className="w-3 h-3 text-destructive" />
+                        </button>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    );
+                  })}
               </div>
             )}
-            {(prospect.interactions || []).length === 0 && <p className="text-sm text-muted-foreground text-center py-3">No interactions logged yet.</p>}
           </div>
-
-          {/* Location Notes */}
-          {prospect.locationNotes && (
-            <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: "250ms" }}>
-               <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Location Notes</h3>
-              <p className="text-sm text-foreground/80 bg-muted/50 p-3 rounded-lg border border-border">{prospect.locationNotes}</p>
-            </div>
-          )}
-        </div>
+          </TabsContent>
+        </Tabs>
 
       {/* Account-level Email Draft Picker */}
       <ContactPickerDialog
