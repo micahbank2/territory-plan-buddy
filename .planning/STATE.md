@@ -64,6 +64,10 @@ Progress: [░░░░░░░░░░] 0%
 
 ## Accumulated Context
 
+### Roadmap Evolution
+
+- 2026-04-24: Phase 5 added — Log + Next Step Widget (single-submit interaction logger in ProspectSheet Activity tab; replaces two-section workflow)
+
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
