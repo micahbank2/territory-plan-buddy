@@ -889,7 +889,12 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                     </select>
                   </div>
                 </div>
-                <textarea value={newContact.notes || ""} onChange={e => setNewContact({...newContact, notes: e.target.value})} placeholder="Notes (e.g. CMO previously at a customer account)" className={cn(inputClass, "text-xs py-1.5 resize-none")} rows={2} />
+                <RichTextEditor
+                  content={newContact.notes || ""}
+                  onChange={(html) => setNewContact({ ...newContact, notes: html })}
+                  placeholder="Notes (e.g. CMO previously at a customer account)"
+                  minHeight="80px"
+                />
                 <div className="flex gap-2">
                   <button onClick={addContact} className="px-3 py-1.5 bg-primary text-primary-foreground text-xs rounded-md hover:bg-primary/90">Add</button>
                   <button onClick={() => { setShowAddContact(false); setNewContact({}); }} className="px-3 py-1.5 bg-muted text-muted-foreground text-xs rounded-md">Cancel</button>
@@ -928,7 +933,12 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                         </select>
                       </div>
                     </div>
-                    <textarea value={editContact.notes || ""} onChange={e => setEditContact({...editContact, notes: e.target.value})} placeholder="Notes (e.g. met at conference, reports to VP)" className={cn(inputClass, "text-sm py-2 resize-none")} rows={3} />
+                    <RichTextEditor
+                      content={editContact.notes || ""}
+                      onChange={(html) => setEditContact({ ...editContact, notes: html })}
+                      placeholder="Notes (e.g. met at conference, reports to VP)"
+                      minHeight="110px"
+                    />
                     <div className="flex gap-2 pt-1">
                       <button onClick={saveEditContact} className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90">Save</button>
                       <button onClick={() => { setEditingContactId(null); setEditContact({}); }} className="px-4 py-2 bg-muted text-muted-foreground text-sm rounded-md hover:bg-muted/80">Cancel</button>
@@ -969,7 +979,15 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                     {c.email && <a href={`mailto:${c.email}`} className="text-xs text-primary hover:underline flex items-center gap-1 mt-1 select-text"><Mail className="w-3 h-3" /> {c.email}</a>}
                     {c.phone && <div className="text-xs text-foreground/70 flex items-center gap-1 mt-0.5 select-text"><Phone className="w-3 h-3" /> {c.phone}</div>}
                     {c.linkedinUrl && <a href={c.linkedinUrl.startsWith("http") ? c.linkedinUrl : `https://${c.linkedinUrl}`} target="_blank" rel="noreferrer" className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 mt-0.5 select-text"><Linkedin className="w-3 h-3" /> LinkedIn</a>}
-                    {c.notes && <div className="text-xs text-foreground/70 mt-1.5 pt-1.5 border-t border-border italic select-text">📝 {c.notes}</div>}
+                    {c.notes && (
+                      <div className="mt-2 pt-2 border-t border-border flex gap-1.5 items-start">
+                        <span className="text-xs leading-5 shrink-0">📝</span>
+                        <SafeHTML
+                          html={c.notes}
+                          className="prose prose-sm dark:prose-invert max-w-none text-xs text-foreground/80 select-text [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
