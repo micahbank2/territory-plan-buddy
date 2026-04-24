@@ -324,7 +324,7 @@ Color-coded last-contact indicator. Green = <7 days, Yellow = 7-30 days, Red = 3
 
 8. **Score does not drive actions**: The scoring system produces a number but nothing downstream uses it to suggest actions. This is intentional tech debt to address.
 
-9. **Archive is simplified**: The `restore` and `permanentDelete` functions in useProspects are stubs (`() => {}`). Archive is visual only — items are hard deleted.
+9. **No archive — delete is permanent**: `remove()` and `bulkRemove()` hard-delete from Supabase (cascade cleans up related rows). Both the row-level delete and ProspectSheet delete route through an AlertDialog confirmation with "This cannot be undone" copy. There is no soft-delete, no `deleted_at`, no restore — a previous archive concept was removed because its restore path was a stub and the code was already hard-deleting. If soft-delete is needed in the future, add `deleted_at` to Supabase first, then wire it into `remove()`.
 
 ---
 

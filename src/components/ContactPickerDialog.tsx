@@ -349,7 +349,7 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals, on
                           onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                         <span className="font-medium text-sm truncate">{p.name}</span>
-                        <span className="text-[10px] text-muted-foreground ml-auto shrink-0">
+                        <span className="text-xs text-muted-foreground ml-auto shrink-0">
                           {p.status !== "Prospect" && <span className={p.status === "Churned" ? "text-destructive" : p.status === "Customer" ? "text-emerald-600" : "text-amber-600"}>{p.status} · </span>}
                           {p.industry}{visibleContacts.length > 0 && ` · ${visibleContacts.length}`}
                         </span>
@@ -376,9 +376,9 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals, on
                                   {c.starred && <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" aria-label="Starred" />}
                                 </div>
                                 <div className="flex items-center gap-2 mt-0.5">
-                                  {c.title && <span className="text-[11px] text-muted-foreground truncate">{c.title}</span>}
-                                  {c.email && <span className="text-[11px] text-muted-foreground/60 truncate">{c.email}</span>}
-                                  <span className={`text-[10px] font-medium shrink-0 ${lastCls}`}>{lastText}</span>
+                                  {c.title && <span className="text-xs text-muted-foreground truncate">{c.title}</span>}
+                                  {c.email && <span className="text-xs text-muted-foreground/60 truncate">{c.email}</span>}
+                                  <span className={`text-xs font-medium shrink-0 ${lastCls}`}>{lastText}</span>
                                 </div>
                               </div>
                               <StrengthDot strength={c.relationshipStrength} />
@@ -414,7 +414,7 @@ export function ContactPickerDialog({ open, onOpenChange, prospects, signals, on
               >
                 <ArrowLeft className="w-3 h-3" /> Back to selection
               </button>
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 {wordCount.toLocaleString()} words · {charCount.toLocaleString()} chars
               </span>
             </div>

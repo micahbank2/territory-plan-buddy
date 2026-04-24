@@ -26,10 +26,10 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### UX Polish
 
-- [ ] **UX-01**: ProspectSheet displays content in tabs: Overview, Activity, Contacts, Tasks
-- [ ] **UX-02**: Tab selection persists while the sheet is open (switching between prospects resets to Overview)
-- [ ] **UX-03**: TerritoryPlanner.tsx is decomposed into sub-components: FilterBar, ProspectTable, BulkActions bar, and dialog launchers
-- [ ] **UX-04**: TerritoryPlanner.tsx coordinator component is under 400 lines after decomposition
+- [x] **UX-01**: ProspectSheet displays content in tabs: Overview, Activity, Contacts, Tasks
+- [x] **UX-02**: Tab selection persists while the sheet is open (switching between prospects resets to Overview)
+- [x] **UX-03**: TerritoryPlanner.tsx is decomposed into sub-components: FilterBar, ProspectTable, BulkActions bar, and dialog launchers
+- [x] **UX-04**: TerritoryPlanner.tsx coordinator component is under 400 lines after decomposition
 
 ### Performance
 
@@ -93,10 +93,10 @@ Explicitly excluded. Documented to prevent scope creep.
 | SEC-01 | Phase 1 | Complete |
 | SEC-02 | Phase 1 | Complete |
 | SEC-03 | Phase 1 | Complete |
-| UX-01 | Phase 3 | Pending |
-| UX-02 | Phase 3 | Pending |
-| UX-03 | Phase 3 | Pending |
-| UX-04 | Phase 3 | Pending |
+| UX-01 | Phase 3 | Complete |
+| UX-02 | Phase 3 | Complete |
+| UX-03 | Phase 3 | Complete |
+| UX-04 | Phase 3 | Complete |
 | PERF-01 | Phase 2 | Pending |
 | PERF-02 | Phase 2 | Pending |
 | PERF-03 | Phase 2 | Pending |
