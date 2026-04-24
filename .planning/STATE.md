@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: phase-complete
-stopped_at: Phase 03 verified PASS — UX-01..UX-04 satisfied
-last_updated: "2026-04-24T22:15:00.000Z"
+status: verifying
+stopped_at: Completed 05-log-next-step-widget 05-01-PLAN.md
+last_updated: "2026-04-24T23:12:59.903Z"
 last_activity: 2026-04-24
 progress:
-  total_phases: 4
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
-  percent: 75
+  total_phases: 5
+  completed_phases: 4
+  total_plans: 10
+  completed_plans: 10
+  percent: 0
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 
 Phase: 03 (component-decomposition-ux-polish) — COMPLETE (verified 2026-04-24)
 Plan: 3 of 3
-Status: Phase verified PASS — UX-01..UX-04 delivered. Ready for next phase.
+Status: Phase complete — ready for verification
 Last activity: 2026-04-24
 
 Progress: [░░░░░░░░░░] 0%
@@ -61,6 +61,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 03-component-decomposition-ux-polish P01 | 143s | 2 tasks | 3 files |
 | Phase 03-component-decomposition-ux-polish P02 | 6m 11s | 2 tasks | 4 files |
 | Phase 03-component-decomposition-ux-polish P03 | 15m | 2 tasks | 18 files |
+| Phase 05-log-next-step-widget P01 | 5min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,9 @@ Recent decisions affecting current work:
 - [Phase 03-component-decomposition-ux-polish]: Plan named 3 extractions but UX-04 <400 line target required 5 component extractions plus 2 derived-state hooks (useFilteredProspects, usePendingOutreach)
 - [Phase 03-component-decomposition-ux-polish]: TerritoryDialogGroup uses forwardRef + useImperativeHandle to expose openX() methods — coordinator holds zero dialog booleans
 - [Phase 03-component-decomposition-ux-polish]: FilterState consolidation: 9 individual filter setters replaced by single setFilterState driving controlled ProspectFilterBar
+- [Phase 05-log-next-step-widget]: addInteraction + addTask return Promise<boolean> — non-breaking: void-ignoring callers compile unchanged, new boolean contract lets the widget detect partial failure cleanly
+- [Phase 05-log-next-step-widget]: Default follow-up due date recomputes on every toggle-on — memo-once would go stale for widgets opened before midnight and submitted after
+- [Phase 05-log-next-step-widget]: parseLocalDate helper — new Date('yyyy-MM-dd') parses as UTC and drifts a day west in EDT; caught when Test 4 expected 'April 27th' but got 'April 26th'
 
 ### Pending Todos
 
@@ -113,6 +117,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-24T22:00:51.036Z
-Stopped at: Completed 03-component-decomposition-ux-polish 03-03-PLAN.md
+Last session: 2026-04-24T23:12:50.349Z
+Stopped at: Completed 05-log-next-step-widget 05-01-PLAN.md
 Resume file: None

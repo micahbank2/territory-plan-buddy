@@ -47,12 +47,12 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Log + Next Step Widget
 
-- [ ] **LOG-01**: A single widget on the ProspectSheet Activity tab captures interaction type + notes + an optional follow-up task in one submit (creates both the interaction row and the task row from one click when the follow-up toggle is on)
-- [ ] **LOG-02**: When the follow-up task toggle is turned on, the due-date input defaults to +3 business days from today (skips Saturday and Sunday) and remains user-editable via the date picker
-- [ ] **LOG-03**: When the widget submit partially fails (e.g., interaction saves but task does not), the user sees a clear error toast distinct from the success path and the form retains the unsaved input so no typed data is silently lost
-- [ ] **LOG-04**: Submitting an activity bumps `prospects.last_touched` to today so the aging-dot staleness indicator refreshes immediately
-- [ ] **LOG-05**: The widget renders correctly inside both the desktop Sheet and the mobile vaul Drawer wrapper from Phase 03
-- [ ] **LOG-06**: The old separate "Log Interaction" and independent task-add sub-sections inside the Activity tab are removed — LogActivityWidget is the single logging surface (no duplicate forms)
+- [x] **LOG-01**: A single widget on the ProspectSheet Activity tab captures interaction type + notes + an optional follow-up task in one submit (creates both the interaction row and the task row from one click when the follow-up toggle is on)
+- [x] **LOG-02**: When the follow-up task toggle is turned on, the due-date input defaults to +3 business days from today (skips Saturday and Sunday) and remains user-editable via the date picker
+- [x] **LOG-03**: When the widget submit partially fails (e.g., interaction saves but task does not), the user sees a clear error toast distinct from the success path and the form retains the unsaved input so no typed data is silently lost
+- [x] **LOG-04**: Submitting an activity bumps `prospects.last_touched` to today so the aging-dot staleness indicator refreshes immediately
+- [x] **LOG-05**: The widget renders correctly inside both the desktop Sheet and the mobile vaul Drawer wrapper from Phase 03
+- [x] **LOG-06**: The old separate "Log Interaction" and independent task-add sub-sections inside the Activity tab are removed — LogActivityWidget is the single logging surface (no duplicate forms)
 
 ## v2 Requirements
 
@@ -114,9 +114,9 @@ Explicitly excluded. Documented to prevent scope creep.
 | AI-02 | Phase 4 | Complete |
 | AI-03 | Phase 4 | Complete |
 | AI-04 | Phase 4 | Complete |
-| LOG-01 | Phase 5 | Pending |
-| LOG-02 | Phase 5 | Pending |
-| LOG-03 | Phase 5 | Pending |
-| LOG-04 | Phase 5 | Pending |
-| LOG-05 | Phase 5 | Pending |
-| LOG-06 | Phase 5 | Pending |
+| LOG-01 | Phase 5 | Complete |
+| LOG-02 | Phase 5 | Complete |
+| LOG-03 | Phase 5 | Complete |
+| LOG-04 | Phase 5 | Complete |
+| LOG-05 | Phase 5 | Complete |
+| LOG-06 | Phase 5 | Complete |
