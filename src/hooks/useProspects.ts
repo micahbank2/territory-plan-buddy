@@ -4,10 +4,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { SEED, initProspect, type Prospect, type Contact, type InteractionLog, type NoteEntry, type Task } from "@/data/prospects";
 import { toast } from "sonner";
 
-export interface ArchivedProspect extends Prospect {
-  archivedAt: string;
-}
-
 // Convert DB row to Prospect
 function dbToProspect(row: any, contacts: any[], interactions: any[], notes: any[], tasks: any[]): Prospect {
   return {
@@ -46,7 +42,6 @@ function dbToProspect(row: any, contacts: any[], interactions: any[], notes: any
 export function useProspects(territoryId?: string | null) {
   const { user } = useAuth();
   const [data, setData] = useState<Prospect[]>([]);
-  const [archivedData, setArchivedData] = useState<ArchivedProspect[]>([]);
   const [ok, setOk] = useState(false);
   const [seeding, setSeeding] = useState(false);
 
@@ -106,11 +101,6 @@ export function useProspects(territoryId?: string | null) {
     setData(mapped);
     setOk(true);
   }, [user, territoryId]);
-
-  // Soft delete / archive — stubbed until deleted_at column is added to Supabase
-  const loadArchivedData = useCallback(async () => {
-    setArchivedData([]);
-  }, []);
 
   useEffect(() => {
     if (user) loadData();
@@ -439,10 +429,6 @@ export function useProspects(territoryId?: string | null) {
     toast.success("🎉 Seed data imported!");
   }, [user, seeding, loadData]);
 
-  // Stubbed — will be implemented when deleted_at column is added to Supabase
-  const restore = useCallback(async (_id: any) => {}, []);
-  const permanentDelete = useCallback(async (_id: any) => {}, []);
-
   const deleteNote = useCallback(async (prospectId: any, noteId: string) => {
     if (!user) return;
     await supabase.from("prospect_notes").delete().eq("id", noteId);
@@ -634,10 +620,6 @@ export function useProspects(territoryId?: string | null) {
     bulkAdd,
     bulkMerge,
     reset,
-    archivedData,
-    loadArchivedData,
-    restore,
-    permanentDelete,
     seedData,
     seeding,
     deleteNote,

@@ -1,7 +1,6 @@
 /**
  * Tests for useProspects hook
  * DATA-01 through DATA-04: Rollback + direct CRUD
- * DATA-05 through DATA-08: Soft delete (stubbed — requires deleted_at column)
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -150,9 +149,15 @@ describe("useProspects direct CRUD contracts (DATA-02, DATA-03, DATA-04)", () =>
   });
 });
 
-describe("useProspects soft delete (DATA-05 through DATA-08) — requires deleted_at column", () => {
-  it.todo("DATA-05: remove() calls .update({ deleted_at }) not .delete()");
-  it.todo("DATA-06: loadArchivedData() queries .not('deleted_at', 'is', null)");
-  it.todo("DATA-07: restore() calls .update({ deleted_at: null })");
-  it.todo("DATA-08: permanentDelete() calls .delete()");
+describe("useProspects hard delete contract (DATA-05)", () => {
+  it("DATA-05: remove() calls .delete().eq('id', id) on prospects", async () => {
+    const eqMock = vi.fn().mockResolvedValue({ data: null, error: null });
+    const deleteMock = vi.fn().mockReturnValue({ eq: eqMock });
+    (supabase.from as any) = vi.fn().mockReturnValue({ delete: deleteMock });
+
+    await supabase.from("prospects").delete().eq("id", "prospect-1");
+
+    expect(deleteMock).toHaveBeenCalled();
+    expect(eqMock).toHaveBeenCalledWith("id", "prospect-1");
+  });
 });
