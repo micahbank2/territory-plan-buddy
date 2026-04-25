@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 07-01-PLAN.md
-last_updated: "2026-04-25T02:45:55.580Z"
+status: phase-complete
+stopped_at: Phase 07 verified PASS — FORECAST-01..08 satisfied
+last_updated: "2026-04-25T02:55:00.000Z"
 last_activity: 2026-04-25
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 12
   completed_plans: 12
-  percent: 83
+  percent: 86
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** The app must never silently lose data. Every edit must either persist to Supabase or visibly fail with a clear error.
-**Current focus:** Phase 06 — score-to-recommended-action (COMPLETE)
+**Current focus:** Phase 07 — weighted-pipeline-forecast (COMPLETE)
 
 ## Current Position
 
-Phase: 06 (score-to-recommended-action) — COMPLETE (verified 2026-04-25)
+Phase: 07 (weighted-pipeline-forecast) — COMPLETE (verified 2026-04-25)
 Plan: 1 of 1
-Status: Phase complete — ready for verification
+Status: Phase verified PASS — FORECAST-01..08 delivered. Phase 2 (TanStack Query) remains.
 Last activity: 2026-04-25
 
-Progress: [████████░░] 83% (5 of 6 integer phases complete; Phase 2 remains)
+Progress: [█████████░] 86% (6 of 7 integer phases complete; Phase 2 remains)
 
 ## Performance Metrics
 
@@ -106,7 +106,7 @@ Recent decisions affecting current work:
 - [Phase 06-score-to-recommended-action]: Competitor 'Other: X' prefix stripped for display; severity defaults to info for unmapped competitors
 - [Phase 07-weighted-pipeline-forecast]: Pure forecastPipeline(opps, quota) engine with classification (open/booked/lost); STAGE_WEIGHTS covers all 10 OPP_STAGES; Math.round per-deal mirrors prior inline math
 - [Phase 07-weighted-pipeline-forecast]: loadAnnualQuota lives inside PipelineForecastBar.tsx (YAGNI — single consumer); mirrors QuotaHeroBoxes try/catch + DEFAULT_QUOTAS fallback; sum>0 guard ignores empty stored arrays
-- [Phase 07-weighted-pipeline-forecast]: Quota source-of-truth = code ($615k from DEFAULT_QUOTAS sum); CLAUDE.md $625k mention is stale doc drift — flagged for separate quick-fix, NOT updated this phase
+- [Phase 07-weighted-pipeline-forecast]: Quota = $625k. Researcher initially miscounted DEFAULT_QUOTAS sum as $615k; verifier caught it (actual sum is 30+30+60+38+38+77+40+40+80+48+48+96=625). CLAUDE.md was correct — no doc drift, no fix needed.
 - [Phase 07-weighted-pipeline-forecast]: Test fix: getByText($70,000) caught two matches (headline + legend chip) — switched to getAllByText for weighted-total assertion
 
 ### Pending Todos
