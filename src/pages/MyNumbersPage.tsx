@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTerritories } from "@/hooks/useTerritories";
@@ -11,71 +11,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Settings, TrendingUp, DollarSign, Target, ShieldCheck, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { cn } from "@/lib/utils";
-
-// ─── Types ───────────────────────────────────────────────────────────
-
-interface NumbersEntry {
-  month: string; // YYYY-MM
-  incrementalQuota: number;
-  incrementalBookings: number;
-  renewedAcv: number;
-  pipelineAcv: number;
-  meetings: number;
-  outreachTouches: number;
-}
-
-interface AddOns {
-  multiYearDuration: number;
-  multiYearRenewedAcv: number;
-  multiYearIncrementalAcv: number;
-  servicesAmount: number;
-  kongExitAcv: number;
-  kongBlendedAcv: number;
-}
-
-interface CompSettings {
-  annualTI: number;
-  incrementalSplit: number;
-  renewalSplit: number;
-  annualIncrementalQuota: number;
-  u4r: number;
-  retentionTarget: number;
-  renewalAbove100Rate: number;
-}
-
-// ─── Constants ───────────────────────────────────────────────────────
-
-const FY27_MONTHS = [
-  "2026-02", "2026-03", "2026-04", "2026-05", "2026-06",
-  "2026-07", "2026-08", "2026-09", "2026-10", "2026-11",
-  "2026-12", "2027-01",
-];
-
-const DEFAULT_QUOTAS: Record<string, number> = {
-  "2026-02": 30000, "2026-03": 30000, "2026-04": 60000,
-  "2026-05": 38000, "2026-06": 38000, "2026-07": 77000,
-  "2026-08": 40000, "2026-09": 40000, "2026-10": 80000,
-  "2026-11": 48000, "2026-12": 48000, "2027-01": 96000,
-};
-
-const DEFAULT_SETTINGS: CompSettings = {
-  annualTI: 95000,
-  incrementalSplit: 0.65,
-  renewalSplit: 0.35,
-  annualIncrementalQuota: 615000,
-  u4r: 2924263,
-  retentionTarget: 0.86,
-  renewalAbove100Rate: 0.08,
-};
-
-const DEFAULT_ADDONS: AddOns = {
-  multiYearDuration: 0,
-  multiYearRenewedAcv: 0,
-  multiYearIncrementalAcv: 0,
-  servicesAmount: 0,
-  kongExitAcv: 0,
-  kongBlendedAcv: 0,
-};
+import {
+  FY27_MONTHS,
+  DEFAULT_QUOTAS,
+  DEFAULT_SETTINGS,
+  DEFAULT_ADDONS,
+  ENTRIES_KEY,
+  SETTINGS_KEY,
+  ADDONS_KEY,
+  loadEntries,
+  loadSettings,
+  loadAddOns,
+  type NumbersEntry,
+  type CompSettings,
+  type AddOns,
+} from "@/data/myNumbers/storage";
+import {
+  calcIncrementalForMonth,
+  calcAnnualAccel,
+  calcRenewalForMonth,
+  calcLargeRenewalAddon,
+  calcAddOnPayouts,
+} from "@/data/myNumbers/comp";
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
@@ -93,210 +50,18 @@ function pct(n: number): string {
   return (n * 100).toFixed(1) + "%";
 }
 
-// ─── Commission Calculations ─────────────────────────────────────────
-
-function calcIncrementalForMonth(
-  entries: NumbersEntry[],
-  monthIndex: number,
-  settings: CompSettings,
-) {
-  const tier1Cap = settings.annualIncrementalQuota * 0.5;
-  const tier2Cap = settings.annualIncrementalQuota * 0.75;
-  const incrementalTI = settings.annualTI * settings.incrementalSplit;
-  const icr1 = (incrementalTI * 0.4) / tier1Cap;
-  const icr2 = (incrementalTI * 0.25) / (tier2Cap - tier1Cap);
-  const icr3 = (incrementalTI * 0.35) / (settings.annualIncrementalQuota - tier2Cap);
-
-  // YTD bookings through this month
-  let ytdBookings = 0;
-  let ytdQuota = 0;
-  for (let i = 0; i <= monthIndex; i++) {
-    ytdBookings += entries[i].incrementalBookings;
-    ytdQuota += entries[i].incrementalQuota;
-  }
-
-  // YTD bookings through prior month
-  let priorYtdBookings = 0;
-  for (let i = 0; i < monthIndex; i++) {
-    priorYtdBookings += entries[i].incrementalBookings;
-  }
-
-  // Tier allocation for this month's bookings
-  const thisMonthBookings = entries[monthIndex].incrementalBookings;
-
-  // Calculate cumulative tier allocations
-  const cumT1 = Math.min(ytdBookings, tier1Cap);
-  const cumT2 = Math.max(0, Math.min(ytdBookings, tier2Cap) - tier1Cap);
-  const cumT3 = Math.max(0, ytdBookings - tier2Cap);
-
-  const priorT1 = Math.min(priorYtdBookings, tier1Cap);
-  const priorT2 = Math.max(0, Math.min(priorYtdBookings, tier2Cap) - tier1Cap);
-  const priorT3 = Math.max(0, priorYtdBookings - tier2Cap);
-
-  const monthT1 = cumT1 - priorT1;
-  const monthT2 = cumT2 - priorT2;
-  const monthT3 = cumT3 - priorT3;
-
-  const baseCommission = monthT1 * icr1 + monthT2 * icr2 + monthT3 * icr3;
-
-  // YTD accelerator: +3% on this month's bookings if YTD ahead
-  const ytdAccel = ytdBookings > ytdQuota ? thisMonthBookings * 0.03 : 0;
-
-  return { baseCommission, ytdAccel, monthT1, monthT2, monthT3, ytdBookings, ytdQuota };
-}
-
-function calcAnnualAccel(entries: NumbersEntry[], settings: CompSettings) {
-  const totalBookings = entries.reduce((s, e) => s + e.incrementalBookings, 0);
-  const attainment = totalBookings / settings.annualIncrementalQuota;
-  if (attainment <= 1.0) return 0;
-
-  const aboveQuota = totalBookings - settings.annualIncrementalQuota;
-  let rate = 0;
-  if (attainment > 1.5) rate = 0.12;
-  else if (attainment > 1.25) rate = 0.10;
-  else rate = 0.08;
-
-  return aboveQuota * rate;
-}
-
-function calcRenewalForMonth(
-  entries: NumbersEntry[],
-  monthIndex: number,
-  settings: CompSettings,
-) {
-  const renewalTI = settings.annualTI * settings.renewalSplit;
-  const goalRenewed = settings.u4r * settings.retentionTarget;
-
-  // Cumulative renewed through this month and prior
-  let cumRenewed = 0;
-  for (let i = 0; i <= monthIndex; i++) cumRenewed += entries[i].renewedAcv;
-  let priorCumRenewed = 0;
-  for (let i = 0; i < monthIndex; i++) priorCumRenewed += entries[i].renewedAcv;
-
-  const retentionPct = cumRenewed / settings.u4r;
-  const attainment = goalRenewed > 0 ? cumRenewed / goalRenewed : 0;
-  const priorAttainment = goalRenewed > 0 ? priorCumRenewed / goalRenewed : 0;
-
-  const payoutPct = renewalPayoutPct(attainment);
-  const priorPayoutPct = renewalPayoutPct(priorAttainment);
-
-  const cumPayout = renewalTI * payoutPct;
-  const priorCumPayout = renewalTI * priorPayoutPct;
-  const monthlyPayout = cumPayout - priorCumPayout;
-
-  return { monthlyPayout, cumRenewed, retentionPct, attainment, cumPayoutPct: payoutPct };
-}
-
-function renewalPayoutPct(attainment: number): number {
-  // Attainment is fraction (1.0 = 100%)
-  const att = attainment * 100; // work in percentage points
-  if (att <= 0) return 0;
-  if (att <= 50) return (att * 0.5) / 100;
-  if (att <= 75) return (25 + (att - 50) * 1.0) / 100;
-  if (att <= 100) return (50 + (att - 75) * 2.0) / 100;
-  // Above 100%: 8% per 1% attainment, max 200% total payout
-  const above = (100 + (att - 100) * 8.0) / 100;
-  return Math.min(above, 2.0);
-}
-
-function calcLargeRenewalAddon(entries: NumbersEntry[], settings: CompSettings): number {
-  if (settings.u4r < 1500000) return 0;
-  const totalRenewed = entries.reduce((s, e) => s + e.renewedAcv, 0);
-  const retentionRate = totalRenewed / settings.u4r;
-  if (retentionRate < settings.retentionTarget) return 0;
-  return totalRenewed * 0.005;
-}
-
-function calcAddOnPayouts(addons: AddOns, settings: CompSettings) {
-  // Multi-year
-  const multiYearRenewal = addons.multiYearDuration > 12 ? addons.multiYearRenewedAcv * 0.005 : 0;
-  const multiYearIncremental = addons.multiYearDuration > 12 ? addons.multiYearIncrementalAcv * 0.05 : 0;
-
-  // 1x Services
-  const services = addons.servicesAmount * 0.05;
-
-  // Kong buy-out
-  const kongDelta = Math.max(0, addons.kongExitAcv - addons.kongBlendedAcv);
-  const incrementalTI = settings.annualTI * settings.incrementalSplit;
-  const baseICR = incrementalTI / settings.annualIncrementalQuota;
-  const kong = kongDelta * baseICR;
-
-  return { multiYearRenewal, multiYearIncremental, services, kong, total: multiYearRenewal + multiYearIncremental + services + kong };
-}
-
-// ─── Storage ─────────────────────────────────────────────────────────
-
-const ENTRIES_KEY = "my_numbers_v2";
-const SETTINGS_KEY = "my_numbers_settings";
-const ADDONS_KEY = "my_numbers_addons";
-
-function loadEntries(): NumbersEntry[] {
-  try {
-    const stored = localStorage.getItem(ENTRIES_KEY);
-    if (stored) return JSON.parse(stored);
-
-    // Migrate from old format
-    const old = localStorage.getItem("my_numbers");
-    if (old) {
-      const oldEntries = JSON.parse(old) as any[];
-      const migrated = FY27_MONTHS.map(m => {
-        const match = oldEntries.find((e: any) => e.month === m);
-        return {
-          month: m,
-          incrementalQuota: match?.quota ?? DEFAULT_QUOTAS[m] ?? 0,
-          incrementalBookings: match?.closedAcv ?? 0,
-          renewedAcv: 0,
-          pipelineAcv: match?.pipelineAcv ?? 0,
-          meetings: match?.meetings ?? 0,
-          outreachTouches: match?.outreachTouches ?? 0,
-        };
-      });
-      localStorage.setItem(ENTRIES_KEY, JSON.stringify(migrated));
-      return migrated;
-    }
-
-    // Fresh start
-    return FY27_MONTHS.map(m => ({
-      month: m,
-      incrementalQuota: DEFAULT_QUOTAS[m] ?? 0,
-      incrementalBookings: 0,
-      renewedAcv: 0,
-      pipelineAcv: 0,
-      meetings: 0,
-      outreachTouches: 0,
-    }));
-  } catch {
-    return FY27_MONTHS.map(m => ({
-      month: m, incrementalQuota: DEFAULT_QUOTAS[m] ?? 0,
-      incrementalBookings: 0, renewedAcv: 0, pipelineAcv: 0, meetings: 0, outreachTouches: 0,
-    }));
-  }
-}
-
-function loadSettings(): CompSettings {
-  try {
-    const stored = localStorage.getItem(SETTINGS_KEY);
-    return stored ? { ...DEFAULT_SETTINGS, ...JSON.parse(stored) } : DEFAULT_SETTINGS;
-  } catch { return DEFAULT_SETTINGS; }
-}
-
-function loadAddOns(): AddOns {
-  try {
-    const stored = localStorage.getItem(ADDONS_KEY);
-    return stored ? { ...DEFAULT_ADDONS, ...JSON.parse(stored) } : DEFAULT_ADDONS;
-  } catch { return DEFAULT_ADDONS; }
-}
-
 // ─── Inline Edit Cell ────────────────────────────────────────────────
 
 function EditableCell({
   value,
   onChange,
   isCurrency = true,
+  ariaLabel,
 }: {
   value: number;
   onChange: (v: number) => void;
   isCurrency?: boolean;
+  ariaLabel?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -306,6 +71,7 @@ function EditableCell({
       <input
         autoFocus
         type="number"
+        aria-label={ariaLabel}
         className="w-full bg-transparent text-right font-mono text-sm border-b border-primary outline-none py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         value={draft}
         onChange={e => setDraft(e.target.value)}
@@ -317,7 +83,11 @@ function EditableCell({
 
   return (
     <span
+      role="button"
+      tabIndex={0}
+      aria-label={ariaLabel}
       onClick={() => { setDraft(String(value || "")); setEditing(true); }}
+      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDraft(String(value || "")); setEditing(true); } }}
       className="cursor-pointer hover:text-primary hover:bg-primary/5 rounded px-1.5 py-0.5 -mx-1.5 transition-colors font-mono text-sm border border-transparent hover:border-primary/20"
       title="Click to edit"
     >
@@ -343,11 +113,12 @@ export default function MyNumbersPage() {
   const [activeTab, setActiveTab] = useState("incremental");
   const [expandedQuarter, setExpandedQuarter] = useState<string | null>(null);
 
-  // Gate: non-owners get redirected away
-  if (user && !OWNER_EMAILS.includes(user.email ?? "")) {
-    navigate("/", { replace: true });
-    return null;
-  }
+  // Gate: non-owners get redirected away (useEffect to avoid render-time navigate)
+  useEffect(() => {
+    if (user && !OWNER_EMAILS.includes(user.email ?? "")) {
+      navigate("/", { replace: true });
+    }
+  }, [user, navigate]);
 
   // Auto-compute pipeline from deals by close date and type
   const pipelineByMonth = useMemo(() => {
@@ -432,6 +203,7 @@ export default function MyNumbersPage() {
   );
 
   if (!user) return null;
+  if (!OWNER_EMAILS.includes(user.email ?? "")) return null;
 
   const incrAttainment = ytdTotals.totalIncrQuota > 0 ? ytdTotals.totalIncrBookings / ytdTotals.totalIncrQuota : 0;
   const renewalRetention = settings.u4r > 0 ? ytdTotals.totalRenewed / settings.u4r : 0;
@@ -528,10 +300,10 @@ export default function MyNumbersPage() {
                       <TableRow key={e.month} className="group">
                         <TableCell className="font-medium text-sm">{formatMonth(e.month)}</TableCell>
                         <TableCell className="text-right">
-                          <EditableCell value={e.incrementalQuota} onChange={v => updateEntry(e.month, "incrementalQuota", v)} />
+                          <EditableCell value={e.incrementalQuota} onChange={v => updateEntry(e.month, "incrementalQuota", v)} ariaLabel={`Quota for ${formatMonth(e.month)}`} />
                         </TableCell>
                         <TableCell className="text-right">
-                          <EditableCell value={e.incrementalBookings} onChange={v => updateEntry(e.month, "incrementalBookings", v)} />
+                          <EditableCell value={e.incrementalBookings} onChange={v => updateEntry(e.month, "incrementalBookings", v)} ariaLabel={`Bookings for ${formatMonth(e.month)}`} />
                         </TableCell>
                         <TableCell className="text-right">
                           <span className={cn("font-bold font-mono text-sm",
@@ -545,10 +317,10 @@ export default function MyNumbersPage() {
                           {fmt(pipelineByMonth.incr.get(e.month) ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          <EditableCell value={e.meetings} onChange={v => updateEntry(e.month, "meetings", v)} isCurrency={false} />
+                          <EditableCell value={e.meetings} onChange={v => updateEntry(e.month, "meetings", v)} isCurrency={false} ariaLabel={`Meetings for ${formatMonth(e.month)}`} />
                         </TableCell>
                         <TableCell className="text-right">
-                          <EditableCell value={e.outreachTouches} onChange={v => updateEntry(e.month, "outreachTouches", v)} isCurrency={false} />
+                          <EditableCell value={e.outreachTouches} onChange={v => updateEntry(e.month, "outreachTouches", v)} isCurrency={false} ariaLabel={`Outreach touches for ${formatMonth(e.month)}`} />
                         </TableCell>
                       </TableRow>
                     );
@@ -599,7 +371,6 @@ export default function MyNumbersPage() {
                       { label: "Q3 FY27", months: ["2026-08","2026-09","2026-10"] },
                       { label: "Q4 FY27", months: ["2026-11","2026-12","2027-01"] },
                     ];
-                    const FY27_MONTHS = ["2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10","2026-11","2026-12","2027-01"];
                     return quarters.map((q, qi) => {
                       // Sum ACV renewed for this quarter
                       const qRenewed = q.months.reduce((s, m) => {
@@ -648,7 +419,7 @@ export default function MyNumbersPage() {
                             <TableRow key={m} className="bg-muted/20">
                               <TableCell className="pl-8 text-xs text-muted-foreground font-medium">{label}</TableCell>
                               <TableCell className="text-right">
-                                <EditableCell value={e.renewedAcv} onChange={v => updateEntry(m, "renewedAcv", v)} />
+                                <EditableCell value={e.renewedAcv} onChange={v => updateEntry(m, "renewedAcv", v)} ariaLabel={`Renewed ACV for ${formatMonth(m)}`} />
                               </TableCell>
                               <TableCell colSpan={6} />
                             </TableRow>
@@ -719,7 +490,7 @@ export default function MyNumbersPage() {
               <div className="pt-2 border-t border-border text-sm">
                 <div className="flex justify-between"><span>Payout (5%)</span><span className="font-mono">{fmt(addonPayouts.services)}</span></div>
               </div>
-              <p className="text-[10px] text-muted-foreground">No payout when 1x services replace MS hours w/ retention exception</p>
+              <p className="text-xs text-muted-foreground">No payout when 1x services replace MS hours w/ retention exception</p>
             </div>
 
             {/* Kong Buy-out */}
