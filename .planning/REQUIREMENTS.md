@@ -64,6 +64,28 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **REC-06**: The engine is covered by table-driven unit tests in `src/test/recommendation.test.ts` (≥10 representative cases) and the card has at least one render test in `src/test/RecommendationCard.test.tsx`
 - [x] **REC-07**: The existing inline `whyActParts` memo at `ProspectSheet.tsx:176-195` and its render at `:504-508` are removed — `RecommendationCard` is the single surface for "why act on this account"
 
+### Weighted Pipeline Forecast
+
+- [x] **FORECAST-01**: A `PipelineForecastBar` component renders above the Opportunities List View — between `QuotaHeroBoxes` and the table — for every territory state where opportunities exist (with an internal empty-state branch when zero open deals)
+- [x] **FORECAST-02**: A pure function `forecastPipeline(opps: Opportunity[], quota: number): Forecast` is the single source of truth for forecast math — deterministic, no React, no async, no clock reads, no side effects
+- [x] **FORECAST-03**: Stage weights cover all 10 OPP_STAGES with correct values and classifications: Develop=10% / Discovery=20% / Business Alignment=35% / Validate=50% / Propose=70% / Negotiate=85% (all "open"); Won=Closed Won=100% ("booked", NOT counted in weighted open pipeline); Closed Lost=Dead=excluded ("lost")
+- [x] **FORECAST-04**: The bar headline shows weighted pipeline total + raw open total + booked total (when >0) + "% of FY27 Quota" with the quota dollar value visible in a subline; quota source is `localStorage["my_numbers_v2"]` summed over FY27 with `DEFAULT_QUOTAS` fallback (~$615k)
+- [x] **FORECAST-05**: A segmented horizontal bar renders one tinted segment per active open stage with width proportional to that stage's weighted contribution; segments use `STAGE_BAR_COLORS` keyed to the existing `OpportunityKanban` palette (no new color tokens)
+- [x] **FORECAST-06**: Each segment exposes a hover tooltip (shadcn `Tooltip`) showing stage name, deal count, weighted ACV, and weight percentage
+- [x] **FORECAST-07**: When zero open opportunities exist (territory has only Closed Won / Closed Lost / Dead deals), the bar renders a "No active pipeline" empty-state card with a CTA-style icon and no segmented bar
+- [x] **FORECAST-08**: The inline `STAGE_WEIGHTS` constant (was `OpportunitiesPage.tsx:45-53`), `weightedACV` `useMemo` (was `:274-279`), and inline two-column forecast JSX (was `:340-357`) are deleted — single source of truth lives in `src/data/forecast.ts` + `src/components/PipelineForecastBar.tsx`
+
+### Meeting Prep One-Pager
+
+- [x] **PREP-01**: A `<MeetingPrepDialog>` component exists at `src/components/MeetingPrepDialog.tsx`, owns all meeting-prep state (loading, brief, open, prospect), and is mounted in `ProspectSheet` via `forwardRef + useImperativeHandle` (`meetingPrepRef.current?.open(prospect)`) — `ProspectSheet.tsx` retains zero `meetingPrep*` state vars
+- [x] **PREP-02**: The edge function `meeting-prep` returns markdown with exactly six labeled headers in fixed order: `## Context`, `## Recent History`, `## Contacts`, `## Open Tasks`, `## Talking Points`, `## Suggested Ask`
+- [x] **PREP-03**: Each section in the dialog renders with a clear header chip + a `react-markdown` body (inline `**bold**` and bullet support); the parser tolerates a missing section by returning empty string and the UI renders a "None on file." placeholder without crashing
+- [x] **PREP-04**: Talking Points are anchored on Yext positioning — each bullet must reference at least one of: AI search visibility, multi-location brand consistency, local SEO at scale, or competitive displacement of {SOCi, Birdeye, Uberall, Chatmeter, Rio SEO} (enforced by edge-function system prompt)
+- [x] **PREP-05**: The Suggested Ask section is a single concrete sentence (not a bullet list) — enforced by edge-function prompt and validated by manual UAT
+- [x] **PREP-06**: The Copy button writes the full markdown brief to clipboard (`navigator.clipboard.writeText(brief.raw)`) and the Export PDF button opens a print window with the formatted brief — both behaviors preserved verbatim from the previous inline implementation
+- [x] **PREP-07**: Loading state renders a spinner + "Generating meeting prep..." copy; error state surfaces `toast.error(msg)` and closes the dialog (matches previous inline behavior)
+- [x] **PREP-08**: Inline `meetingPrep*` references in `ProspectSheet.tsx` are removed — `grep -nE "meetingPrepBrief|meetingPrepLoading|generateMeetingPrep|copyMeetingPrep|exportMeetingPrepPdf|showMeetingPrepDialog" src/components/ProspectSheet.tsx` returns zero matches; the only remaining meeting-prep code is the import, the `meetingPrepRef` declaration, the button `onClick={() => meetingPrepRef.current?.open(prospect)}`, and the single `<MeetingPrepDialog />` mount
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -82,6 +104,20 @@ Deferred to future release. Tracked but not in current roadmap.
 ### AI Enhancements
 - **AI-V2-01**: Competitive intel battlecards per competitor in ProspectSheet
 - **AI-V2-02**: Score → Recommended Action block ("Why call this account") — promoted to v1 as REC-01..REC-07
+
+### Forecast Enhancements
+- **FORECAST-V2-01**: Per-stage drill-down — clicking a segment filters the Opportunities table to that stage
+- **FORECAST-V2-02**: Tunable per-user stage weights (currently locked at engine constants)
+- **FORECAST-V2-03**: Quarterly / monthly weighted forecast variants (v1 is annual only — `QuotaHeroBoxes` already covers cadence for bookings)
+- **FORECAST-V2-04**: Pipeline coverage multiplier ("3x quota target" — weighted / (quota - booked))
+- **FORECAST-V2-05**: Type-aware weighting (Renewal vs Net New at the same stage have different probabilities)
+- **FORECAST-V2-06**: Migrate quota schedule from `localStorage` to a Supabase `quota_schedule` table to survive browser data clears
+
+### Meeting Prep Enhancements
+- **PREP-V2-01**: Streaming responses (current edge function is non-streaming)
+- **PREP-V2-02**: Cache briefs in Supabase (regenerate every click is fine for v1)
+- **PREP-V2-03**: Editing the brief inline before copy/export (read-only display in v1)
+- **PREP-V2-04**: Resolve nested Dialog-inside-Drawer a11y warnings on mobile (Phase 01 known issue, preserved in v1)
 
 ## Out of Scope
 
@@ -137,3 +173,19 @@ Explicitly excluded. Documented to prevent scope creep.
 | REC-05 | Phase 6 | Complete |
 | REC-06 | Phase 6 | Complete |
 | REC-07 | Phase 6 | Complete |
+| FORECAST-01 | Phase 7 | Complete |
+| FORECAST-02 | Phase 7 | Complete |
+| FORECAST-03 | Phase 7 | Complete |
+| FORECAST-04 | Phase 7 | Complete |
+| FORECAST-05 | Phase 7 | Complete |
+| FORECAST-06 | Phase 7 | Complete |
+| FORECAST-07 | Phase 7 | Complete |
+| FORECAST-08 | Phase 7 | Complete |
+| PREP-01 | Phase 8 | Complete |
+| PREP-02 | Phase 8 | Complete |
+| PREP-03 | Phase 8 | Complete |
+| PREP-04 | Phase 8 | Complete |
+| PREP-05 | Phase 8 | Complete |
+| PREP-06 | Phase 8 | Complete |
+| PREP-07 | Phase 8 | Complete |
+| PREP-08 | Phase 8 | Complete |

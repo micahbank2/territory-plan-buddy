@@ -23,6 +23,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { ArrowLeft, Plus, Search, DollarSign, ArrowUp, ArrowDown, ArrowUpDown, X, Trash2, CalendarIcon, ChevronDown, ChevronRight } from "lucide-react";
 import { QuotaHeroBoxes } from "@/components/QuotaHeroBoxes";
+import { PipelineForecastBar } from "@/components/PipelineForecastBar";
 import { cn } from "@/lib/utils";
 
 function htmlToPreviewText(html: string) {
@@ -41,16 +42,6 @@ function htmlToPreviewText(html: string) {
 
   return (container.textContent || "").replace(/\s+/g, " ").trim();
 }
-
-const STAGE_WEIGHTS: Record<string, number> = {
-  "Develop": 0.10,
-  "Discovery": 0.20,
-  "Validate": 0.50,
-  "Propose": 0.70,
-  "Negotiate": 0.85,
-  "Closed Won": 1.0,
-  "Won": 1.0,
-};
 
 const typeColors: Record<string, string> = {
   "Net New": "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
@@ -271,13 +262,6 @@ export default function OpportunitiesPage() {
   const totalACV = useMemo(() => filtered.reduce((s, o) => s + (o.potential_value || 0), 0), [filtered]);
   const totalIncrementalACV = useMemo(() => filtered.reduce((s, o) => s + (o.incremental_acv || 0), 0), [filtered]);
 
-  const weightedACV = useMemo(() => {
-    return Math.round(opportunities.reduce((s, o) => {
-      const weight = STAGE_WEIGHTS[o.stage] ?? 0;
-      return s + (o.potential_value || 0) * weight;
-    }, 0));
-  }, [opportunities]);
-
   // Pipeline coverage now in Quota & Attainment page
 
   const handleAdd = async () => {
@@ -337,22 +321,10 @@ export default function OpportunitiesPage() {
         </div>
       )}
 
-      {/* Forecast Bar */}
+      {/* Pipeline Forecast Bar */}
       {!loading && opportunities.length > 0 && (
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-4 pb-0">
-          <div className="rounded-lg border border-border bg-muted/30 p-4">
-            <div className="flex items-center gap-6 flex-wrap">
-              <div>
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Raw Pipeline</div>
-                <div className="text-xl font-black font-mono text-foreground">${totalACV.toLocaleString()}</div>
-              </div>
-              <div className="w-px h-10 bg-border hidden sm:block" />
-              <div>
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Weighted Forecast</div>
-                <div className="text-xl font-black font-mono text-primary">${weightedACV.toLocaleString()}</div>
-              </div>
-            </div>
-          </div>
+          <PipelineForecastBar opportunities={opportunities} />
         </div>
       )}
 

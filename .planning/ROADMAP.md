@@ -17,7 +17,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 3: Component Decomposition & UX Polish** - Decompose TerritoryPlanner god component, add tabbed ProspectSheet layout
 - [x] **Phase 4: AI Capabilities** - Draft emails post-outreach tracking: batch persistence, pending outreach badge, mark-as-sent dialog, bulk Mark Contacted action (completed 2026-03-30)
 - [x] **Phase 5: Log + Next Step Widget** - Extract and harden the unified Log Activity widget on ProspectSheet: +3-business-day default, partial-failure handling, test coverage (completed 2026-04-24)
-- [ ] **Phase 6: Score → Recommended Action** - Promote inline whyActParts into a tested RecommendationCard at the top of the Overview tab; pure deterministic engine surfaces score + callouts + a single suggested-action sentence
+- [x] **Phase 6: Score → Recommended Action** - Promote inline whyActParts into a tested RecommendationCard at the top of the Overview tab; pure deterministic engine surfaces score + callouts + a single suggested-action sentence (completed 2026-04-25)
+- [ ] **Phase 7: Weighted Pipeline Forecast** - Promote the inline two-column forecast on Opportunities into a tested pure engine + dedicated PipelineForecastBar with segmented stage bar, quota %, and empty-state card
+- [ ] **Phase 8: Meeting Prep One-Pager** - Promote the inline meeting-prep dialog out of ProspectSheet into a tested forwardRef MeetingPrepDialog with a six-section structured markdown brief (Context / Recent History / Contacts / Open Tasks / Talking Points / Suggested Ask) rendered via react-markdown; edge-function prompt rewritten to enforce the contract and anchor Talking Points on Yext positioning
 
 ## Phase Details
 
@@ -116,10 +118,47 @@ Plans:
 Plans:
 - [x] 06-01-PLAN.md — Engine + card + ProspectSheet mount + delete inline whyActParts (REC-01..REC-07)
 
+### Phase 7: Weighted Pipeline Forecast
+
+**Goal:** Promote the inline `STAGE_WEIGHTS` map + `weightedACV` memo + two-column forecast JSX from `OpportunitiesPage.tsx:45-53/274-279/340-357` into a tested pure TypeScript engine (`src/data/forecast.ts`) and a dedicated `PipelineForecastBar` component mounted above the Opportunities List View. The engine becomes deterministic and table-driven testable across all 10 OPP_STAGES (Develop=10% / Discovery=20% / Business Alignment=35% / Validate=50% / Propose=70% / Negotiate=85% / Won=Closed Won=100% booked / Closed Lost=Dead excluded). The bar adds quota %, a per-stage segmented horizontal bar with shadcn Tooltip per segment, and an empty-state card for territories with no open deals. Closes CLAUDE.md priority roadmap item #7 and the implicit "stage does not drive forecast visibility" gap.
+**Depends on:** Phase 6
+**Requirements**: FORECAST-01, FORECAST-02, FORECAST-03, FORECAST-04, FORECAST-05, FORECAST-06, FORECAST-07, FORECAST-08
+**Success Criteria** (what must be TRUE):
+  1. Visiting `/opportunities` for a territory with open deals renders `<PipelineForecastBar>` between `<QuotaHeroBoxes />` and the List View; territories with zero open deals render the "No active pipeline" empty-state card
+  2. The bar headline shows weighted total (primary color, font-mono, 2xl), raw open total + deal count, booked total (only when >0), and right-aligned "% of FY27 Quota" with quota dollar value subline (~$615k from `DEFAULT_QUOTAS` / `localStorage["my_numbers_v2"]`)
+  3. A segmented horizontal bar renders one tinted segment per active open stage with width proportional to that stage's weighted contribution; each segment exposes a hover tooltip with stage name, deal count, weighted ACV, and weight percentage
+  4. `forecastPipeline(opps, quota)` is a pure deterministic TS function — no React, no async, no clock reads, no side effects — and `STAGE_WEIGHTS` covers all 10 OPP_STAGES with correct values and classifications (open / booked / lost)
+  5. The forecast engine is covered by ≥10 table-driven unit tests in `src/test/forecast.test.ts` (per-stage weights, classification rules, sort order, pctOfQuota math including quota=0 edge case, multi-deal aggregation) and the component has ≥3 render tests in `src/test/PipelineForecastBar.test.tsx` (headline, empty state, quota % from localStorage), all passing under `bunx vitest run`
+  6. The inline `STAGE_WEIGHTS` constant, `weightedACV` `useMemo`, and two-column forecast JSX are removed from `OpportunitiesPage.tsx` (`! grep -n "STAGE_WEIGHTS\|weightedACV" src/pages/OpportunitiesPage.tsx` returns zero matches); `PipelineForecastBar` is the sole forecast surface
+  7. The bar uses ONLY existing tokens (`border-border`, `bg-muted/30`, `text-primary`, `bg-emerald-500`, `bg-amber-500`, `bg-slate-400`, etc.) and reuses the `OpportunityKanban` color palette via `STAGE_BAR_COLORS` — no new CSS classes, no new tailwind config keys, no new dependencies
+**Plans**: 1 plan
+
+Plans:
+- [x] 07-01-PLAN.md — Engine + bar + OpportunitiesPage mount + delete inline forecast (FORECAST-01..FORECAST-08)
+
+### Phase 8: Meeting Prep One-Pager
+
+**Goal:** Promote the inline meeting-prep dialog (state at `ProspectSheet.tsx:144-145`, generator at `:298-332`, copy at `:334-339`, PDF export at `:341-369`, trigger at `:510-512`, Dialog markup at `:1023-1054` — ~95 lines total) into a dedicated, tested `MeetingPrepDialog` component using the **forwardRef + useImperativeHandle** pattern proven in `TerritoryDialogGroup` (Phase 03). Pair extraction with a stable six-section markdown contract from the edge function (`## Context` / `## Recent History` / `## Contacts` / `## Open Tasks` / `## Talking Points` / `## Suggested Ask`) parsed by a pure `parseMeetingBrief` function and rendered as six labeled sections via `react-markdown` (already in `package.json`, currently unused in `src/`). Talking Points are anchored on Yext positioning (AI search visibility / brand consistency / local SEO / competitive displacement of SOCi/Birdeye/Uberall/Chatmeter/Rio SEO) via prompt constraint. Suggested Ask is enforced as a single sentence. Copy + PDF export carry over verbatim. Closes CLAUDE.md priority roadmap item #8 ("Meeting Prep Skill").
+**Depends on:** Phase 7
+**Requirements**: PREP-01, PREP-02, PREP-03, PREP-04, PREP-05, PREP-06, PREP-07, PREP-08
+**Success Criteria** (what must be TRUE):
+  1. Clicking "Meeting Prep" in any ProspectSheet header opens `<MeetingPrepDialog>` via `meetingPrepRef.current?.open(prospect)`; ProspectSheet retains zero `meetingPrep*` state vars (grep guard)
+  2. The edge function returns markdown with exactly six labeled headers in fixed order; the parser tolerates a missing section by returning an empty string and the UI renders a "None on file." placeholder without crashing
+  3. Each of the six sections renders with a header chip + a `react-markdown` body (inline `**bold**` and bullets, no `whitespace-pre-wrap` fallback)
+  4. Talking Points reference Yext positioning (enforced by edge-function system prompt at `supabase/functions/meeting-prep/index.ts`); Suggested Ask is a single sentence (not a bullet list)
+  5. Copy button writes the full markdown brief to clipboard; Export PDF opens print window with formatted brief — both behaviors preserved verbatim
+  6. Loading state shows spinner + "Generating meeting prep..." copy; error state surfaces `toast.error(msg)` and closes dialog
+  7. The parser is covered by ≥4 unit tests in `src/test/meetingBrief.test.ts` (well-formed brief, missing section tolerance, noise tolerance, raw passthrough) and the dialog by ≥5 component tests in `src/test/MeetingPrepDialog.test.tsx` (closed by default, loading state, six sections rendered, copy → clipboard, error toast), all passing under `bunx vitest run`
+  8. Inline `meetingPrep*` references in `ProspectSheet.tsx` are removed: `grep -nE "meetingPrepBrief|meetingPrepLoading|generateMeetingPrep|copyMeetingPrep|exportMeetingPrepPdf|showMeetingPrepDialog" src/components/ProspectSheet.tsx` returns zero matches; `<MeetingPrepDialog>` is the sole meeting-prep surface
+**Plans**: 1 plan
+
+Plans:
+- [x] 08-01-PLAN.md — Parser + dialog + ProspectSheet mount + edge-function prompt rewrite + delete inline meeting-prep (PREP-01..PREP-08)
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -128,4 +167,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. Component Decomposition & UX Polish | 3/3 | Complete | 2026-04-24 |
 | 4. AI Capabilities | 2/2 | Complete   | 2026-03-30 |
 | 5. Log + Next Step Widget | 1/1 | Complete   | 2026-04-24 |
-| 6. Score → Recommended Action | 0/1 | Planned | - |
+| 6. Score → Recommended Action | 1/1 | Complete | 2026-04-25 |
+| 7. Weighted Pipeline Forecast | 1/1 | Complete | 2026-04-25 |
+| 8. Meeting Prep One-Pager | 0/1 | Planned | - |

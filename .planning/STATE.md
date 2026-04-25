@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: phase-complete
-stopped_at: Phase 06 verified PASS — REC-01..REC-07 satisfied
-last_updated: "2026-04-25T01:35:00.000Z"
+stopped_at: Phase 08 verified PASS — PREP-01..08 satisfied
+last_updated: "2026-04-25T17:15:00.000Z"
 last_activity: 2026-04-25
 progress:
-  total_phases: 6
-  completed_phases: 5
-  total_plans: 11
-  completed_plans: 11
-  percent: 83
+  total_phases: 8
+  completed_phases: 7
+  total_plans: 13
+  completed_plans: 13
+  percent: 88
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** The app must never silently lose data. Every edit must either persist to Supabase or visibly fail with a clear error.
-**Current focus:** Phase 06 — score-to-recommended-action (COMPLETE)
+**Current focus:** Phase 08 — meeting-prep-one-pager (COMPLETE)
 
 ## Current Position
 
-Phase: 06 (score-to-recommended-action) — COMPLETE (verified 2026-04-25)
+Phase: 08 (meeting-prep-one-pager) — COMPLETE (verified 2026-04-25)
 Plan: 1 of 1
-Status: Phase verified PASS — REC-01..REC-07 delivered. Phase 2 (TanStack Query) is the only "Not started" phase remaining.
+Status: Phase verified PASS — PREP-01..08 delivered. Phase 2 (TanStack Query) remains.
 Last activity: 2026-04-25
 
-Progress: [████████░░] 83% (5 of 6 integer phases complete; Phase 2 remains)
+Progress: [█████████░] 88% (7 of 8 integer phases complete; Phase 2 remains)
 
 ## Performance Metrics
 
@@ -63,6 +63,8 @@ Progress: [████████░░] 83% (5 of 6 integer phases complete; 
 | Phase 03-component-decomposition-ux-polish P03 | 15m | 2 tasks | 18 files |
 | Phase 05-log-next-step-widget P01 | 5min | 2 tasks | 4 files |
 | Phase 06-score-to-recommended-action P01 | 6min | 2 tasks | 5 files |
+| Phase 07-weighted-pipeline-forecast P01 | 12min 35s | 2 tasks | 5 files |
+| Phase 08-meeting-prep-one-pager P01 | 5min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -70,6 +72,8 @@ Progress: [████████░░] 83% (5 of 6 integer phases complete; 
 
 - 2026-04-24: Phase 5 added — Log + Next Step Widget (single-submit interaction logger in ProspectSheet Activity tab; replaces two-section workflow)
 - 2026-04-24: Phase 6 added — Score → Recommended Action (surface "why call this account" header in ProspectSheet Overview tab using score breakdown + contact gaps + staleness)
+- 2026-04-25: Phase 7 added — Weighted Pipeline Forecast (stage-weighted ACV bar + quota tracker above Opportunities table; Propose=70%, Validate=50%, Discovery=20%, Develop=10%)
+- 2026-04-25: Phase 8 added — Meeting Prep One-Pager (extract inline state + dialog from ProspectSheet to MeetingPrepDialog component, structure brief as Context / History / Contacts / Tasks / Talking Points / Suggested Ask sections)
 
 ### Decisions
 
@@ -102,6 +106,13 @@ Recent decisions affecting current work:
 - [Phase 06-score-to-recommended-action]: Recommendation engine is pure-TS deterministic (no LLM); useMemo([prospect]) in card scopes recompute
 - [Phase 06-score-to-recommended-action]: Engine date math mirrors agingHelpers.ts:6 (Math.floor / 86400000) to avoid Phase 05 UTC drift
 - [Phase 06-score-to-recommended-action]: Competitor 'Other: X' prefix stripped for display; severity defaults to info for unmapped competitors
+- [Phase 07-weighted-pipeline-forecast]: Pure forecastPipeline(opps, quota) engine with classification (open/booked/lost); STAGE_WEIGHTS covers all 10 OPP_STAGES; Math.round per-deal mirrors prior inline math
+- [Phase 07-weighted-pipeline-forecast]: loadAnnualQuota lives inside PipelineForecastBar.tsx (YAGNI — single consumer); mirrors QuotaHeroBoxes try/catch + DEFAULT_QUOTAS fallback; sum>0 guard ignores empty stored arrays
+- [Phase 07-weighted-pipeline-forecast]: Quota = $625k. Researcher initially miscounted DEFAULT_QUOTAS sum as $615k; verifier caught it (actual sum is 30+30+60+38+38+77+40+40+80+48+48+96=625). CLAUDE.md was correct — no doc drift, no fix needed.
+- [Phase 07-weighted-pipeline-forecast]: Test fix: getByText($70,000) caught two matches (headline + legend chip) — switched to getAllByText for weighted-total assertion
+- [Phase 08-meeting-prep-one-pager]: Imperative ref API (forwardRef + useImperativeHandle) chosen over controlled props — matches TerritoryDialogGroup precedent and keeps ProspectSheet free of dialog state
+- [Phase 08-meeting-prep-one-pager]: Markdown six-section contract over JSON output — forgiving (LLM can drop/add filler), trivial regex parse, no schema fragility
+- [Phase 08-meeting-prep-one-pager]: react-markdown adopted (was unused in src/ despite being in package.json) — replaces whitespace-pre-wrap blob with real one-pager rendering
 
 ### Pending Todos
 
@@ -122,6 +133,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-25T01:23:03.675Z
-Stopped at: Completed 06-01-PLAN.md
+Last session: 2026-04-25T17:01:45.004Z
+Stopped at: Completed 08-01-PLAN.md — PREP-01..08 satisfied
 Resume file: None

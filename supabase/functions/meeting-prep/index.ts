@@ -36,6 +36,7 @@ serve(async (req) => {
       .join("\n") || "No interactions logged";
 
     const taskSummary = (tasks || [])
+      .filter((t: { completed?: boolean }) => !t.completed)
       .map((t: { text: string; dueDate?: string }) =>
         `- ${t.text}${t.dueDate ? ` (due: ${t.dueDate})` : ""}`
       )
@@ -71,14 +72,27 @@ ${taskSummary}
 NOTES:
 ${notesSummary}
 
-Generate the brief with these sections:
-1. **Situation Summary** — 2-3 sentences on who they are, where they stand, and why we're meeting
-2. **Key Contacts & Roles** — Who matters, their role in the deal, relationship status
-3. **Open Items & Risks** — Overdue tasks, gaps (missing decision maker?), competitive threats
-4. **Recommended Talking Points** — 3-5 specific, insight-led points to drive the conversation. Position Yext around AI search visibility, multi-location brand consistency, and local SEO at scale.
-5. **Suggested Ask** — The one thing to close on in this meeting (next step, intro, demo, etc.)
+EMIT EXACTLY THESE SIX MARKDOWN SECTIONS, IN ORDER, WITH THESE EXACT HEADERS:
 
-Keep it concise and actionable. Use bullet points. No fluff.`;
+## Context
+2-3 sentences: who they are, where the deal stands, why we're meeting.
+
+## Recent History
+Bulleted list of the last 3-5 interactions with dates. If none, write "No prior interactions on file."
+
+## Contacts
+Bulleted list of key contacts with role and relationship strength. If none, write "No contacts on file - discovery call required."
+
+## Open Tasks
+Bulleted list of open tasks with due dates. If none, write "No open tasks."
+
+## Talking Points
+3-5 bullets. EACH bullet must reference at least one of: AI search visibility, multi-location brand consistency, local SEO at scale, or competitive displacement of {SOCi, Birdeye, Uberall, Chatmeter, Rio SEO}.
+
+## Suggested Ask
+One sentence - a single concrete next step (intro, demo, pilot scope, decision criteria check). NOT a bullet list.
+
+ALWAYS emit all six sections, in order. If a section truly has no relevant data, write "None on file." under that header. Never omit a header.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
