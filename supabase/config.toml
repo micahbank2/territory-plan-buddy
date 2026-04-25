@@ -1,13 +1,13 @@
 project_id = "opktnhjukjiclagcyqpk"
 
 [functions.chat]
-verify_jwt = false
+verify_jwt = true
 
 [functions.enrich-prospect]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ai-readiness]
-verify_jwt = false
+verify_jwt = true
 
 [functions.categorize-signal]
-verify_jwt = false
+verify_jwt = true
