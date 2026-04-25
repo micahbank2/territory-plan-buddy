@@ -19,6 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Log + Next Step Widget** - Extract and harden the unified Log Activity widget on ProspectSheet: +3-business-day default, partial-failure handling, test coverage (completed 2026-04-24)
 - [x] **Phase 6: Score → Recommended Action** - Promote inline whyActParts into a tested RecommendationCard at the top of the Overview tab; pure deterministic engine surfaces score + callouts + a single suggested-action sentence (completed 2026-04-25)
 - [ ] **Phase 7: Weighted Pipeline Forecast** - Promote the inline two-column forecast on Opportunities into a tested pure engine + dedicated PipelineForecastBar with segmented stage bar, quota %, and empty-state card
+- [ ] **Phase 8: Meeting Prep One-Pager** - Promote the inline meeting-prep dialog out of ProspectSheet into a tested forwardRef MeetingPrepDialog with a six-section structured markdown brief (Context / Recent History / Contacts / Open Tasks / Talking Points / Suggested Ask) rendered via react-markdown; edge-function prompt rewritten to enforce the contract and anchor Talking Points on Yext positioning
 
 ## Phase Details
 
@@ -135,10 +136,29 @@ Plans:
 Plans:
 - [x] 07-01-PLAN.md — Engine + bar + OpportunitiesPage mount + delete inline forecast (FORECAST-01..FORECAST-08)
 
+### Phase 8: Meeting Prep One-Pager
+
+**Goal:** Promote the inline meeting-prep dialog (state at `ProspectSheet.tsx:144-145`, generator at `:298-332`, copy at `:334-339`, PDF export at `:341-369`, trigger at `:510-512`, Dialog markup at `:1023-1054` — ~95 lines total) into a dedicated, tested `MeetingPrepDialog` component using the **forwardRef + useImperativeHandle** pattern proven in `TerritoryDialogGroup` (Phase 03). Pair extraction with a stable six-section markdown contract from the edge function (`## Context` / `## Recent History` / `## Contacts` / `## Open Tasks` / `## Talking Points` / `## Suggested Ask`) parsed by a pure `parseMeetingBrief` function and rendered as six labeled sections via `react-markdown` (already in `package.json`, currently unused in `src/`). Talking Points are anchored on Yext positioning (AI search visibility / brand consistency / local SEO / competitive displacement of SOCi/Birdeye/Uberall/Chatmeter/Rio SEO) via prompt constraint. Suggested Ask is enforced as a single sentence. Copy + PDF export carry over verbatim. Closes CLAUDE.md priority roadmap item #8 ("Meeting Prep Skill").
+**Depends on:** Phase 7
+**Requirements**: PREP-01, PREP-02, PREP-03, PREP-04, PREP-05, PREP-06, PREP-07, PREP-08
+**Success Criteria** (what must be TRUE):
+  1. Clicking "Meeting Prep" in any ProspectSheet header opens `<MeetingPrepDialog>` via `meetingPrepRef.current?.open(prospect)`; ProspectSheet retains zero `meetingPrep*` state vars (grep guard)
+  2. The edge function returns markdown with exactly six labeled headers in fixed order; the parser tolerates a missing section by returning an empty string and the UI renders a "None on file." placeholder without crashing
+  3. Each of the six sections renders with a header chip + a `react-markdown` body (inline `**bold**` and bullets, no `whitespace-pre-wrap` fallback)
+  4. Talking Points reference Yext positioning (enforced by edge-function system prompt at `supabase/functions/meeting-prep/index.ts`); Suggested Ask is a single sentence (not a bullet list)
+  5. Copy button writes the full markdown brief to clipboard; Export PDF opens print window with formatted brief — both behaviors preserved verbatim
+  6. Loading state shows spinner + "Generating meeting prep..." copy; error state surfaces `toast.error(msg)` and closes dialog
+  7. The parser is covered by ≥4 unit tests in `src/test/meetingBrief.test.ts` (well-formed brief, missing section tolerance, noise tolerance, raw passthrough) and the dialog by ≥5 component tests in `src/test/MeetingPrepDialog.test.tsx` (closed by default, loading state, six sections rendered, copy → clipboard, error toast), all passing under `bunx vitest run`
+  8. Inline `meetingPrep*` references in `ProspectSheet.tsx` are removed: `grep -nE "meetingPrepBrief|meetingPrepLoading|generateMeetingPrep|copyMeetingPrep|exportMeetingPrepPdf|showMeetingPrepDialog" src/components/ProspectSheet.tsx` returns zero matches; `<MeetingPrepDialog>` is the sole meeting-prep surface
+**Plans**: 1 plan
+
+Plans:
+- [ ] 08-01-PLAN.md — Parser + dialog + ProspectSheet mount + edge-function prompt rewrite + delete inline meeting-prep (PREP-01..PREP-08)
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -148,14 +168,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. AI Capabilities | 2/2 | Complete   | 2026-03-30 |
 | 5. Log + Next Step Widget | 1/1 | Complete   | 2026-04-24 |
 | 6. Score → Recommended Action | 1/1 | Complete | 2026-04-25 |
-| 7. Weighted Pipeline Forecast | 0/1 | Planned | - |
-
-### Phase 8: Meeting Prep One Pager
-
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 7
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (run /gsd:plan-phase 8 to break down)
+| 7. Weighted Pipeline Forecast | 1/1 | Complete | 2026-04-25 |
+| 8. Meeting Prep One-Pager | 0/1 | Planned | - |

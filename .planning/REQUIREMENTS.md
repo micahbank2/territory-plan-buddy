@@ -75,6 +75,17 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **FORECAST-07**: When zero open opportunities exist (territory has only Closed Won / Closed Lost / Dead deals), the bar renders a "No active pipeline" empty-state card with a CTA-style icon and no segmented bar
 - [x] **FORECAST-08**: The inline `STAGE_WEIGHTS` constant (was `OpportunitiesPage.tsx:45-53`), `weightedACV` `useMemo` (was `:274-279`), and inline two-column forecast JSX (was `:340-357`) are deleted — single source of truth lives in `src/data/forecast.ts` + `src/components/PipelineForecastBar.tsx`
 
+### Meeting Prep One-Pager
+
+- [ ] **PREP-01**: A `<MeetingPrepDialog>` component exists at `src/components/MeetingPrepDialog.tsx`, owns all meeting-prep state (loading, brief, open, prospect), and is mounted in `ProspectSheet` via `forwardRef + useImperativeHandle` (`meetingPrepRef.current?.open(prospect)`) — `ProspectSheet.tsx` retains zero `meetingPrep*` state vars
+- [ ] **PREP-02**: The edge function `meeting-prep` returns markdown with exactly six labeled headers in fixed order: `## Context`, `## Recent History`, `## Contacts`, `## Open Tasks`, `## Talking Points`, `## Suggested Ask`
+- [ ] **PREP-03**: Each section in the dialog renders with a clear header chip + a `react-markdown` body (inline `**bold**` and bullet support); the parser tolerates a missing section by returning empty string and the UI renders a "None on file." placeholder without crashing
+- [ ] **PREP-04**: Talking Points are anchored on Yext positioning — each bullet must reference at least one of: AI search visibility, multi-location brand consistency, local SEO at scale, or competitive displacement of {SOCi, Birdeye, Uberall, Chatmeter, Rio SEO} (enforced by edge-function system prompt)
+- [ ] **PREP-05**: The Suggested Ask section is a single concrete sentence (not a bullet list) — enforced by edge-function prompt and validated by manual UAT
+- [ ] **PREP-06**: The Copy button writes the full markdown brief to clipboard (`navigator.clipboard.writeText(brief.raw)`) and the Export PDF button opens a print window with the formatted brief — both behaviors preserved verbatim from the previous inline implementation
+- [ ] **PREP-07**: Loading state renders a spinner + "Generating meeting prep..." copy; error state surfaces `toast.error(msg)` and closes the dialog (matches previous inline behavior)
+- [ ] **PREP-08**: Inline `meetingPrep*` references in `ProspectSheet.tsx` are removed — `grep -nE "meetingPrepBrief|meetingPrepLoading|generateMeetingPrep|copyMeetingPrep|exportMeetingPrepPdf|showMeetingPrepDialog" src/components/ProspectSheet.tsx` returns zero matches; the only remaining meeting-prep code is the import, the `meetingPrepRef` declaration, the button `onClick={() => meetingPrepRef.current?.open(prospect)}`, and the single `<MeetingPrepDialog />` mount
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -101,6 +112,12 @@ Deferred to future release. Tracked but not in current roadmap.
 - **FORECAST-V2-04**: Pipeline coverage multiplier ("3x quota target" — weighted / (quota - booked))
 - **FORECAST-V2-05**: Type-aware weighting (Renewal vs Net New at the same stage have different probabilities)
 - **FORECAST-V2-06**: Migrate quota schedule from `localStorage` to a Supabase `quota_schedule` table to survive browser data clears
+
+### Meeting Prep Enhancements
+- **PREP-V2-01**: Streaming responses (current edge function is non-streaming)
+- **PREP-V2-02**: Cache briefs in Supabase (regenerate every click is fine for v1)
+- **PREP-V2-03**: Editing the brief inline before copy/export (read-only display in v1)
+- **PREP-V2-04**: Resolve nested Dialog-inside-Drawer a11y warnings on mobile (Phase 01 known issue, preserved in v1)
 
 ## Out of Scope
 
@@ -164,3 +181,11 @@ Explicitly excluded. Documented to prevent scope creep.
 | FORECAST-06 | Phase 7 | Complete |
 | FORECAST-07 | Phase 7 | Complete |
 | FORECAST-08 | Phase 7 | Complete |
+| PREP-01 | Phase 8 | Pending |
+| PREP-02 | Phase 8 | Pending |
+| PREP-03 | Phase 8 | Pending |
+| PREP-04 | Phase 8 | Pending |
+| PREP-05 | Phase 8 | Pending |
+| PREP-06 | Phase 8 | Pending |
+| PREP-07 | Phase 8 | Pending |
+| PREP-08 | Phase 8 | Pending |
