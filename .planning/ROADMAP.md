@@ -169,14 +169,21 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 5. Log + Next Step Widget | 1/1 | Complete   | 2026-04-24 |
 | 6. Score → Recommended Action | 1/1 | Complete | 2026-04-25 |
 | 7. Weighted Pipeline Forecast | 1/1 | Complete | 2026-04-25 |
-| 8. Meeting Prep One-Pager | 0/1 | Planned | - |
+| 8. Meeting Prep One-Pager | 1/1 | Complete | 2026-04-25 |
+| 9. Daily Briefing | 0/1 | Planned | - |
 
 ### Phase 9: Daily Briefing
 
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 8
-**Plans:** 0 plans
+**Goal:** Turn the existing /today page into a true morning-bookmark briefing — backed by a pure testable engine, surfacing hero metrics, today's plan, overdue tasks, going-stale accounts, and pipeline movement, with a celebration card for inbox zero and a clean print stylesheet
+**Requirements**: BRIEF-01, BRIEF-02, BRIEF-03, BRIEF-04, BRIEF-05, BRIEF-06, BRIEF-07, BRIEF-08
+**Success Criteria** (what must be TRUE):
+  1. Opening /today renders all data from a single `Briefing` struct produced by a pure `getBriefing()` function — no inline filtering or scoring inside the page
+  2. The hero row at the top shows Active / Hot / Weighted Pipeline / Overdue counts derived from current territory data
+  3. Going-stale, overdue tasks, today's plan, and pipeline-movement sections render with deterministic rules (cited in BRIEF-04..07)
+  4. Inbox-zero state shows a celebratory card when overdue + stale + today-plan are all empty
+  5. `@media print` rules in `src/index.css` produce a clean printable briefing (nav hidden, single-column layout)
+**Depends on:** Phases 6 + 7 engines (forecast.ts reused for weighted pipeline; recommendation.ts optional for stale-account hints)
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 9 to break down)
+- [ ] 09-01-PLAN.md — Pure briefing engine + TodayPage refactor + hero/movement/inbox-zero sections + print stylesheet
