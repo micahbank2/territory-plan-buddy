@@ -51,12 +51,33 @@ export interface Forecast {
 }
 
 export function forecastPipeline(opps: Opportunity[], quota: number): Forecast {
-  return {
-    rawOpen: 0,
-    weighted: 0,
-    booked: 0,
-    openCount: 0,
-    byStage: [],
-    pctOfQuota: 0,
-  };
+  const buckets = new Map<string, ByStage>();
+
+  for (const o of opps) {
+    const stage = o.stage || "Develop";
+    const cfg = STAGE_WEIGHTS[stage];
+    const weight = cfg?.weight ?? 0;
+    const classification: StageClassification = cfg?.classification ?? "open";
+    const acv = o.potential_value || 0;
+
+    if (!buckets.has(stage)) {
+      buckets.set(stage, { stage, count: 0, raw: 0, weighted: 0, weight, classification });
+    }
+    const b = buckets.get(stage)!;
+    b.count += 1;
+    b.raw += acv;
+    b.weighted += Math.round(acv * weight);
+  }
+
+  const byStage = Array.from(buckets.values()).sort((a, b) => b.weighted - a.weighted);
+
+  let rawOpen = 0, weighted = 0, booked = 0, openCount = 0;
+  for (const b of byStage) {
+    if (b.classification === "open")   { rawOpen += b.raw; weighted += b.weighted; openCount += b.count; }
+    if (b.classification === "booked") { booked  += b.raw; }
+  }
+
+  const pctOfQuota = quota > 0 ? (weighted / quota) * 100 : 0;
+
+  return { rawOpen, weighted, booked, openCount, byStage, pctOfQuota };
 }
