@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: phase-complete
-stopped_at: Phase 08 verified PASS — PREP-01..08 satisfied
-last_updated: "2026-04-25T17:15:00.000Z"
+status: verifying
+stopped_at: Completed 09-01-PLAN.md — BRIEF-01..08 satisfied
+last_updated: "2026-04-25T18:08:48.446Z"
 last_activity: 2026-04-25
 progress:
-  total_phases: 8
+  total_phases: 9
   completed_phases: 7
-  total_plans: 13
+  total_plans: 14
   completed_plans: 13
   percent: 88
 ---
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 
 Phase: 08 (meeting-prep-one-pager) — COMPLETE (verified 2026-04-25)
 Plan: 1 of 1
-Status: Phase verified PASS — PREP-01..08 delivered. Phase 2 (TanStack Query) remains.
+Status: Phase complete — ready for verification
 Last activity: 2026-04-25
 
 Progress: [█████████░] 88% (7 of 8 integer phases complete; Phase 2 remains)
@@ -65,6 +65,7 @@ Progress: [█████████░] 88% (7 of 8 integer phases complete; 
 | Phase 06-score-to-recommended-action P01 | 6min | 2 tasks | 5 files |
 | Phase 07-weighted-pipeline-forecast P01 | 12min 35s | 2 tasks | 5 files |
 | Phase 08-meeting-prep-one-pager P01 | 5min | 2 tasks | 8 files |
+| Phase 09-daily-briefing P01 | 10min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -114,6 +115,9 @@ Recent decisions affecting current work:
 - [Phase 08-meeting-prep-one-pager]: Imperative ref API (forwardRef + useImperativeHandle) chosen over controlled props — matches TerritoryDialogGroup precedent and keeps ProspectSheet free of dialog state
 - [Phase 08-meeting-prep-one-pager]: Markdown six-section contract over JSON output — forgiving (LLM can drop/add filler), trivial regex parse, no schema fragility
 - [Phase 08-meeting-prep-one-pager]: react-markdown adopted (was unused in src/ despite being in package.json) — replaces whitespace-pre-wrap blob with real one-pager rendering
+- [Phase 09-daily-briefing]: Hero weighted-pipeline reuses forecastPipeline(opps, 0).weighted — STAGE_WEIGHTS lives only in forecast.ts, never duplicated; grep-guarded in plan
+- [Phase 09-daily-briefing]: Pure-engine pattern: today: Date is a parameter (no Date.now() inside), useMemo(() => new Date(), []) anchors today on mount to prevent referential-inequality re-runs (Pitfall 4)
+- [Phase 09-daily-briefing]: Never-contacted Hot prospects fold into Today's Plan (BRIEF-04), explicitly excluded from Going Stale via lastTouched != null filter (BRIEF-06 narrowing)
 
 ### Pending Todos
 
@@ -134,6 +138,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-25T17:01:45.004Z
-Stopped at: Completed 08-01-PLAN.md — PREP-01..08 satisfied
+Last session: 2026-04-25T18:08:34.154Z
+Stopped at: Completed 09-01-PLAN.md — BRIEF-01..08 satisfied
 Resume file: None

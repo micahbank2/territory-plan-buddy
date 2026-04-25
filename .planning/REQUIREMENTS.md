@@ -88,14 +88,14 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Daily Briefing
 
-- [ ] **BRIEF-01**: A pure TypeScript function `getBriefing(prospects, opportunities, today)` returns a structured `Briefing` object with no React or Supabase imports
-- [ ] **BRIEF-02**: TodayPage renders all sections from the Briefing struct (no inline filtering/scoring computation in the page)
-- [ ] **BRIEF-03**: Hero metrics row shows Active prospects, Hot count, Weighted Pipeline ($), and Overdue count
-- [ ] **BRIEF-04**: Today's Plan section lists Hot prospects with `lastTouched > 14 days` (or never contacted), capped at 5
-- [ ] **BRIEF-05**: Overdue Tasks section lists tasks where `task.dueDate < today`, sorted oldest first, capped at 10
-- [ ] **BRIEF-06**: Going Stale section lists Hot/Warm prospects where `lastTouched != null` AND `daysBetween(lastTouched, today) >= 30` AND `score >= 40`, capped at 10
-- [ ] **BRIEF-07**: Pipeline Movement section lists opportunities created in the last 7 days (`created_at >= today - 7d`)
-- [ ] **BRIEF-08**: `@media print` rules in `src/index.css` hide nav and simplify layout for clean print/PDF output
+- [x] **BRIEF-01**: A pure TypeScript function `getBriefing(prospects, opportunities, today)` returns a structured `Briefing` object with no React or Supabase imports
+- [x] **BRIEF-02**: TodayPage renders all sections from the Briefing struct (no inline filtering/scoring computation in the page)
+- [x] **BRIEF-03**: Hero metrics row shows Active prospects, Hot count, Weighted Pipeline ($), and Overdue count
+- [x] **BRIEF-04**: Today's Plan section lists Hot prospects with `lastTouched > 14 days` (or never contacted), capped at 5
+- [x] **BRIEF-05**: Overdue Tasks section lists tasks where `task.dueDate < today`, sorted oldest first, capped at 10
+- [x] **BRIEF-06**: Going Stale section lists Hot/Warm prospects where `lastTouched != null` AND `daysBetween(lastTouched, today) >= 30` AND `score >= 40`, capped at 10
+- [x] **BRIEF-07**: Pipeline Movement section lists opportunities created in the last 7 days (`created_at >= today - 7d`)
+- [x] **BRIEF-08**: `@media print` rules in `src/index.css` hide nav and simplify layout for clean print/PDF output
 
 ## v2 Requirements
 

@@ -186,4 +186,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 **Plans:** 1 plan
 
 Plans:
-- [ ] 09-01-PLAN.md — Pure briefing engine + TodayPage refactor + hero/movement/inbox-zero sections + print stylesheet
+- [x] 09-01-PLAN.md — Pure briefing engine + TodayPage refactor + hero/movement/inbox-zero sections + print stylesheet
