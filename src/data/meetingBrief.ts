@@ -33,16 +33,34 @@ export interface MeetingBrief {
 /**
  * Parse the markdown brief into a typed `MeetingBrief`.
  *
- * Stub for Task 1 (RED). Task 2 fills the line-walk parser body.
+ * Walks the markdown line by line. When it sees a `## Header` line whose
+ * label is one of `SECTIONS`, it starts collecting subsequent lines into
+ * that bucket. Unknown `##` headers are ignored (their content folds into
+ * the previous valid section). Lines before the first valid header are
+ * dropped. Missing sections resolve to empty strings — the UI renders a
+ * "None on file." placeholder for those.
  */
-export function parseMeetingBrief(markdown: string): MeetingBrief {
+export function parseMeetingBrief(md: string): MeetingBrief {
+  const lines = md.split("\n");
+  const sections: Record<string, string[]> = {};
+  let current = "";
+  for (const line of lines) {
+    const m = line.match(/^##\s+(.+?)\s*$/);
+    if (m && (SECTIONS as readonly string[]).includes(m[1])) {
+      current = m[1];
+      sections[current] = [];
+    } else if (current) {
+      sections[current].push(line);
+    }
+  }
+  const get = (k: SectionName) => (sections[k] ?? []).join("\n").trim();
   return {
-    context: "",
-    recentHistory: "",
-    contacts: "",
-    openTasks: "",
-    talkingPoints: "",
-    suggestedAsk: "",
-    raw: markdown,
+    context: get("Context"),
+    recentHistory: get("Recent History"),
+    contacts: get("Contacts"),
+    openTasks: get("Open Tasks"),
+    talkingPoints: get("Talking Points"),
+    suggestedAsk: get("Suggested Ask"),
+    raw: md,
   };
 }

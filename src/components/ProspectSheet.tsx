@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   INDUSTRIES, STAGES, STATUSES, PRIORITIES, TIERS, COMPETITORS,
@@ -14,6 +14,7 @@ import { SignalsSection } from "@/components/SignalsSection";
 import { ContactPickerDialog } from "@/components/ContactPickerDialog";
 import { LogActivityWidget } from "@/components/LogActivityWidget";
 import { RecommendationCard } from "@/components/RecommendationCard";
+import { MeetingPrepDialog, type MeetingPrepDialogHandle } from "@/components/MeetingPrepDialog";
 import { type Signal } from "@/hooks/useSignals";
 import { cn, normalizeUrl } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -140,10 +141,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
   const [outreachLoading, setOutreachLoading] = useState(false);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
   const [showDraftPicker, setShowDraftPicker] = useState(false);
-  // Meeting prep state
-  const [meetingPrepBrief, setMeetingPrepBrief] = useState("");
-  const [meetingPrepLoading, setMeetingPrepLoading] = useState(false);
-  const [showMeetingPrepDialog, setShowMeetingPrepDialog] = useState(false);
+  // Meeting prep — dialog component owns its own state; we just hold an imperative ref
+  const meetingPrepRef = useRef<MeetingPrepDialogHandle>(null);
   // Research state
   interface ResearchFinding {
     title: string;
@@ -295,79 +294,6 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     }
   };
 
-  const generateMeetingPrep = async () => {
-    setMeetingPrepLoading(true);
-    setShowMeetingPrepDialog(true);
-    setMeetingPrepBrief("");
-    try {
-      const { data: result, error } = await supabase.functions.invoke("meeting-prep", {
-        body: {
-          name: prospect.name,
-          website: prospect.website,
-          industry: prospect.industry,
-          locationCount: prospect.locationCount,
-          tier: prospect.tier,
-          priority: prospect.priority,
-          competitor: prospect.competitor,
-          score,
-          contacts: prospect.contacts,
-          interactions: prospect.interactions,
-          tasks: prospect.tasks,
-          notes: prospect.noteLog,
-        },
-      });
-      if (error) throw error;
-      if (result?.error) throw new Error(result.error);
-      const text = result?.brief;
-      if (!text) throw new Error("Empty response from meeting prep");
-      setMeetingPrepBrief(text);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to generate meeting prep";
-      toast.error(msg);
-      setMeetingPrepBrief("");
-      setShowMeetingPrepDialog(false);
-    } finally {
-      setMeetingPrepLoading(false);
-    }
-  };
-
-  const copyMeetingPrep = () => {
-    if (meetingPrepBrief) {
-      navigator.clipboard.writeText(meetingPrepBrief);
-      toast.success("Meeting prep copied to clipboard!");
-    }
-  };
-
-  const exportMeetingPrepPdf = () => {
-    if (!meetingPrepBrief) return;
-    const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      toast.error("Pop-up blocked — please allow pop-ups for PDF export.");
-      return;
-    }
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>Meeting Prep — ${prospect.name}</title>
-<style>
-  @media print { body { margin: 0; } @page { margin: 0.75in; } }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; max-width: 700px; margin: 0 auto; padding: 40px 24px; line-height: 1.6; }
-  .header { border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 24px; }
-  .header h1 { font-size: 20px; font-weight: 700; margin: 0 0 4px 0; color: #111; }
-  .header .meta { font-size: 13px; color: #666; }
-  .content { font-size: 14px; white-space: pre-wrap; }
-  .content strong { color: #111; }
-  .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #999; }
-</style></head><body>
-<div class="header">
-  <h1>Meeting Prep — ${prospect.name}</h1>
-  <div class="meta">${today} · Prepared by Territory Plan Buddy</div>
-</div>
-<div class="content">${meetingPrepBrief.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}</div>
-<div class="footer">${prospect.industry || ""}${prospect.industry && prospect.locationCount ? " · " : ""}${prospect.locationCount ? prospect.locationCount + " locations" : ""}</div>
-</body></html>`);
-    printWindow.document.close();
-    setTimeout(() => { printWindow.print(); }, 300);
-  };
-
   const runResearch = async () => {
     if (!prospect) return;
     setResearchLoading(true);
@@ -507,7 +433,7 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
             <button onClick={() => setShowDraftPicker(true)} className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 ml-4">
               <Mail className="w-3 h-3" /> Draft Email
             </button>
-            <button onClick={generateMeetingPrep} className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 ml-3">
+            <button onClick={() => meetingPrepRef.current?.open(prospect)} className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 ml-3">
               <FileText className="w-3 h-3" /> Meeting Prep
             </button>
           </div>
@@ -1019,40 +945,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
         </DialogContent>
       </Dialog>
 
-      {/* Meeting Prep Dialog */}
-      <Dialog open={showMeetingPrepDialog} onOpenChange={setShowMeetingPrepDialog}>
-        <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-primary" />
-              Meeting Prep — {prospect.name}
-            </DialogTitle>
-          </DialogHeader>
-          {meetingPrepLoading ? (
-            <div className="flex items-center justify-center gap-2 py-8">
-              <Loader2 className="w-5 h-5 animate-spin text-primary" />
-              <span className="text-sm text-muted-foreground">Generating meeting prep...</span>
-            </div>
-          ) : meetingPrepBrief ? (
-            <div className="space-y-4 flex-1 min-h-0">
-              <div className="bg-muted/50 border border-border rounded-lg p-4 overflow-y-auto max-h-[55vh]">
-                <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap prose prose-sm dark:prose-invert max-w-none">{meetingPrepBrief}</div>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Button onClick={copyMeetingPrep} size="sm" className="gap-1.5">
-                  <Copy className="w-3.5 h-3.5" /> Copy to Clipboard
-                </Button>
-                <Button onClick={exportMeetingPrepPdf} size="sm" variant="outline" className="gap-1.5">
-                  <FileText className="w-3.5 h-3.5" /> Export PDF
-                </Button>
-                <Button onClick={generateMeetingPrep} size="sm" variant="outline" className="gap-1.5">
-                  <RefreshCw className="w-3.5 h-3.5" /> Regenerate
-                </Button>
-              </div>
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+      {/* Meeting Prep — extracted to MeetingPrepDialog (Phase 08) */}
+      <MeetingPrepDialog ref={meetingPrepRef} score={score} territoryId={territoryId} />
       </div>
   );
 
