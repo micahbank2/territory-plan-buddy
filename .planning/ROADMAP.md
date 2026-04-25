@@ -170,3 +170,13 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 6. Score → Recommended Action | 1/1 | Complete | 2026-04-25 |
 | 7. Weighted Pipeline Forecast | 1/1 | Complete | 2026-04-25 |
 | 8. Meeting Prep One-Pager | 0/1 | Planned | - |
+
+### Phase 9: Daily Briefing
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 8
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 9 to break down)

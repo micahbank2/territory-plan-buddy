@@ -74,6 +74,7 @@ Progress: [█████████░] 88% (7 of 8 integer phases complete; 
 - 2026-04-24: Phase 6 added — Score → Recommended Action (surface "why call this account" header in ProspectSheet Overview tab using score breakdown + contact gaps + staleness)
 - 2026-04-25: Phase 7 added — Weighted Pipeline Forecast (stage-weighted ACV bar + quota tracker above Opportunities table; Propose=70%, Validate=50%, Discovery=20%, Develop=10%)
 - 2026-04-25: Phase 8 added — Meeting Prep One-Pager (extract inline state + dialog from ProspectSheet to MeetingPrepDialog component, structure brief as Context / History / Contacts / Tasks / Talking Points / Suggested Ask sections)
+- 2026-04-25: Phase 9 added — Daily Briefing (single bookmarkable HTML artifact: overdue tasks + stale accounts + pipeline movement + what to do today; novel surface, greenfield)
 
 ### Decisions
 
