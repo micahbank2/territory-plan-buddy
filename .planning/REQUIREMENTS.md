@@ -77,14 +77,14 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Meeting Prep One-Pager
 
-- [ ] **PREP-01**: A `<MeetingPrepDialog>` component exists at `src/components/MeetingPrepDialog.tsx`, owns all meeting-prep state (loading, brief, open, prospect), and is mounted in `ProspectSheet` via `forwardRef + useImperativeHandle` (`meetingPrepRef.current?.open(prospect)`) — `ProspectSheet.tsx` retains zero `meetingPrep*` state vars
-- [ ] **PREP-02**: The edge function `meeting-prep` returns markdown with exactly six labeled headers in fixed order: `## Context`, `## Recent History`, `## Contacts`, `## Open Tasks`, `## Talking Points`, `## Suggested Ask`
-- [ ] **PREP-03**: Each section in the dialog renders with a clear header chip + a `react-markdown` body (inline `**bold**` and bullet support); the parser tolerates a missing section by returning empty string and the UI renders a "None on file." placeholder without crashing
-- [ ] **PREP-04**: Talking Points are anchored on Yext positioning — each bullet must reference at least one of: AI search visibility, multi-location brand consistency, local SEO at scale, or competitive displacement of {SOCi, Birdeye, Uberall, Chatmeter, Rio SEO} (enforced by edge-function system prompt)
-- [ ] **PREP-05**: The Suggested Ask section is a single concrete sentence (not a bullet list) — enforced by edge-function prompt and validated by manual UAT
-- [ ] **PREP-06**: The Copy button writes the full markdown brief to clipboard (`navigator.clipboard.writeText(brief.raw)`) and the Export PDF button opens a print window with the formatted brief — both behaviors preserved verbatim from the previous inline implementation
-- [ ] **PREP-07**: Loading state renders a spinner + "Generating meeting prep..." copy; error state surfaces `toast.error(msg)` and closes the dialog (matches previous inline behavior)
-- [ ] **PREP-08**: Inline `meetingPrep*` references in `ProspectSheet.tsx` are removed — `grep -nE "meetingPrepBrief|meetingPrepLoading|generateMeetingPrep|copyMeetingPrep|exportMeetingPrepPdf|showMeetingPrepDialog" src/components/ProspectSheet.tsx` returns zero matches; the only remaining meeting-prep code is the import, the `meetingPrepRef` declaration, the button `onClick={() => meetingPrepRef.current?.open(prospect)}`, and the single `<MeetingPrepDialog />` mount
+- [x] **PREP-01**: A `<MeetingPrepDialog>` component exists at `src/components/MeetingPrepDialog.tsx`, owns all meeting-prep state (loading, brief, open, prospect), and is mounted in `ProspectSheet` via `forwardRef + useImperativeHandle` (`meetingPrepRef.current?.open(prospect)`) — `ProspectSheet.tsx` retains zero `meetingPrep*` state vars
+- [x] **PREP-02**: The edge function `meeting-prep` returns markdown with exactly six labeled headers in fixed order: `## Context`, `## Recent History`, `## Contacts`, `## Open Tasks`, `## Talking Points`, `## Suggested Ask`
+- [x] **PREP-03**: Each section in the dialog renders with a clear header chip + a `react-markdown` body (inline `**bold**` and bullet support); the parser tolerates a missing section by returning empty string and the UI renders a "None on file." placeholder without crashing
+- [x] **PREP-04**: Talking Points are anchored on Yext positioning — each bullet must reference at least one of: AI search visibility, multi-location brand consistency, local SEO at scale, or competitive displacement of {SOCi, Birdeye, Uberall, Chatmeter, Rio SEO} (enforced by edge-function system prompt)
+- [x] **PREP-05**: The Suggested Ask section is a single concrete sentence (not a bullet list) — enforced by edge-function prompt and validated by manual UAT
+- [x] **PREP-06**: The Copy button writes the full markdown brief to clipboard (`navigator.clipboard.writeText(brief.raw)`) and the Export PDF button opens a print window with the formatted brief — both behaviors preserved verbatim from the previous inline implementation
+- [x] **PREP-07**: Loading state renders a spinner + "Generating meeting prep..." copy; error state surfaces `toast.error(msg)` and closes the dialog (matches previous inline behavior)
+- [x] **PREP-08**: Inline `meetingPrep*` references in `ProspectSheet.tsx` are removed — `grep -nE "meetingPrepBrief|meetingPrepLoading|generateMeetingPrep|copyMeetingPrep|exportMeetingPrepPdf|showMeetingPrepDialog" src/components/ProspectSheet.tsx` returns zero matches; the only remaining meeting-prep code is the import, the `meetingPrepRef` declaration, the button `onClick={() => meetingPrepRef.current?.open(prospect)}`, and the single `<MeetingPrepDialog />` mount
 
 ## v2 Requirements
 
@@ -181,11 +181,11 @@ Explicitly excluded. Documented to prevent scope creep.
 | FORECAST-06 | Phase 7 | Complete |
 | FORECAST-07 | Phase 7 | Complete |
 | FORECAST-08 | Phase 7 | Complete |
-| PREP-01 | Phase 8 | Pending |
-| PREP-02 | Phase 8 | Pending |
-| PREP-03 | Phase 8 | Pending |
-| PREP-04 | Phase 8 | Pending |
-| PREP-05 | Phase 8 | Pending |
-| PREP-06 | Phase 8 | Pending |
-| PREP-07 | Phase 8 | Pending |
-| PREP-08 | Phase 8 | Pending |
+| PREP-01 | Phase 8 | Complete |
+| PREP-02 | Phase 8 | Complete |
+| PREP-03 | Phase 8 | Complete |
+| PREP-04 | Phase 8 | Complete |
+| PREP-05 | Phase 8 | Complete |
+| PREP-06 | Phase 8 | Complete |
+| PREP-07 | Phase 8 | Complete |
+| PREP-08 | Phase 8 | Complete |

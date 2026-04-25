@@ -153,7 +153,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 08-01-PLAN.md — Parser + dialog + ProspectSheet mount + edge-function prompt rewrite + delete inline meeting-prep (PREP-01..PREP-08)
+- [x] 08-01-PLAN.md — Parser + dialog + ProspectSheet mount + edge-function prompt rewrite + delete inline meeting-prep (PREP-01..PREP-08)
 
 ## Progress
 
