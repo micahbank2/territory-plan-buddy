@@ -129,3 +129,13 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 4. AI Capabilities | 2/2 | Complete   | 2026-03-30 |
 | 5. Log + Next Step Widget | 1/1 | Complete   | 2026-04-24 |
 | 6. Score → Recommended Action | 0/1 | Planned | - |
+
+### Phase 7: Weighted Pipeline Forecast
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 6
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 7 to break down)
