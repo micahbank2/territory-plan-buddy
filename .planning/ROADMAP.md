@@ -171,14 +171,26 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 7. Weighted Pipeline Forecast | 1/1 | Complete | 2026-04-25 |
 | 8. Meeting Prep One-Pager | 1/1 | Complete | 2026-04-25 |
 | 9. Daily Briefing | 1/1 | Complete (PR #9 awaiting merge) | 2026-04-25 |
-| 10. My Numbers Polish | 0/1 | Planned | - |
+| 10. My Numbers Polish | 0/2 | Planned | - |
 
 ### Phase 10: My Numbers Polish
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Harden the FY27 commission tracker (`src/pages/MyNumbersPage.tsx`) by extracting six untested pure comp-math functions into `src/data/myNumbers/comp.ts` (≥12 unit-test cases), consolidating four duplicate copies of `FY27_MONTHS` + `DEFAULT_QUOTAS` into a shared `src/data/myNumbers/storage.ts` module, fixing the navigate-in-render anti-pattern at MyNumbersPage.tsx:347-350, and shipping the CLAUDE.md priority #10 mandate — a "Trends" tab with three new recharts visualizations (Quota Attainment %, Activity Rate, Pipeline Coverage) — paired with a sub-component decomposition that drops the coordinator from 875 lines to ≤400 lines.
+
 **Depends on:** None (read-only audit/extend pass on existing MyNumbersPage)
-**Plans:** 0 plans
+**Requirements**: NUM-01, NUM-02, NUM-03, NUM-04, NUM-05, NUM-06, NUM-07, NUM-08
+**Success Criteria** (what must be TRUE):
+  1. The 6 pure commission math functions live in `src/data/myNumbers/comp.ts` (zero React, zero localStorage, zero side effects) and are covered by ≥12 unit tests in `src/test/myNumbers/comp.test.ts` — tier1/tier2/tier3 boundaries, YTD-accelerator on/off, calcAnnualAccel tiered rates, renewalPayoutPct breakpoints, calcLargeRenewalAddon U4R + retention floors, calcAddOnPayouts duration gate + Kong delta clamps
+  2. `FY27_MONTHS` and `DEFAULT_QUOTAS` are declared exactly once in `src/data/myNumbers/storage.ts` (`grep -rE "^const FY27_MONTHS = \[" src/` returns 1 match); MyNumbersPage, QuotaHeroBoxes, PipelineForecastBar, and useTerritoryPlannerSelectors all import from the shared module
+  3. The non-owner redirect on `/my-numbers` uses `useEffect` instead of synchronous navigate during render — no console "Cannot update a component while rendering" warning
+  4. A new "Trends" tab on MyNumbersPage renders three vertically stacked charts: cumulative YTD attainment % (with 100% reference line), Activity Rate (Meetings + Touches dual-line), and Pipeline Coverage (monthly pipeline ÷ monthly quota with 3x reference line)
+  5. After decomposition, `src/pages/MyNumbersPage.tsx` is ≤400 lines; sub-components live in `src/components/myNumbers/` (SummaryCardRow, IncrementalTab, RenewalTab, MyNumbersTrendsTab, AddonsSection, EarningsSummary, MyNumbersChart, SettingsDialog); the coordinator owns all state and passes typed props
+  6. EditableCell forwards an `aria-label` prop to both `<input>` and `<span>`; every callsite passes a meaningful label (e.g., "Quota for Mar 2026")
+  7. `text-[10px]` arbitrary size at MyNumbersPage.tsx:722 is replaced with `text-xs`
+  8. Full Vitest suite passes; `npx tsc --noEmit` clean; `bun run build` clean; manual UAT confirms identical numbers, identical edit-cell behavior, and identical Settings dialog before/after
+
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 10 to break down)
+- [ ] 10-01-PLAN.md — Tests-first foundation: extract comp.ts + storage.ts, fix navigate-in-render, wire 4 callers, add aria-label + text-xs (NUM-01..04, NUM-06, NUM-08)
+- [ ] 10-02-PLAN.md — Trends tab (3 charts) + sub-component decomposition to ≤400 lines (NUM-05, NUM-07)
