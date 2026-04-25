@@ -1,47 +1,14 @@
 import { useMemo } from "react";
 import { DollarSign, TrendingUp, Target } from "lucide-react";
-
-// Read quota data from the same localStorage the MyNumbersPage uses
-const ENTRIES_KEY = "my_numbers_v2";
-
-interface NumbersEntry {
-  month: string;
-  incrementalQuota: number;
-  incrementalBookings: number;
-  renewedAcv: number;
-  pipelineAcv: number;
-  meetings: number;
-  outreachTouches: number;
-}
-
-const FY27_MONTHS = [
-  "2026-02", "2026-03", "2026-04", "2026-05", "2026-06",
-  "2026-07", "2026-08", "2026-09", "2026-10", "2026-11",
-  "2026-12", "2027-01",
-];
-
-const DEFAULT_QUOTAS: Record<string, number> = {
-  "2026-02": 30000, "2026-03": 30000, "2026-04": 60000,
-  "2026-05": 38000, "2026-06": 38000, "2026-07": 77000,
-  "2026-08": 40000, "2026-09": 40000, "2026-10": 80000,
-  "2026-11": 48000, "2026-12": 48000, "2027-01": 96000,
-};
+import {
+  FY27_MONTHS,
+  loadEntries,
+} from "@/data/myNumbers/storage";
 
 // ICR tiers for payout estimation
 const ANNUAL_QUOTA = 615_000;
 const ANNUAL_TI = 95_000;
 const INCR_TI = ANNUAL_TI * 0.65;
-
-function loadEntries(): NumbersEntry[] {
-  try {
-    const stored = localStorage.getItem(ENTRIES_KEY);
-    if (stored) return JSON.parse(stored);
-  } catch {}
-  return FY27_MONTHS.map(m => ({
-    month: m, incrementalQuota: DEFAULT_QUOTAS[m] ?? 0,
-    incrementalBookings: 0, renewedAcv: 0, pipelineAcv: 0, meetings: 0, outreachTouches: 0,
-  }));
-}
 
 function getCurrentFYMonth(): string {
   const now = new Date();

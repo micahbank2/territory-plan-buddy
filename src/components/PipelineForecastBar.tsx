@@ -4,20 +4,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 import { forecastPipeline, STAGE_BAR_COLORS } from "@/data/forecast";
 import type { Opportunity } from "@/hooks/useOpportunities";
-
-const ENTRIES_KEY = "my_numbers_v2";
-
-const FY27_MONTHS = [
-  "2026-02","2026-03","2026-04","2026-05","2026-06","2026-07",
-  "2026-08","2026-09","2026-10","2026-11","2026-12","2027-01",
-];
-
-const DEFAULT_QUOTAS: Record<string, number> = {
-  "2026-02": 30000, "2026-03": 30000, "2026-04": 60000,
-  "2026-05": 38000, "2026-06": 38000, "2026-07": 77000,
-  "2026-08": 40000, "2026-09": 40000, "2026-10": 80000,
-  "2026-11": 48000, "2026-12": 48000, "2027-01": 96000,
-};
+import { FY27_MONTHS, DEFAULT_QUOTAS, ENTRIES_KEY } from "@/data/myNumbers/storage";
 
 function loadAnnualQuota(): number {
   try {
