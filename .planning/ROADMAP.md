@@ -16,6 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 2: TanStack Query Migration** - Migrate all data fetching and mutations to TanStack Query with structural rollback, cache invalidation, and lazy sub-collection loading
 - [ ] **Phase 3: Component Decomposition & UX Polish** - Decompose TerritoryPlanner god component, add tabbed ProspectSheet layout
 - [x] **Phase 4: AI Capabilities** - Draft emails post-outreach tracking: batch persistence, pending outreach badge, mark-as-sent dialog, bulk Mark Contacted action (completed 2026-03-30)
+- [x] **Phase 5: Log + Next Step Widget** - Extract and harden the unified Log Activity widget on ProspectSheet: +3-business-day default, partial-failure handling, test coverage (completed 2026-04-24)
 
 ## Phase Details
 
@@ -79,10 +80,27 @@ Plans:
 - [x] 04-01-PLAN.md — Bring ContactPickerDialog from quirky-buck to main + create pendingBatch persistence layer (AI-01, AI-02)
 - [x] 04-02-PLAN.md — PendingOutreachDialog, badge on Draft Emails button, bulk Mark Contacted action (AI-03, AI-04)
 
+### Phase 5: Log + Next Step Widget
+
+**Goal:** Extract the inline Log Activity widget from ProspectSheet into a standalone, tested component that reliably creates an interaction and an optional follow-up task in one submit — with a sensible +3-business-day default due date and no silent data loss on partial failure
+**Depends on:** Phase 4
+**Requirements**: LOG-01, LOG-02, LOG-03, LOG-04, LOG-05, LOG-06
+**Success Criteria** (what must be TRUE):
+  1. A single widget on the Activity tab accepts interaction type + notes + an optional follow-up task (text + due date) and commits both rows to Supabase on one click
+  2. Toggling the follow-up task ON pre-fills the due date to +3 business days from today (skips weekends); the user can override via the date picker
+  3. When the submit partially fails (interaction landed, task did not — or vice versa), the user sees a clear error toast distinct from the success toast AND the form retains the unsaved input so the typed data is never silently lost
+  4. A successful submit bumps `prospects.last_touched` to today so the aging dot on the main list refreshes immediately
+  5. The widget renders correctly inside both the desktop Sheet and the mobile vaul Drawer (Phase 03 responsive wrapper)
+  6. No duplicate logging UI remains inside the Activity tab — LogActivityWidget is the single surface; the old separate Log Interaction + independent task-add blocks are removed
+**Plans**: 1 plan
+
+Plans:
+- [x] 05-01-PLAN.md — Extract LogActivityWidget, add +3-business-day default + partial-failure handling, non-breaking hook signature change, and full test coverage for LOG-01/02/03
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -90,3 +108,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 2. TanStack Query Migration | 0/? | Not started | - |
 | 3. Component Decomposition & UX Polish | 3/3 | Complete | 2026-04-24 |
 | 4. AI Capabilities | 2/2 | Complete   | 2026-03-30 |
+| 5. Log + Next Step Widget | 1/1 | Complete   | 2026-04-24 |

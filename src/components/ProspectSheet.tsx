@@ -1,8 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
 import {
-  INDUSTRIES, STAGES, STATUSES, PRIORITIES, TIERS, COMPETITORS, INTERACTION_TYPES,
+  INDUSTRIES, STAGES, STATUSES, PRIORITIES, TIERS, COMPETITORS,
   CONTACT_ROLES, RELATIONSHIP_STRENGTHS,
   scoreProspect, scoreBreakdown, getScoreLabel, getLogoUrl,
   type Prospect, type Contact, type InteractionLog, type NoteEntry, type Task,
@@ -13,12 +12,13 @@ import { RichTextEditor } from "@/components/RichTextEditor";
 import { AIReadinessCard } from "@/components/AIReadinessCard";
 import { SignalsSection } from "@/components/SignalsSection";
 import { ContactPickerDialog } from "@/components/ContactPickerDialog";
+import { LogActivityWidget } from "@/components/LogActivityWidget";
 import { type Signal } from "@/hooks/useSignals";
 import { cn, normalizeUrl } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ExternalLink, Plus, X, Mail, Phone, Building2, MessageSquare, PhoneCall,
-  Linkedin, Clock, CalendarIcon, Target, ArrowRight, Check, CheckCircle, Trash2,
+  Linkedin, Clock, Target, ArrowRight, Check, CheckCircle, Trash2,
   Sparkles, Copy, Loader2, RefreshCw, FileText, Pencil, Star, Search, ThumbsUp, ThumbsDown,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -27,8 +27,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
@@ -42,10 +40,10 @@ interface ProspectSheetProps {
   addContact?: (prospectId: string, contact: Omit<Contact, "id">) => Promise<void>;
   updateContact?: (contactId: string, fields: Partial<Contact>) => Promise<void>;
   removeContact?: (contactId: string) => Promise<void>;
-  addInteraction?: (prospectId: string, interaction: Omit<InteractionLog, "id">) => Promise<void>;
+  addInteraction?: (prospectId: string, interaction: Omit<InteractionLog, "id">) => Promise<boolean>;
   removeInteraction?: (interactionId: string) => Promise<void>;
   addNote?: (prospectId: string, text: string) => Promise<void>;
-  addTaskDirect?: (prospectId: string, task: Omit<Task, "id">) => Promise<void>;
+  addTaskDirect?: (prospectId: string, task: Omit<Task, "id">) => Promise<boolean>;
   removeTaskDirect?: (taskId: string) => Promise<void>;
   signals?: Signal[];
   addSignal?: (signal: Omit<Signal, "id" | "created_at" | "user_id">) => Promise<Signal | null>;
@@ -130,18 +128,12 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     setResearchRan(false);
     setResearchLoading(false);
   }, [prospectId]);
-  const [interactionType, setInteractionType] = useState(INTERACTION_TYPES[0]);
-  const [interactionNotes, setInteractionNotes] = useState("");
   const [newNote, setNewNote] = useState("");
 
   // Local state for debounced text inputs
   const [localLocCount, setLocalLocCount] = useState("");
   const [localCustomCompetitor, setLocalCustomCompetitor] = useState("");
   const [localName, setLocalName] = useState("");
-  // Task manager state
-  const [newTaskText, setNewTaskText] = useState("");
-  const [newTaskDate, setNewTaskDate] = useState("");
-  const [showFollowUp, setShowFollowUp] = useState(false);
   // Outreach draft state
   const [outreachDraft, setOutreachDraft] = useState("");
   const [outreachLoading, setOutreachLoading] = useState(false);
@@ -226,14 +218,6 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     }
   };
 
-  const addTask = async () => {
-    if (!newTaskText.trim()) return;
-    await addTaskDirect?.(prospect.id, { text: newTaskText.trim(), dueDate: newTaskDate });
-    setNewTaskText("");
-    setNewTaskDate("");
-    toast.success("✅ Task added!");
-  };
-
   const completeTask = async (task: Task) => {
     await removeTaskDirect?.(task.id);
     await addInteractionDirect?.(prospect.id, {
@@ -283,38 +267,6 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
     setEditingContactId(null);
     setEditContact({});
     toast.success("✅ Contact updated!");
-  };
-
-  const logInteraction = async () => {
-    await addInteractionDirect?.(prospect.id, {
-      type: interactionType,
-      date: new Date().toISOString().split("T")[0],
-      notes: interactionNotes || `${interactionType} logged`,
-    });
-    setInteractionNotes("");
-    toast.success("📝 Activity logged!");
-  };
-
-  const logActivity = async () => {
-    if (!interactionNotes.trim() && !showFollowUp) {
-      toast.error("Add notes or a follow-up task");
-      return;
-    }
-    // Log the interaction
-    await addInteractionDirect?.(prospect.id, {
-      type: interactionType,
-      date: new Date().toISOString().split("T")[0],
-      notes: interactionNotes || `${interactionType} logged`,
-    });
-    // Optionally create follow-up task
-    if (showFollowUp && newTaskText.trim()) {
-      await addTaskDirect?.(prospect.id, { text: newTaskText.trim(), dueDate: newTaskDate });
-    }
-    setInteractionNotes("");
-    setNewTaskText("");
-    setNewTaskDate("");
-    setShowFollowUp(false);
-    toast.success(showFollowUp && newTaskText.trim() ? "📝 Activity logged + task created!" : "📝 Activity logged!");
   };
 
   const submitNote = async () => {
@@ -802,58 +754,15 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
 
           {/* ACTIVITY TAB: Log Activity widget, Notes, Activity Timeline */}
           <TabsContent value="activity" className="space-y-5 mt-0 animate-fade-in-up">
-          {/* Log Activity — unified widget */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Target className="w-4 h-4 text-primary" />
-              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Log Activity</h3>
-            </div>
-            <div className="p-3 border border-border rounded-lg bg-muted/30 space-y-3">
-              <div className="flex gap-2">
-                <select value={interactionType} onChange={e => setInteractionType(e.target.value)} className={cn(selectClass, "w-36 text-xs")}>
-                  {INTERACTION_TYPES.filter(t => t !== "Task Completed").map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-                <input value={interactionNotes} onChange={e => setInteractionNotes(e.target.value)} placeholder="What happened?" className={cn(inputClass, "flex-1 text-xs")} onKeyDown={e => e.key === "Enter" && !showFollowUp && logActivity()} />
-              </div>
-              {/* Follow-up toggle */}
-              <button
-                type="button"
-                onClick={() => setShowFollowUp(!showFollowUp)}
-                className={cn("text-xs font-medium inline-flex items-center gap-1 transition-colors",
-                  showFollowUp ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {showFollowUp ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
-                {showFollowUp ? "Follow-up task added" : "Add follow-up task"}
-              </button>
-              {showFollowUp && (
-                <div className="grid grid-cols-2 gap-3 animate-fade-in-up">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-muted-foreground uppercase">Follow-up</label>
-                    <input value={newTaskText} onChange={e => setNewTaskText(e.target.value)} placeholder="e.g. Send proposal" className={cn(inputClass, "text-xs")} />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-muted-foreground uppercase">Due Date</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button className={cn(inputClass, "flex items-center gap-2 text-left text-xs", !newTaskDate && "text-muted-foreground")}>
-                          <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
-                          {newTaskDate ? format(new Date(newTaskDate), "PPP") : "Pick a date"}
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-[60]" align="start">
-                        <Calendar mode="single" selected={newTaskDate ? new Date(newTaskDate) : undefined}
-                          onSelect={date => setNewTaskDate(date ? date.toISOString().split("T")[0] : "")} initialFocus className="p-3 pointer-events-auto" />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-              )}
-              <Button onClick={logActivity} size="sm" className="w-full text-xs font-semibold">
-                Log Activity{showFollowUp && newTaskText.trim() ? " + Create Task" : ""}
-              </Button>
-            </div>
-          </div>
+          {/* Log Activity — unified widget (extracted to its own component in Phase 05-01) */}
+          {addInteractionDirect && addTaskDirect && (
+            <LogActivityWidget
+              prospectId={prospect.id}
+              addInteraction={addInteractionDirect}
+              addTask={addTaskDirect}
+              triggerLastTouchedBump={async () => { await update(prospect.id, {}); }}
+            />
+          )}
 
           {/* Notes */}
           <div className="space-y-3">

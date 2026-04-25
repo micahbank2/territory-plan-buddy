@@ -509,8 +509,8 @@ export function useProspects(territoryId?: string | null) {
 
   // --- Direct interaction CRUD (single-row operations, no delete-all + re-insert) ---
 
-  const addInteraction = useCallback(async (prospectId: string, interaction: Omit<InteractionLog, "id">) => {
-    if (!user) return;
+  const addInteraction = useCallback(async (prospectId: string, interaction: Omit<InteractionLog, "id">): Promise<boolean> => {
+    if (!user) return false;
     const { data: rows, error } = await supabase.from("prospect_interactions").insert({
       prospect_id: prospectId,
       user_id: user.id,
@@ -518,7 +518,7 @@ export function useProspects(territoryId?: string | null) {
       date: interaction.date,
       notes: interaction.notes,
     }).select("id");
-    if (error) { toast.error("Failed to add interaction"); return; }
+    if (error) { toast.error("Failed to add interaction"); return false; }
     const newId = rows?.[0]?.id;
     if (newId) {
       setData(prev => prev.map(p =>
@@ -527,6 +527,7 @@ export function useProspects(territoryId?: string | null) {
           : p
       ));
     }
+    return true;
   }, [user]);
 
   const updateInteraction = useCallback(async (interactionId: string, fields: Partial<InteractionLog>) => {
@@ -567,15 +568,15 @@ export function useProspects(territoryId?: string | null) {
 
   // --- Direct task CRUD (single-row operations, no delete-all + re-insert) ---
 
-  const addTask = useCallback(async (prospectId: string, task: Omit<Task, "id">) => {
-    if (!user) return;
+  const addTask = useCallback(async (prospectId: string, task: Omit<Task, "id">): Promise<boolean> => {
+    if (!user) return false;
     const { data: rows, error } = await supabase.from("prospect_tasks").insert({
       prospect_id: prospectId,
       user_id: user.id,
       text: task.text,
       due_date: task.dueDate || null,
     }).select("id");
-    if (error) { toast.error("Failed to add task"); return; }
+    if (error) { toast.error("Failed to add task"); return false; }
     const newId = rows?.[0]?.id;
     if (newId) {
       setData(prev => prev.map(p =>
@@ -584,6 +585,7 @@ export function useProspects(territoryId?: string | null) {
           : p
       ));
     }
+    return true;
   }, [user]);
 
   const updateTask = useCallback(async (taskId: string, fields: Partial<Task>) => {
