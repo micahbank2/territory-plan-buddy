@@ -21,15 +21,17 @@ export const STAGE_WEIGHTS: Record<string, StageWeight> = {
   "Dead":                { stage: "Dead",                weight: 0,    classification: "lost" },
 };
 
+// Cold-to-hot funnel gradient — adjacent stages use non-adjacent hues so a
+// segmented bar reads as distinct bands instead of one purple smear.
 export const STAGE_BAR_COLORS: Record<string, string> = {
-  "Develop":            "bg-slate-400",
-  "Discovery":          "bg-blue-500",
-  "Business Alignment": "bg-indigo-500",
-  "Validate":           "bg-violet-500",
-  "Propose":            "bg-amber-500",
-  "Negotiate":          "bg-orange-500",
-  "Won":                "bg-emerald-500",
-  "Closed Won":         "bg-emerald-500",
+  "Develop":            "bg-slate-400",   // early: cold grey
+  "Discovery":          "bg-sky-500",     // cyan
+  "Business Alignment": "bg-teal-500",    // greenish-blue (jumps away from sky)
+  "Validate":           "bg-lime-500",    // yellow-green (mid-funnel signal)
+  "Propose":            "bg-amber-500",   // yellow-orange (getting hot)
+  "Negotiate":          "bg-orange-500",  // hot
+  "Won":                "bg-emerald-500", // booked
+  "Closed Won":         "bg-emerald-500", // booked
 };
 
 export interface ByStage {
