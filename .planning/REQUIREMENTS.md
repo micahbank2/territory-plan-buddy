@@ -56,13 +56,13 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Score → Recommended Action
 
-- [ ] **REC-01**: A `RecommendationCard` renders at the top of the ProspectSheet Overview tab (above Account Details), summarizing score + label + at most 3 callout chips + a single suggested-action sentence
-- [ ] **REC-02**: A pure function `getRecommendation(p: Prospect)` returns a deterministic `Recommendation` object with `{ score, scoreLabel, callouts, suggestedAction }` — no LLM, no async, no side effects
-- [ ] **REC-03**: The recommendation surfaces contact-coverage gaps (missing Decision Maker, missing Champion, no contacts at all) using `prospect.contacts`
-- [ ] **REC-04**: The recommendation surfaces staleness using the same thresholds as `getAgingClass` (<7d / 7–30d / 30+d / never), with an extra "Hot going cold" rule at 14+d for Hot prospects and a critical "stale-90" rule past 90 days
-- [ ] **REC-05**: The recommendation surfaces competitor pressure when `prospect.competitor` is set, with warn severity for SOCi/Birdeye/Reputation.com, info severity for other named competitors, "Other: X" prefix stripped, and silence on `""` / `"Unknown"` / `"Yext"`
-- [ ] **REC-06**: The engine is covered by table-driven unit tests in `src/test/recommendation.test.ts` (≥10 representative cases) and the card has at least one render test in `src/test/RecommendationCard.test.tsx`
-- [ ] **REC-07**: The existing inline `whyActParts` memo at `ProspectSheet.tsx:176-195` and its render at `:504-508` are removed — `RecommendationCard` is the single surface for "why act on this account"
+- [x] **REC-01**: A `RecommendationCard` renders at the top of the ProspectSheet Overview tab (above Account Details), summarizing score + label + at most 3 callout chips + a single suggested-action sentence
+- [x] **REC-02**: A pure function `getRecommendation(p: Prospect)` returns a deterministic `Recommendation` object with `{ score, scoreLabel, callouts, suggestedAction }` — no LLM, no async, no side effects
+- [x] **REC-03**: The recommendation surfaces contact-coverage gaps (missing Decision Maker, missing Champion, no contacts at all) using `prospect.contacts`
+- [x] **REC-04**: The recommendation surfaces staleness using the same thresholds as `getAgingClass` (<7d / 7–30d / 30+d / never), with an extra "Hot going cold" rule at 14+d for Hot prospects and a critical "stale-90" rule past 90 days
+- [x] **REC-05**: The recommendation surfaces competitor pressure when `prospect.competitor` is set, with warn severity for SOCi/Birdeye/Reputation.com, info severity for other named competitors, "Other: X" prefix stripped, and silence on `""` / `"Unknown"` / `"Yext"`
+- [x] **REC-06**: The engine is covered by table-driven unit tests in `src/test/recommendation.test.ts` (≥10 representative cases) and the card has at least one render test in `src/test/RecommendationCard.test.tsx`
+- [x] **REC-07**: The existing inline `whyActParts` memo at `ProspectSheet.tsx:176-195` and its render at `:504-508` are removed — `RecommendationCard` is the single surface for "why act on this account"
 
 ## v2 Requirements
 
@@ -130,10 +130,10 @@ Explicitly excluded. Documented to prevent scope creep.
 | LOG-04 | Phase 5 | Complete |
 | LOG-05 | Phase 5 | Complete |
 | LOG-06 | Phase 5 | Complete |
-| REC-01 | Phase 6 | Pending |
-| REC-02 | Phase 6 | Pending |
-| REC-03 | Phase 6 | Pending |
-| REC-04 | Phase 6 | Pending |
-| REC-05 | Phase 6 | Pending |
-| REC-06 | Phase 6 | Pending |
-| REC-07 | Phase 6 | Pending |
+| REC-01 | Phase 6 | Complete |
+| REC-02 | Phase 6 | Complete |
+| REC-03 | Phase 6 | Complete |
+| REC-04 | Phase 6 | Complete |
+| REC-05 | Phase 6 | Complete |
+| REC-06 | Phase 6 | Complete |
+| REC-07 | Phase 6 | Complete |
