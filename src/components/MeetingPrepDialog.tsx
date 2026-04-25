@@ -104,7 +104,7 @@ export const MeetingPrepDialog = forwardRef<MeetingPrepDialogHandle, MeetingPrep
 <style>
   @media print { body { margin: 0; } @page { margin: 0.75in; } }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; max-width: 700px; margin: 0 auto; padding: 40px 24px; line-height: 1.6; }
-  .header { border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 24px; }
+  .header { border-bottom: 2px solid #5158d3; padding-bottom: 12px; margin-bottom: 24px; }
   .header h1 { font-size: 20px; font-weight: 700; margin: 0 0 4px 0; color: #111; }
   .header .meta { font-size: 13px; color: #666; }
   .content { font-size: 14px; white-space: pre-wrap; }

@@ -268,7 +268,7 @@ function Stat({
         : "text-foreground";
   return (
     <div className="bg-card border border-border rounded-lg p-3">
-      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className={cn("text-2xl font-black font-mono mt-0.5", colorClass)}>{value}</div>
     </div>
   );
