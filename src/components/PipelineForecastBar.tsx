@@ -111,10 +111,14 @@ export function PipelineForecastBar({ opportunities }: PipelineForecastBarProps)
             return (
               <Tooltip key={b.stage}>
                 <TooltipTrigger asChild>
-                  <div
-                    className={cn("h-full transition-all duration-500", STAGE_BAR_COLORS[b.stage] ?? "bg-slate-400")}
+                  <button
+                    type="button"
+                    className={cn(
+                      "h-full transition-all duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      STAGE_BAR_COLORS[b.stage] ?? "bg-slate-400",
+                    )}
                     style={{ width: `${widthPct}%` }}
-                    aria-label={`${b.stage}: ${b.count} deals, $${b.weighted.toLocaleString()} weighted`}
+                    aria-label={`${b.stage}: ${b.count} deals, $${b.weighted.toLocaleString()} weighted (${(b.weight * 100).toFixed(0)}%)`}
                   />
                 </TooltipTrigger>
                 <TooltipContent>

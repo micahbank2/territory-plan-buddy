@@ -359,10 +359,8 @@
     position: static !important;
     backdrop-filter: none !important;
   }
-  [data-no-print] {
-    display: none !important;
-  }
-  button {
+  [data-no-print],
+  [data-no-print] button {
     display: none !important;
   }
   /* Remove decorative backgrounds for print contrast */

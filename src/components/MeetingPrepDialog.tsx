@@ -1,6 +1,6 @@
 import { forwardRef, useImperativeHandle, useState } from "react";
 import { FileText, Copy, Loader2, RefreshCw } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -134,10 +134,18 @@ export const MeetingPrepDialog = forwardRef<MeetingPrepDialogHandle, MeetingPrep
               <FileText className="w-4 h-4 text-primary" />
               Meeting Prep{prospect ? ` — ${prospect.name}` : ""}
             </DialogTitle>
+            <DialogDescription>
+              AI-generated one-pager: context, recent history, contacts, open tasks, talking points, suggested ask.
+            </DialogDescription>
           </DialogHeader>
 
           {loading ? (
-            <div className="flex items-center justify-center gap-2 py-8" data-testid="meeting-prep-loading">
+            <div
+              className="flex items-center justify-center gap-2 py-8"
+              data-testid="meeting-prep-loading"
+              role="status"
+              aria-live="polite"
+            >
               <Loader2 className="w-5 h-5 animate-spin text-primary" />
               <span className="text-sm text-muted-foreground">Generating meeting prep...</span>
             </div>
