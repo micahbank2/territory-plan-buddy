@@ -1,78 +1,28 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTheme } from "next-themes";
 import { useProspects } from "@/hooks/useProspects";
+import { useOpportunities } from "@/hooks/useOpportunities";
 import { useTerritories } from "@/hooks/useTerritories";
-import { scoreProspect, getScoreLabel, getLogoUrl, STAGES, type Prospect } from "@/data/prospects";
+import { getScoreLabel, getLogoUrl, type Prospect } from "@/data/prospects";
+import { getBriefing } from "@/data/briefing";
 import { cn, normalizeUrl } from "@/lib/utils";
 import {
-  ArrowLeft, AlertTriangle, Clock, UserX, BarChart3, Building2,
-  ExternalLink, CheckCircle, ChevronRight,
+  ArrowLeft, AlertTriangle, Clock, BarChart3, Building2,
+  CheckCircle, ChevronRight, Sparkles, TrendingUp, Target,
 } from "lucide-react";
-
-
-function daysBetween(a: string, b: Date): number {
-  return Math.floor((b.getTime() - new Date(a).getTime()) / 86400000);
-}
 
 export default function TodayPage() {
   const navigate = useNavigate();
-  const { theme } = useTheme();
   const { activeTerritory } = useTerritories();
   const { data, ok } = useProspects(activeTerritory ?? undefined);
+  const { opportunities } = useOpportunities(activeTerritory);
 
-  const now = new Date();
-  const todayStr = now.toISOString().split("T")[0];
-
-  // 1. Overdue tasks grouped by prospect
-  const overdueTasks = useMemo(() => {
-    const results: { prospect: Prospect; tasks: { id: string; text: string; dueDate: string }[] }[] = [];
-    for (const p of data) {
-      const overdue = (p.tasks || []).filter(
-        (t) => t.dueDate && t.dueDate < todayStr
-      );
-      if (overdue.length > 0) {
-        results.push({
-          prospect: p,
-          tasks: overdue.map((t) => ({ id: t.id, text: t.text, dueDate: t.dueDate! })),
-        });
-      }
-    }
-    return results.sort((a, b) => b.tasks.length - a.tasks.length);
-  }, [data, todayStr]);
-
-  // 2. Stale high-priority: score 40+, not touched in 30+ days
-  const staleHighPriority = useMemo(() => {
-    return data
-      .filter((p) => {
-        const score = scoreProspect(p);
-        if (score < 40) return false;
-        if (!p.lastTouched) return true;
-        return daysBetween(p.lastTouched, now) >= 30;
-      })
-      .sort((a, b) => scoreProspect(b) - scoreProspect(a));
-  }, [data]);
-
-  // 3. Never contacted: zero interactions, top 5 by score
-  const neverContacted = useMemo(() => {
-    return data
-      .filter((p) => !p.interactions || p.interactions.length === 0)
-      .sort((a, b) => scoreProspect(b) - scoreProspect(a))
-      .slice(0, 5);
-  }, [data]);
-
-  // 4. Pipeline summary: count by outreach stage
-  const pipelineSummary = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const stage of STAGES) counts[stage] = 0;
-    for (const p of data) {
-      const stage = p.outreach || "Not Started";
-      counts[stage] = (counts[stage] || 0) + 1;
-    }
-    return STAGES.map((stage) => ({ stage, count: counts[stage] || 0 }));
-  }, [data]);
-
-  const totalOverdue = overdueTasks.reduce((sum, g) => sum + g.tasks.length, 0);
+  // Capture today once on mount — Pitfall 4: prevents re-running engine on every render
+  const now = useMemo(() => new Date(), []);
+  const briefing = useMemo(
+    () => getBriefing(data, opportunities, now),
+    [data, opportunities, now],
+  );
 
   if (!ok) {
     return (
@@ -86,7 +36,7 @@ export default function TodayPage() {
     <div className="min-h-screen bg-background text-foreground">
 
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border">
+      <div data-no-print className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-4xl mx-auto flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
             <button onClick={() => navigate("/")} className="p-1.5 rounded-md hover:bg-muted transition-colors">
@@ -96,171 +46,195 @@ export default function TodayPage() {
               <h1 className="text-lg font-bold tracking-tight">Today</h1>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">{now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</p>
+          <p className="text-xs text-muted-foreground">{briefing.todayLabel}</p>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-8 space-y-8 relative z-10">
 
-        {/* Section 1: Overdue Tasks */}
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="w-5 h-5 text-destructive" />
-            <h2 className="text-base font-bold">Overdue Tasks</h2>
-            {totalOverdue > 0 && (
-              <span className="ml-1 text-xs bg-destructive/10 text-destructive font-semibold px-2 py-0.5 rounded-full">{totalOverdue}</span>
-            )}
-          </div>
-          {overdueTasks.length === 0 ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-4">
-              <CheckCircle className="w-4 h-4 text-emerald-500" />
-              All caught up — no overdue tasks.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {overdueTasks.map(({ prospect, tasks }) => (
-                <div key={prospect.id} className="bg-card border border-border rounded-lg p-4">
-                  <button
-                    onClick={() => navigate(`/prospect/${prospect.id}`)}
-                    className="flex items-center gap-2 mb-2 group"
-                  >
-                    <ProspectLogo prospect={prospect} />
-                    <span className="text-sm font-semibold group-hover:text-primary transition-colors">{prospect.name}</span>
-                    <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                  </button>
-                  <div className="space-y-1.5 pl-7">
-                    {tasks.map((t) => (
-                      <div key={t.id} className="flex items-center gap-2 text-sm">
-                        <span className="text-destructive font-medium text-xs">
-                          {daysBetween(t.dueDate, now)}d overdue
-                        </span>
-                        <span className="text-foreground">{t.text}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        {/* Hero metrics row */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Stat label="Active" value={briefing.hero.activeProspects} />
+          <Stat label="Hot" value={briefing.hero.hotCount} accent="primary" />
+          <Stat
+            label="Weighted Pipeline"
+            value={
+              briefing.hero.weightedPipeline >= 1000
+                ? `$${(briefing.hero.weightedPipeline / 1000).toFixed(0)}k`
+                : `$${briefing.hero.weightedPipeline.toLocaleString()}`
+            }
+            accent="primary"
+          />
+          <Stat
+            label="Overdue"
+            value={briefing.hero.overdueTaskCount}
+            accent={briefing.hero.overdueTaskCount > 0 ? "destructive" : "default"}
+          />
         </section>
 
-        {/* Section 2: Stale High-Priority */}
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-5 h-5 text-amber-500" />
-            <h2 className="text-base font-bold">Stale High-Priority Accounts</h2>
-            {staleHighPriority.length > 0 && (
-              <span className="ml-1 text-xs bg-amber-500/10 text-amber-600 font-semibold px-2 py-0.5 rounded-full">{staleHighPriority.length}</span>
-            )}
+        {/* Inbox-zero celebration — only shown when prospects exist AND nothing actionable */}
+        {briefing.inboxZero && data.length > 0 && (
+          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-6 text-center">
+            <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+            <p className="text-base font-semibold">Inbox zero.</p>
+            <p className="text-sm text-muted-foreground">Nothing demands action today. Go close some deals.</p>
           </div>
-          {staleHighPriority.length === 0 ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-4">
-              <CheckCircle className="w-4 h-4 text-emerald-500" />
-              No high-scoring accounts are going stale.
+        )}
+
+        {/* Today's Plan — Hot prospects with no recent contact */}
+        {briefing.todayPlan.length > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="w-5 h-5 text-primary" />
+              <h2 className="text-base font-bold">Today's Plan</h2>
+              <span className="ml-1 text-xs bg-primary/10 text-primary font-semibold px-2 py-0.5 rounded-full">
+                {briefing.todayPlan.length}
+              </span>
             </div>
-          ) : (
             <div className="grid gap-2">
-              {staleHighPriority.map((p) => {
-                const score = scoreProspect(p);
-                const scoreInfo = getScoreLabel(score);
-                const staleDays = p.lastTouched ? daysBetween(p.lastTouched, now) : null;
+              {briefing.todayPlan.map((item) => {
+                const prospect = data.find((p) => String(p.id) === item.prospectId);
+                const scoreInfo = getScoreLabel(item.score);
                 return (
                   <button
-                    key={p.id}
-                    onClick={() => navigate(`/prospect/${p.id}`)}
+                    key={item.prospectId}
+                    onClick={() => navigate(`/prospect/${item.prospectId}`)}
                     className="flex items-center gap-3 bg-card border border-border rounded-lg p-3 hover:border-primary/40 transition-all text-left w-full group"
                   >
-                    <ProspectLogo prospect={p} />
+                    {prospect ? <ProspectLogo prospect={prospect} /> : <Building2 className="w-5 h-5 text-muted-foreground" />}
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm font-semibold group-hover:text-primary transition-colors">{p.name}</span>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                        <span>{p.industry || "—"}</span>
-                        {p.locationCount != null && <span>· {p.locationCount} locs</span>}
+                      <span className="text-sm font-semibold group-hover:text-primary transition-colors">{item.name}</span>
+                      <div className="text-xs text-muted-foreground mt-0.5">{item.reason}</div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className={cn("text-xs font-bold", scoreInfo.color)}>{item.score}</div>
+                      <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Overdue Tasks — flat list (engine already sorted oldest-first, capped at 10) */}
+        {briefing.overdueTasks.length > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              <h2 className="text-base font-bold">Overdue Tasks</h2>
+              <span className="ml-1 text-xs bg-destructive/10 text-destructive font-semibold px-2 py-0.5 rounded-full">
+                {briefing.hero.overdueTaskCount}
+              </span>
+              {briefing.hero.overdueTaskCount > briefing.overdueTasks.length && (
+                <span className="text-xs text-muted-foreground">showing top {briefing.overdueTasks.length}</span>
+              )}
+            </div>
+            <div className="grid gap-2">
+              {briefing.overdueTasks.map((task) => {
+                const prospect = data.find((p) => String(p.id) === task.prospectId);
+                return (
+                  <button
+                    key={`${task.prospectId}-${task.taskId}`}
+                    onClick={() => navigate(`/prospect/${task.prospectId}`)}
+                    className="flex items-center gap-3 bg-card border border-border rounded-lg p-3 hover:border-primary/40 transition-all text-left w-full group"
+                  >
+                    {prospect ? <ProspectLogo prospect={prospect} /> : <Building2 className="w-5 h-5 text-muted-foreground" />}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm">
+                        <span className="font-semibold group-hover:text-primary transition-colors">{task.prospectName}</span>
+                        <span className="text-muted-foreground"> · </span>
+                        <span className="text-foreground">{task.text}</span>
                       </div>
+                    </div>
+                    <span className="shrink-0 text-xs bg-destructive/10 text-destructive font-semibold px-2 py-0.5 rounded">
+                      {task.daysOverdue}d overdue
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Going Stale — Hot/Warm with 30+d staleness and score>=40 */}
+        {briefing.goingStale.length > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="w-5 h-5 text-amber-500" />
+              <h2 className="text-base font-bold">Going Stale</h2>
+              <span className="ml-1 text-xs bg-amber-500/10 text-amber-600 font-semibold px-2 py-0.5 rounded-full">
+                {briefing.goingStale.length}
+              </span>
+            </div>
+            <div className="grid gap-2">
+              {briefing.goingStale.map((item) => {
+                const prospect = data.find((p) => String(p.id) === item.prospectId);
+                const scoreInfo = getScoreLabel(item.score);
+                return (
+                  <button
+                    key={item.prospectId}
+                    onClick={() => navigate(`/prospect/${item.prospectId}`)}
+                    className="flex items-center gap-3 bg-card border border-border rounded-lg p-3 hover:border-primary/40 transition-all text-left w-full group"
+                  >
+                    {prospect ? <ProspectLogo prospect={prospect} /> : <Building2 className="w-5 h-5 text-muted-foreground" />}
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-semibold group-hover:text-primary transition-colors">{item.name}</span>
+                      <div className="text-xs text-muted-foreground mt-0.5">{item.reason}</div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className={cn("text-xs font-bold", scoreInfo.color)}>{score} ({scoreInfo.label})</div>
+                      <div className={cn("text-xs font-bold", scoreInfo.color)}>{item.score} ({scoreInfo.short})</div>
                       <div className="text-xs text-muted-foreground">
-                        {staleDays != null ? `${staleDays}d since touch` : "Never touched"}
+                        {item.daysStale != null ? `${item.daysStale}d since touch` : "Never touched"}
                       </div>
                     </div>
                   </button>
                 );
               })}
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
-        {/* Section 3: Never Contacted */}
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <UserX className="w-5 h-5 text-blue-500" />
-            <h2 className="text-base font-bold">Never Contacted</h2>
-            <span className="text-xs text-muted-foreground">Top 5 by score</span>
-          </div>
-          {neverContacted.length === 0 ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-4">
-              <CheckCircle className="w-4 h-4 text-emerald-500" />
-              Every prospect has at least one interaction.
+        {/* New Pipeline This Week — opps created in last 7 days */}
+        {briefing.newPipeline.length > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="w-5 h-5 text-emerald-500" />
+              <h2 className="text-base font-bold">New Pipeline This Week</h2>
+              <span className="ml-1 text-xs bg-emerald-500/10 text-emerald-600 font-semibold px-2 py-0.5 rounded-full">
+                {briefing.newPipeline.length}
+              </span>
             </div>
-          ) : (
             <div className="grid gap-2">
-              {neverContacted.map((p) => {
-                const score = scoreProspect(p);
-                const scoreInfo = getScoreLabel(score);
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => navigate(`/prospect/${p.id}`)}
-                    className="flex items-center gap-3 bg-card border border-border rounded-lg p-3 hover:border-primary/40 transition-all text-left w-full group"
-                  >
-                    <ProspectLogo prospect={p} />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-semibold group-hover:text-primary transition-colors">{p.name}</span>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                        <span>{p.industry || "—"}</span>
-                        {p.locationCount != null && <span>· {p.locationCount} locs</span>}
-                        {p.competitor && <span>· vs {p.competitor}</span>}
-                      </div>
+              {briefing.newPipeline.map((opp) => (
+                <button
+                  key={opp.oppId}
+                  onClick={() => opp.prospectId && navigate(`/prospect/${opp.prospectId}`)}
+                  className="flex items-center gap-3 bg-card border border-border rounded-lg p-3 hover:border-primary/40 transition-all text-left w-full group"
+                >
+                  <Target className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-semibold group-hover:text-primary transition-colors">{opp.name}</span>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                      <span>{opp.stage}</span>
+                      {opp.potentialValue > 0 && <span>· ${(opp.potentialValue / 1000).toFixed(0)}k</span>}
+                      <span>· {opp.daysSinceCreated === 0 ? "today" : `${opp.daysSinceCreated}d ago`}</span>
                     </div>
-                    <div className={cn("text-xs font-bold shrink-0", scoreInfo.color)}>{score}</div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        {/* Section 4: Pipeline Summary */}
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <BarChart3 className="w-5 h-5 text-primary" />
-            <h2 className="text-base font-bold">Pipeline Summary</h2>
-          </div>
-          <div className="bg-card border border-border rounded-lg p-4">
-            <div className="space-y-2.5">
-              {pipelineSummary.map(({ stage, count }) => {
-                const maxCount = Math.max(...pipelineSummary.map((s) => s.count), 1);
-                const pct = (count / maxCount) * 100;
-                return (
-                  <div key={stage} className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground w-36 shrink-0 text-right">{stage}</span>
-                    <div className="flex-1 h-6 bg-muted rounded overflow-hidden">
-                      <div
-                        className="h-full bg-primary/70 rounded transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="text-sm font-semibold w-8 text-right">{count}</span>
                   </div>
-                );
-              })}
+                </button>
+              ))}
             </div>
-            <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground text-right">
-              {data.length} total prospects
-            </div>
+          </section>
+        )}
+
+        {/* Empty state — no prospects at all (distinct from inbox-zero) */}
+        {data.length === 0 && (
+          <div className="rounded-lg border border-border bg-muted/30 p-8 text-center">
+            <BarChart3 className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-base font-semibold">No prospects yet.</p>
+            <p className="text-sm text-muted-foreground">Add your first prospect to start your morning briefing.</p>
           </div>
-        </section>
+        )}
       </div>
     </div>
   );
@@ -275,4 +249,27 @@ function ProspectLogo({ prospect }: { prospect: Prospect }) {
     return <img src={url} alt="" className="w-6 h-6 rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />;
   }
   return <Building2 className="w-5 h-5 text-muted-foreground" />;
+}
+
+function Stat({
+  label,
+  value,
+  accent = "default",
+}: {
+  label: string;
+  value: number | string;
+  accent?: "default" | "primary" | "destructive";
+}) {
+  const colorClass =
+    accent === "primary"
+      ? "text-primary"
+      : accent === "destructive"
+        ? "text-destructive"
+        : "text-foreground";
+  return (
+    <div className="bg-card border border-border rounded-lg p-3">
+      <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className={cn("text-2xl font-black font-mono mt-0.5", colorClass)}>{value}</div>
+    </div>
+  );
 }

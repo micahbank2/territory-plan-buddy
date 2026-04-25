@@ -86,6 +86,17 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **PREP-07**: Loading state renders a spinner + "Generating meeting prep..." copy; error state surfaces `toast.error(msg)` and closes the dialog (matches previous inline behavior)
 - [x] **PREP-08**: Inline `meetingPrep*` references in `ProspectSheet.tsx` are removed — `grep -nE "meetingPrepBrief|meetingPrepLoading|generateMeetingPrep|copyMeetingPrep|exportMeetingPrepPdf|showMeetingPrepDialog" src/components/ProspectSheet.tsx` returns zero matches; the only remaining meeting-prep code is the import, the `meetingPrepRef` declaration, the button `onClick={() => meetingPrepRef.current?.open(prospect)}`, and the single `<MeetingPrepDialog />` mount
 
+### Daily Briefing
+
+- [x] **BRIEF-01**: A pure TypeScript function `getBriefing(prospects, opportunities, today)` returns a structured `Briefing` object with no React or Supabase imports
+- [x] **BRIEF-02**: TodayPage renders all sections from the Briefing struct (no inline filtering/scoring computation in the page)
+- [x] **BRIEF-03**: Hero metrics row shows Active prospects, Hot count, Weighted Pipeline ($), and Overdue count
+- [x] **BRIEF-04**: Today's Plan section lists Hot prospects with `lastTouched > 14 days` (or never contacted), capped at 5
+- [x] **BRIEF-05**: Overdue Tasks section lists tasks where `task.dueDate < today`, sorted oldest first, capped at 10
+- [x] **BRIEF-06**: Going Stale section lists Hot/Warm prospects where `lastTouched != null` AND `daysBetween(lastTouched, today) >= 30` AND `score >= 40`, capped at 10
+- [x] **BRIEF-07**: Pipeline Movement section lists opportunities created in the last 7 days (`created_at >= today - 7d`)
+- [x] **BRIEF-08**: `@media print` rules in `src/index.css` hide nav and simplify layout for clean print/PDF output
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
