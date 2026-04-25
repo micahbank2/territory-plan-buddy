@@ -33,6 +33,7 @@ import {
   calcLargeRenewalAddon,
   calcAddOnPayouts,
 } from "@/data/myNumbers/comp";
+import { MyNumbersTrendsTab } from "@/components/myNumbers/MyNumbersTrendsTab";
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
@@ -267,11 +268,12 @@ export default function MyNumbersPage() {
           />
         </div>
 
-        {/* ─── Tabs: Incremental / Renewal ────────────────────────── */}
+        {/* ─── Tabs: Incremental / Renewal / Trends ───────────────── */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-3">
             <TabsTrigger value="incremental">Incremental ACV</TabsTrigger>
             <TabsTrigger value="renewal">Renewal ACV</TabsTrigger>
+            <TabsTrigger value="trends">Trends</TabsTrigger>
           </TabsList>
 
           <TabsContent value="incremental">
@@ -452,6 +454,14 @@ export default function MyNumbersPage() {
                 <span className="text-muted-foreground ml-1">(0.5% on {fmt(ytdTotals.totalRenewed)} renewed, U4R ≥ $1.5M & retention ≥ target)</span>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="trends">
+            <MyNumbersTrendsTab
+              entries={entries}
+              pipelineByMonth={pipelineByMonth}
+              incrementalCalcs={incrementalCalcs}
+            />
           </TabsContent>
         </Tabs>
 

@@ -13,3 +13,12 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: () => {},
   }),
 });
+
+// recharts ResponsiveContainer uses ResizeObserver; jsdom does not provide it.
+class ResizeObserverPolyfill {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+(globalThis as { ResizeObserver?: typeof ResizeObserverPolyfill }).ResizeObserver =
+  ResizeObserverPolyfill;
