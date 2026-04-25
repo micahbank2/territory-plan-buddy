@@ -92,9 +92,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **NUM-02**: Comp math is covered by ≥12 unit tests in `src/test/myNumbers/comp.test.ts` covering tier1/tier2/tier3 boundaries, YTD-accelerator on/off, calcAnnualAccel tiered rates (8%/10%/12%), renewalPayoutPct breakpoints (0/50/75/100/>100), calcLargeRenewalAddon U4R + retention floors, calcAddOnPayouts multi-year duration gate + Kong delta clamps to 0
 - [x] **NUM-03**: `FY27_MONTHS`, `DEFAULT_QUOTAS`, `DEFAULT_SETTINGS`, `DEFAULT_ADDONS`, `ENTRIES_KEY`, `SETTINGS_KEY`, `ADDONS_KEY`, `NumbersEntry` / `CompSettings` / `AddOns` types, and `loadEntries` / `loadSettings` / `loadAddOns` readers all live in `src/data/myNumbers/storage.ts` as the single source of truth — `MyNumbersPage`, `QuotaHeroBoxes`, `PipelineForecastBar`, `useTerritoryPlannerSelectors` all import from it; no duplicate inline declarations remain (`grep -rE "^const FY27_MONTHS = \[" src/` returns 1 match)
 - [x] **NUM-04**: Non-owner redirect on `MyNumbersPage` uses `useEffect` (not `navigate()` during render) — eliminates the React "Cannot update a component while rendering" warning and the StrictMode double-fire hazard; render returns `null` while redirect is pending
-- [ ] **NUM-05**: A new "Trends" tab is added to `MyNumbersPage` containing three vertically stacked recharts visualizations: (1) Quota Attainment % over time (cumulative YTD bookings ÷ cumulative YTD quota × 100, with `<ReferenceLine y={100}>`), (2) Activity Rate over time (Meetings + Touches dual-line), (3) Pipeline Coverage over time (monthly pipeline ACV ÷ monthly quota, with `<ReferenceLine y={3}>` dashed at 3x target)
+- [x] **NUM-05**: A new "Trends" tab is added to `MyNumbersPage` containing three vertically stacked recharts visualizations: (1) Quota Attainment % over time (cumulative YTD bookings ÷ cumulative YTD quota × 100, with `<ReferenceLine y={100}>`), (2) Activity Rate over time (Meetings + Touches dual-line), (3) Pipeline Coverage over time (monthly pipeline ACV ÷ monthly quota, with `<ReferenceLine y={3}>` dashed at 3x target)
 - [x] **NUM-06**: The lone arbitrary text-size violation `text-[10px]` at `MyNumbersPage.tsx:722` is replaced with `text-xs`
-- [ ] **NUM-07**: After sub-component decomposition, `src/pages/MyNumbersPage.tsx` is ≤400 lines (mirrors Phase 03 UX-04 ceiling); sub-components live in `src/components/myNumbers/` (`SummaryCardRow`, `IncrementalTab`, `RenewalTab`, `MyNumbersTrendsTab`, `AddonsSection`, `EarningsSummary`, `MyNumbersChart`, `SettingsDialog`); the coordinator owns all state and passes typed props down
+- [x] **NUM-07**: After sub-component decomposition, `src/pages/MyNumbersPage.tsx` is ≤400 lines (mirrors Phase 03 UX-04 ceiling); sub-components live in `src/components/myNumbers/` (`SummaryCardRow`, `IncrementalTab`, `RenewalTab`, `MyNumbersTrendsTab`, `AddonsSection`, `EarningsSummary`, `MyNumbersChart`, `SettingsDialog`); the coordinator owns all state and passes typed props down
 - [x] **NUM-08**: `EditableCell` accepts an `aria-label` prop and forwards it to both the `<input>` (when editing) and the `<span>` (when displaying); every callsite passes a meaningful label (e.g., "Quota for Mar 2026", "Bookings for Mar 2026", "Renewed ACV for Mar 2026")
 
 ## v2 Requirements
@@ -204,7 +204,7 @@ Explicitly excluded. Documented to prevent scope creep.
 | NUM-02 | Phase 10 | Complete |
 | NUM-03 | Phase 10 | Complete |
 | NUM-04 | Phase 10 | Complete |
-| NUM-05 | Phase 10 | Pending |
+| NUM-05 | Phase 10 | Complete |
 | NUM-06 | Phase 10 | Complete |
-| NUM-07 | Phase 10 | Pending |
+| NUM-07 | Phase 10 | Complete |
 | NUM-08 | Phase 10 | Complete |
