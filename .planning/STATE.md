@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: phase-complete
-stopped_at: Phase 05 verified PASS — LOG-01..LOG-06 satisfied
-last_updated: "2026-04-24T23:30:00.000Z"
-last_activity: 2026-04-24
+stopped_at: Phase 06 verified PASS — REC-01..REC-07 satisfied
+last_updated: "2026-04-25T01:35:00.000Z"
+last_activity: 2026-04-25
 progress:
-  total_phases: 5
-  completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
-  percent: 80
+  total_phases: 6
+  completed_phases: 5
+  total_plans: 11
+  completed_plans: 11
+  percent: 83
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** The app must never silently lose data. Every edit must either persist to Supabase or visibly fail with a clear error.
-**Current focus:** Phase 05 — log-next-step-widget (COMPLETE)
+**Current focus:** Phase 06 — score-to-recommended-action (COMPLETE)
 
 ## Current Position
 
-Phase: 05 (log-next-step-widget) — COMPLETE (verified 2026-04-24)
+Phase: 06 (score-to-recommended-action) — COMPLETE (verified 2026-04-25)
 Plan: 1 of 1
-Status: Phase verified PASS — LOG-01..LOG-06 delivered. Phase 2 (TanStack Query) is the only "Not started" phase remaining.
-Last activity: 2026-04-24
+Status: Phase verified PASS — REC-01..REC-07 delivered. Phase 2 (TanStack Query) is the only "Not started" phase remaining.
+Last activity: 2026-04-25
 
-Progress: [████████░░] 80% (4 of 5 integer phases complete; Phase 2 remains)
+Progress: [████████░░] 83% (5 of 6 integer phases complete; Phase 2 remains)
 
 ## Performance Metrics
 
@@ -62,12 +62,14 @@ Progress: [████████░░] 80% (4 of 5 integer phases complete; 
 | Phase 03-component-decomposition-ux-polish P02 | 6m 11s | 2 tasks | 4 files |
 | Phase 03-component-decomposition-ux-polish P03 | 15m | 2 tasks | 18 files |
 | Phase 05-log-next-step-widget P01 | 5min | 2 tasks | 4 files |
+| Phase 06-score-to-recommended-action P01 | 6min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
 - 2026-04-24: Phase 5 added — Log + Next Step Widget (single-submit interaction logger in ProspectSheet Activity tab; replaces two-section workflow)
+- 2026-04-24: Phase 6 added — Score → Recommended Action (surface "why call this account" header in ProspectSheet Overview tab using score breakdown + contact gaps + staleness)
 
 ### Decisions
 
@@ -97,6 +99,9 @@ Recent decisions affecting current work:
 - [Phase 05-log-next-step-widget]: addInteraction + addTask return Promise<boolean> — non-breaking: void-ignoring callers compile unchanged, new boolean contract lets the widget detect partial failure cleanly
 - [Phase 05-log-next-step-widget]: Default follow-up due date recomputes on every toggle-on — memo-once would go stale for widgets opened before midnight and submitted after
 - [Phase 05-log-next-step-widget]: parseLocalDate helper — new Date('yyyy-MM-dd') parses as UTC and drifts a day west in EDT; caught when Test 4 expected 'April 27th' but got 'April 26th'
+- [Phase 06-score-to-recommended-action]: Recommendation engine is pure-TS deterministic (no LLM); useMemo([prospect]) in card scopes recompute
+- [Phase 06-score-to-recommended-action]: Engine date math mirrors agingHelpers.ts:6 (Math.floor / 86400000) to avoid Phase 05 UTC drift
+- [Phase 06-score-to-recommended-action]: Competitor 'Other: X' prefix stripped for display; severity defaults to info for unmapped competitors
 
 ### Pending Todos
 
@@ -117,6 +122,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-24T23:12:50.349Z
-Stopped at: Completed 05-log-next-step-widget 05-01-PLAN.md
+Last session: 2026-04-25T01:23:03.675Z
+Stopped at: Completed 06-01-PLAN.md
 Resume file: None

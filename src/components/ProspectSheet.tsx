@@ -13,6 +13,7 @@ import { AIReadinessCard } from "@/components/AIReadinessCard";
 import { SignalsSection } from "@/components/SignalsSection";
 import { ContactPickerDialog } from "@/components/ContactPickerDialog";
 import { LogActivityWidget } from "@/components/LogActivityWidget";
+import { RecommendationCard } from "@/components/RecommendationCard";
 import { type Signal } from "@/hooks/useSignals";
 import { cn, normalizeUrl } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -171,28 +172,6 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
 
   const score = prospect ? scoreProspect(prospect) : 0;
   const scoreInfo = getScoreLabel(score);
-
-  // "Why act" summary: chain applicable nudges
-  const whyActParts: string[] = useMemo(() => {
-    if (!prospect) return [];
-
-    const parts: string[] = [];
-    if (score >= 60) {
-      const hasDecisionMaker = (prospect.contacts || []).some(c => c.role === "Decision Maker");
-      if (!hasDecisionMaker) parts.push("Missing Decision Maker");
-    }
-    const interactions = prospect.interactions || [];
-    if (interactions.length === 0) {
-      parts.push("Never contacted");
-    } else {
-      const lastInteraction = interactions.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
-      const daysSince = Math.floor((Date.now() - new Date(lastInteraction.date).getTime()) / 86400000);
-      if (daysSince > 30) parts.push(`${daysSince} days since last touch`);
-    }
-    const comp = prospect.competitor || "";
-    if (comp === "SOCi" || comp === "Birdeye") parts.push(`On ${comp}`);
-    return parts;
-  }, [score, prospect]);
 
   if (!prospect) return null;
 
@@ -501,11 +480,6 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
                   <div className="text-center px-3 cursor-help">
                     <div className="text-2xl font-black animate-count-up" style={{ color: scoreInfo.color }}>{score}</div>
                     <div className="text-xs font-bold" style={{ color: scoreInfo.color }}>{scoreInfo.label}</div>
-                    {whyActParts.length > 0 && (
-                      <div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium mt-0.5 max-w-[180px] leading-tight">
-                        {whyActParts.join(" · ")}
-                      </div>
-                    )}
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" align="end" collisionPadding={16} className="text-xs max-w-[220px] p-3 z-[100]">
@@ -550,6 +524,8 @@ export function ProspectSheet({ prospectId, onClose, data, update, remove, delet
 
           {/* OVERVIEW TAB: Account Details, Research, Signals, AI Readiness, Location Notes */}
           <TabsContent value="overview" className="space-y-5 mt-0 animate-fade-in-up">
+          {/* Recommendation — why call this account */}
+          <RecommendationCard prospect={prospect} />
           {/* Account Details */}
           <div className="space-y-3">
             <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Account Details</h3>

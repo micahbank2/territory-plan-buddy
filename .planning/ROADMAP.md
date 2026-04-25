@@ -17,6 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 3: Component Decomposition & UX Polish** - Decompose TerritoryPlanner god component, add tabbed ProspectSheet layout
 - [x] **Phase 4: AI Capabilities** - Draft emails post-outreach tracking: batch persistence, pending outreach badge, mark-as-sent dialog, bulk Mark Contacted action (completed 2026-03-30)
 - [x] **Phase 5: Log + Next Step Widget** - Extract and harden the unified Log Activity widget on ProspectSheet: +3-business-day default, partial-failure handling, test coverage (completed 2026-04-24)
+- [ ] **Phase 6: Score → Recommended Action** - Promote inline whyActParts into a tested RecommendationCard at the top of the Overview tab; pure deterministic engine surfaces score + callouts + a single suggested-action sentence
 
 ## Phase Details
 
@@ -97,10 +98,28 @@ Plans:
 Plans:
 - [x] 05-01-PLAN.md — Extract LogActivityWidget, add +3-business-day default + partial-failure handling, non-breaking hook signature change, and full test coverage for LOG-01/02/03
 
+### Phase 6: Score → Recommended Action
+
+**Goal:** Promote the existing inline `whyActParts` chip block at `ProspectSheet.tsx:176-195` into a dedicated, tested `RecommendationCard` mounted at the top of the Overview tab. The recommendation engine becomes a pure deterministic TypeScript function (`getRecommendation(p)`) covered by table-driven unit tests; the card surfaces score + label + up to 3 severity-ranked callout chips + a single concrete suggested-action sentence. Closes CLAUDE.md priority roadmap item #5 and the known tech-debt note that "the score does not drive actions."
+**Depends on:** Phase 5
+**Requirements**: REC-01, REC-02, REC-03, REC-04, REC-05, REC-06, REC-07
+**Success Criteria** (what must be TRUE):
+  1. Opening any prospect's sheet shows a RecommendationCard at the top of the Overview tab (immediately above Account Details), rendering score + label + 0–3 callout chips + one suggested-action sentence
+  2. Hot + Not Started prospects surface a "Hot, not started" critical chip and a corresponding "start a first-touch sequence today" action
+  3. Score 40+ prospects with no Decision Maker contact surface a "Missing Decision Maker" warn chip; score 60+ with no Champion (and DM present) surface a "Missing Champion" info chip
+  4. Staleness chips fire correctly: never-contacted at score≥40 → critical; >90d → critical with day count; Hot+>14d → "Hot going cold" warn; >30d → "Nd since touch" warn — exclusive chain, only one of these fires
+  5. Competitor chips fire for SOCi/Birdeye/Reputation.com (warn) and other named competitors (info); "Other: X" prefix is stripped before display; "Yext" / "Unknown" / "" produce zero competitor chip
+  6. The recommendation engine is covered by ≥10 unit tests under fixed system time (vi.useFakeTimers) and the card has ≥1 render smoke test, all passing under `bunx vitest run`
+  7. The inline `whyActParts` memo and its render in the header are removed (`rg -n whyActParts src/` returns zero matches); RecommendationCard is the sole "why act" surface
+**Plans**: 1 plan
+
+Plans:
+- [x] 06-01-PLAN.md — Engine + card + ProspectSheet mount + delete inline whyActParts (REC-01..REC-07)
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -109,3 +128,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 3. Component Decomposition & UX Polish | 3/3 | Complete | 2026-04-24 |
 | 4. AI Capabilities | 2/2 | Complete   | 2026-03-30 |
 | 5. Log + Next Step Widget | 1/1 | Complete   | 2026-04-24 |
+| 6. Score → Recommended Action | 0/1 | Planned | - |
