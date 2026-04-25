@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: phase-complete
-stopped_at: Phase 06 verified PASS — REC-01..REC-07 satisfied
-last_updated: "2026-04-25T01:35:00.000Z"
+status: verifying
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-04-25T02:45:55.580Z"
 last_activity: 2026-04-25
 progress:
-  total_phases: 6
-  completed_phases: 5
-  total_plans: 11
-  completed_plans: 11
+  total_phases: 7
+  completed_phases: 6
+  total_plans: 12
+  completed_plans: 12
   percent: 83
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 
 Phase: 06 (score-to-recommended-action) — COMPLETE (verified 2026-04-25)
 Plan: 1 of 1
-Status: Phase verified PASS — REC-01..REC-07 delivered. Phase 2 (TanStack Query) is the only "Not started" phase remaining.
+Status: Phase complete — ready for verification
 Last activity: 2026-04-25
 
 Progress: [████████░░] 83% (5 of 6 integer phases complete; Phase 2 remains)
@@ -63,6 +63,7 @@ Progress: [████████░░] 83% (5 of 6 integer phases complete; 
 | Phase 03-component-decomposition-ux-polish P03 | 15m | 2 tasks | 18 files |
 | Phase 05-log-next-step-widget P01 | 5min | 2 tasks | 4 files |
 | Phase 06-score-to-recommended-action P01 | 6min | 2 tasks | 5 files |
+| Phase 07-weighted-pipeline-forecast P01 | 12min 35s | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,10 @@ Recent decisions affecting current work:
 - [Phase 06-score-to-recommended-action]: Recommendation engine is pure-TS deterministic (no LLM); useMemo([prospect]) in card scopes recompute
 - [Phase 06-score-to-recommended-action]: Engine date math mirrors agingHelpers.ts:6 (Math.floor / 86400000) to avoid Phase 05 UTC drift
 - [Phase 06-score-to-recommended-action]: Competitor 'Other: X' prefix stripped for display; severity defaults to info for unmapped competitors
+- [Phase 07-weighted-pipeline-forecast]: Pure forecastPipeline(opps, quota) engine with classification (open/booked/lost); STAGE_WEIGHTS covers all 10 OPP_STAGES; Math.round per-deal mirrors prior inline math
+- [Phase 07-weighted-pipeline-forecast]: loadAnnualQuota lives inside PipelineForecastBar.tsx (YAGNI — single consumer); mirrors QuotaHeroBoxes try/catch + DEFAULT_QUOTAS fallback; sum>0 guard ignores empty stored arrays
+- [Phase 07-weighted-pipeline-forecast]: Quota source-of-truth = code ($615k from DEFAULT_QUOTAS sum); CLAUDE.md $625k mention is stale doc drift — flagged for separate quick-fix, NOT updated this phase
+- [Phase 07-weighted-pipeline-forecast]: Test fix: getByText($70,000) caught two matches (headline + legend chip) — switched to getAllByText for weighted-total assertion
 
 ### Pending Todos
 
@@ -123,6 +128,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-25T01:23:03.675Z
-Stopped at: Completed 06-01-PLAN.md
+Last session: 2026-04-25T02:45:34.739Z
+Stopped at: Completed 07-01-PLAN.md
 Resume file: None

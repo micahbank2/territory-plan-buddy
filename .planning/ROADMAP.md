@@ -133,7 +133,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 07-01-PLAN.md — Engine + bar + OpportunitiesPage mount + delete inline forecast (FORECAST-01..FORECAST-08)
+- [x] 07-01-PLAN.md — Engine + bar + OpportunitiesPage mount + delete inline forecast (FORECAST-01..FORECAST-08)
 
 ## Progress
 

@@ -66,14 +66,14 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Weighted Pipeline Forecast
 
-- [ ] **FORECAST-01**: A `PipelineForecastBar` component renders above the Opportunities List View — between `QuotaHeroBoxes` and the table — for every territory state where opportunities exist (with an internal empty-state branch when zero open deals)
-- [ ] **FORECAST-02**: A pure function `forecastPipeline(opps: Opportunity[], quota: number): Forecast` is the single source of truth for forecast math — deterministic, no React, no async, no clock reads, no side effects
-- [ ] **FORECAST-03**: Stage weights cover all 10 OPP_STAGES with correct values and classifications: Develop=10% / Discovery=20% / Business Alignment=35% / Validate=50% / Propose=70% / Negotiate=85% (all "open"); Won=Closed Won=100% ("booked", NOT counted in weighted open pipeline); Closed Lost=Dead=excluded ("lost")
-- [ ] **FORECAST-04**: The bar headline shows weighted pipeline total + raw open total + booked total (when >0) + "% of FY27 Quota" with the quota dollar value visible in a subline; quota source is `localStorage["my_numbers_v2"]` summed over FY27 with `DEFAULT_QUOTAS` fallback (~$615k)
-- [ ] **FORECAST-05**: A segmented horizontal bar renders one tinted segment per active open stage with width proportional to that stage's weighted contribution; segments use `STAGE_BAR_COLORS` keyed to the existing `OpportunityKanban` palette (no new color tokens)
-- [ ] **FORECAST-06**: Each segment exposes a hover tooltip (shadcn `Tooltip`) showing stage name, deal count, weighted ACV, and weight percentage
-- [ ] **FORECAST-07**: When zero open opportunities exist (territory has only Closed Won / Closed Lost / Dead deals), the bar renders a "No active pipeline" empty-state card with a CTA-style icon and no segmented bar
-- [ ] **FORECAST-08**: The inline `STAGE_WEIGHTS` constant (was `OpportunitiesPage.tsx:45-53`), `weightedACV` `useMemo` (was `:274-279`), and inline two-column forecast JSX (was `:340-357`) are deleted — single source of truth lives in `src/data/forecast.ts` + `src/components/PipelineForecastBar.tsx`
+- [x] **FORECAST-01**: A `PipelineForecastBar` component renders above the Opportunities List View — between `QuotaHeroBoxes` and the table — for every territory state where opportunities exist (with an internal empty-state branch when zero open deals)
+- [x] **FORECAST-02**: A pure function `forecastPipeline(opps: Opportunity[], quota: number): Forecast` is the single source of truth for forecast math — deterministic, no React, no async, no clock reads, no side effects
+- [x] **FORECAST-03**: Stage weights cover all 10 OPP_STAGES with correct values and classifications: Develop=10% / Discovery=20% / Business Alignment=35% / Validate=50% / Propose=70% / Negotiate=85% (all "open"); Won=Closed Won=100% ("booked", NOT counted in weighted open pipeline); Closed Lost=Dead=excluded ("lost")
+- [x] **FORECAST-04**: The bar headline shows weighted pipeline total + raw open total + booked total (when >0) + "% of FY27 Quota" with the quota dollar value visible in a subline; quota source is `localStorage["my_numbers_v2"]` summed over FY27 with `DEFAULT_QUOTAS` fallback (~$615k)
+- [x] **FORECAST-05**: A segmented horizontal bar renders one tinted segment per active open stage with width proportional to that stage's weighted contribution; segments use `STAGE_BAR_COLORS` keyed to the existing `OpportunityKanban` palette (no new color tokens)
+- [x] **FORECAST-06**: Each segment exposes a hover tooltip (shadcn `Tooltip`) showing stage name, deal count, weighted ACV, and weight percentage
+- [x] **FORECAST-07**: When zero open opportunities exist (territory has only Closed Won / Closed Lost / Dead deals), the bar renders a "No active pipeline" empty-state card with a CTA-style icon and no segmented bar
+- [x] **FORECAST-08**: The inline `STAGE_WEIGHTS` constant (was `OpportunitiesPage.tsx:45-53`), `weightedACV` `useMemo` (was `:274-279`), and inline two-column forecast JSX (was `:340-357`) are deleted — single source of truth lives in `src/data/forecast.ts` + `src/components/PipelineForecastBar.tsx`
 
 ## v2 Requirements
 
@@ -156,11 +156,11 @@ Explicitly excluded. Documented to prevent scope creep.
 | REC-05 | Phase 6 | Complete |
 | REC-06 | Phase 6 | Complete |
 | REC-07 | Phase 6 | Complete |
-| FORECAST-01 | Phase 7 | Pending |
-| FORECAST-02 | Phase 7 | Pending |
-| FORECAST-03 | Phase 7 | Pending |
-| FORECAST-04 | Phase 7 | Pending |
-| FORECAST-05 | Phase 7 | Pending |
-| FORECAST-06 | Phase 7 | Pending |
-| FORECAST-07 | Phase 7 | Pending |
-| FORECAST-08 | Phase 7 | Pending |
+| FORECAST-01 | Phase 7 | Complete |
+| FORECAST-02 | Phase 7 | Complete |
+| FORECAST-03 | Phase 7 | Complete |
+| FORECAST-04 | Phase 7 | Complete |
+| FORECAST-05 | Phase 7 | Complete |
+| FORECAST-06 | Phase 7 | Complete |
+| FORECAST-07 | Phase 7 | Complete |
+| FORECAST-08 | Phase 7 | Complete |
