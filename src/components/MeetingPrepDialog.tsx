@@ -100,7 +100,20 @@ export const MeetingPrepDialog = forwardRef<MeetingPrepDialogHandle, MeetingPrep
         toast.error("Pop-up blocked — please allow pop-ups for PDF export.");
         return;
       }
-      printWindow.document.write(`<!DOCTYPE html><html><head><title>Meeting Prep — ${prospect.name}</title>
+      // HTML-escape every interpolation: prospect fields are user-editable
+      // (inline edit + CSV import) and brief.raw is LLM-generated, so neither
+      // is safe to splice raw into document.write().
+      const esc = (s: unknown) =>
+        String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+      const name = esc(prospect.name);
+      const industry = esc(prospect.industry || "");
+      const locationCount = prospect.locationCount ? esc(prospect.locationCount) + " locations" : "";
+      const sep = prospect.industry && prospect.locationCount ? " · " : "";
+      // brief body: escape first, THEN apply the **bold** -> <strong> regex
+      // on the already-escaped string. The escape step neutralizes any HTML
+      // payload; the regex only sees benign asterisks.
+      const body = esc(brief.raw).replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+      printWindow.document.write(`<!DOCTYPE html><html><head><title>Meeting Prep — ${name}</title>
 <style>
   @media print { body { margin: 0; } @page { margin: 0.75in; } }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; max-width: 700px; margin: 0 auto; padding: 40px 24px; line-height: 1.6; }
@@ -112,11 +125,11 @@ export const MeetingPrepDialog = forwardRef<MeetingPrepDialogHandle, MeetingPrep
   .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #999; }
 </style></head><body>
 <div class="header">
-  <h1>Meeting Prep — ${prospect.name}</h1>
+  <h1>Meeting Prep — ${name}</h1>
   <div class="meta">${today} · Prepared by Territory Plan Buddy</div>
 </div>
-<div class="content">${brief.raw.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}</div>
-<div class="footer">${prospect.industry || ""}${prospect.industry && prospect.locationCount ? " · " : ""}${prospect.locationCount ? prospect.locationCount + " locations" : ""}</div>
+<div class="content">${body}</div>
+<div class="footer">${industry}${sep}${locationCount}</div>
 </body></html>`);
       printWindow.document.close();
       setTimeout(() => { printWindow.print(); }, 300);
