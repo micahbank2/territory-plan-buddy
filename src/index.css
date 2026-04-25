@@ -346,3 +346,34 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Phase 09 — Daily Briefing print stylesheet */
+@media print {
+  body, html {
+    background: white !important;
+    color: black !important;
+  }
+  /* Sticky header in TodayPage uses position: sticky + backdrop-blur — kill both */
+  [data-no-print],
+  .sticky {
+    position: static !important;
+    backdrop-filter: none !important;
+  }
+  [data-no-print],
+  [data-no-print] button {
+    display: none !important;
+  }
+  /* Remove decorative backgrounds for print contrast */
+  .bg-muted\/30,
+  .bg-card,
+  .bg-background\/80,
+  .bg-emerald-500\/5,
+  .bg-emerald-500\/10 {
+    background: transparent !important;
+    border-color: #ccc !important;
+  }
+  /* Allow full-width on print */
+  .max-w-4xl {
+    max-width: none !important;
+  }
+}

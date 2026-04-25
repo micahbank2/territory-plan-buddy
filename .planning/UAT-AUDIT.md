@@ -1,93 +1,94 @@
 ---
 audit: uat-cross-phase
-generated: 2026-04-24
-auditor: Claude Code (gsd:audit-uat)
-status: drift-detected
+generated: 2026-04-25
+auditor: Claude Code (gsd:audit-uat re-run)
+status: current-after-session-2026-04-25
+supersedes: 2026-04-24 audit (drift detected, mostly resolved this session)
 ---
 
-# UAT Audit — Cross-Phase
+# UAT Audit — Cross-Phase (Updated 2026-04-25)
 
 ## TL;DR
 
-**Phase 01 VERIFICATION.md is wrong.** It claims soft-delete is shipped. It is not. `remove()` does hard `.delete()`, `restore`/`permanentDelete`/`loadArchivedData` are stubs. 4 of 11 "verified truths" from Phase 01 are false in current code. Either the verifier hallucinated, or the soft-delete code was reverted after March 26.
+The 2026-04-24 audit flagged 4 false-truth drifts in Phase 01 around archive/soft-delete and 2 untested AI flows in Phase 04. This session's work has resolved or reframed most of them.
 
-4 UAT items remain pending across 2 phases. 0 have been human-confirmed.
-
----
-
-## Outstanding UAT Items
-
-### Phase 01 — Data Integrity & Security
-
-| # | Item | Status | Priority | Notes |
-|---|------|--------|----------|-------|
-| 1 | Supabase `deleted_at` column exists in `prospects` table | PENDING | High | Column **was never added**. Code is still stubbed with comment: "stubbed until deleted_at column is added to Supabase" (useProspects.ts:110, 442). Schema migration never happened. |
-| 2 | `VITE_ANTHROPIC_API_KEY` removed from Lovable Cloud env vars | PENDING | High | Code is clean (verified). Dashboard cleanup never confirmed. Until confirmed, key may still be exposed via `import.meta.env` in deployed bundle. |
-
-### Phase 04 — AI Capabilities
-
-| # | Item | Status | Priority | Notes |
-|---|------|--------|----------|-------|
-| 3 | E2E Draft Emails flow: picker → badge → PendingOutreachDialog → mark-sent → interaction logged | PENDING | Medium | Requires live Supabase session. Unit tests pass (12 total), E2E never run by user. |
-| 4 | Bulk Mark Contacted stage bump persists after reload | PENDING | Medium | Requires live Supabase session. Optimistic update confirmed in code; persistence never verified. |
+**Currently outstanding: 16 active human UAT items** across Phases 5, 6, 7, 8, 9 — all from new visual surfaces shipped this session that automated tests structurally cover but cannot exercise visually.
 
 ---
 
-## Critical Drift — Phase 01 VERIFICATION is False
+## Resolved since 2026-04-24
 
-VERIFICATION.md (2026-03-26) claims 11/11 truths verified with exact line numbers. Current code (2026-04-24) contradicts 4 of them:
+| Old finding | Resolution | Date |
+|-------------|------------|------|
+| Phase 01: archive is hard-delete masquerading as soft-delete; `restore`/`permanentDelete` stubs | Quick task `260424-m9y` killed the archive UI; hard-delete now has confirmation gate; CLAUDE.md gotcha #9 updated | 2026-04-24 |
+| Phase 01: `deleted_at` column never added | N/A — soft-delete approach abandoned in favor of confirmed hard-delete | 2026-04-24 |
+| Phase 04: E2E Draft Emails flow + Mark Contacted persistence pending | Still pending (not resolved). Carry forward as items B6/B7 below. | — |
 
-| Truth | Claimed in VERIFICATION | Actual Code Today | Severity |
-|-------|-------------------------|--------------------|----------|
-| #10: Archiving removes from main list via soft delete | `remove()` sets `deleted_at = now()` at line 262-274 | `remove()` at line 231-243 calls `.delete()` — HARD delete | CRITICAL |
-| #11: User can view archived prospects | `loadArchivedData()` queries `.not("deleted_at", "is", null)` | `loadArchivedData()` sets `setArchivedData([])` at line 112 — no query | CRITICAL |
-| #11: User can restore archived prospect | Restore button wired to `restore(p.id)` | `restore = (_id) => {}` no-op at line 443 | CRITICAL |
-| #11: User can permanently delete archived prospect | Delete Forever wired to `permanentDelete(p.id)` | `permanentDelete = (_id) => {}` no-op at line 444 | CRITICAL |
+## Still pending from prior audit (carry-over)
 
-**Impact:** Archive is still a hard-delete. Pressing "Archive" on a prospect destroys it. No recovery. This directly violates the project's **Core Value** from PROJECT.md: *"The app must never silently lose data."*
-
-**Likely cause:** VERIFICATION was run against a branch/state where the schema migration had been applied. When the `deleted_at` column wasn't actually added to Supabase, the feature was reverted to stubs but VERIFICATION.md was never updated. Phase 01 status should be `passed-with-carry-over` or reopened.
-
----
-
-## Missing UAT — Not Captured in Any Phase
-
-The codebase concerns audit surfaced risks that have no UAT coverage:
-
-| Finding | Severity | Why it needs UAT |
-|---------|----------|------------------|
-| 4 Edge Functions run `verify_jwt = false` (`chat`, `enrich-prospect`, `ai-readiness`, `categorize-signal`) | CRITICAL | Public unauthenticated endpoints, no rate limit. Anyone who finds the URL can burn your API budget. No phase has tested abuse/rate-limit behavior. |
-| `useTerritories` mutations (rename/removeMember/updateMemberRole) have no rollback | High | Phase 01 hardening missed this hook. A failed share/invite leaves UI diverged from DB with no toast. |
-| Inline-edit cells have no accessibility affordances (no aria, no keyboard-only flow) | Medium | Never scoped in any phase. |
-| Stale `types.ts` missing `deleted_at` and uncertain on `linkedin_url` | Medium | Supabase type regeneration skipped after schema attempts. |
+| # | Item | Action |
+|---|------|--------|
+| 1 | `VITE_ANTHROPIC_API_KEY` removed from Lovable Cloud env vars | **Manual:** open Lovable Cloud Dashboard → Environment Variables → confirm key is absent. Code is clean. |
+| 2 | Phase 04 E2E Draft Emails workflow (picker → badge → mark-sent → interaction logged) | Live Supabase session needed. |
+| 3 | Phase 04 Bulk Mark Contacted stage bump persists after reload | Live Supabase session needed. |
+| 4 | 4 Edge Functions with `verify_jwt = false` (`chat`, `enrich-prospect`, `ai-readiness`, `categorize-signal`) | **Manual:** Supabase Dashboard → Edge Functions → confirm each is intentional or flip to `true`. |
 
 ---
 
-## Prioritized Human Test Plan
+## New items from this session (Phases 5-9)
 
-Order is by blast radius × reversibility.
+All items below are **active** — code shipped to main as of `c3fc049`. Group by where you go to test.
 
-### Immediate (today)
+### Group A — `/today` (Daily Briefing, Phase 9)
 
-1. **Verify Edge Function auth state.** Open Supabase Dashboard → Edge Functions. For each of `chat`, `enrich-prospect`, `ai-readiness`, `categorize-signal`: confirm whether `verify_jwt = false` is intentional or a dev-mode leftover. If unintentional, flip to `true`.
-2. **Test archive data loss.** In the running app: create a test prospect named "DELETE-ME-TEST", click Archive. Refresh. Confirm it's gone AND cannot be restored. (This will confirm CRITICAL finding above.)
+- [ ] **A1.** Open `/today` on populated territory → Hero row shows 4 stats; Today's Plan + Overdue + Going Stale + New Pipeline render only when populated; date label correct
+- [ ] **A2.** Open `/today` on a fresh territory with zero prospects → "No prospects yet" empty card (NOT inbox-zero)
+- [ ] **A3.** Curated populated-but-clear territory → emerald "Inbox zero" celebration card when todayPlan + overdueTasks + goingStale all empty
+- [ ] **A4.** `Cmd+P` Print preview on `/today` → sticky header hidden, no buttons, full-width content, white bg, grey card borders
+- [ ] **A5.** Hero "Weighted Pipeline" matches headline number on `/opportunities` (cross-page consistency)
 
-### This week
+### Group B — `/opportunities` (Pipeline Forecast Bar, Phase 7)
 
-3. **Lovable Cloud env audit.** Dashboard → Project Settings → Environment Variables. Delete `VITE_ANTHROPIC_API_KEY` if present. Confirm `ANTHROPIC_API_KEY` is set at the Edge Function secret level.
-4. **E2E Draft Emails workflow.** Run Phase 04 UAT #3 end-to-end in the browser.
-5. **E2E Mark Contacted persistence.** Run Phase 04 UAT #4 — confirm stage bump survives page reload.
+- [ ] **B1.** PipelineForecastBar renders between QuotaHeroBoxes and the table; mobile reflow OK
+- [ ] **B2.** Hover any colored segment → Tooltip shows stage / count / weighted ACV / weight %; touch-tappable on mobile
+- [ ] **B3.** Quota subline reads `$625,000` (correct DEFAULT_QUOTAS sum)
 
-### Before next feature phase
+### Group C — ProspectSheet Overview tab (RecommendationCard, Phase 6)
 
-6. Decide: actually ship soft-delete (add `deleted_at` column + implement stubs) OR remove the archive UI entirely. Current state is a data-loss trap.
-7. Reopen Phase 01 as `passed-with-carry-over` and file GH issues for the 4 false truths.
+- [ ] **C1.** Hot + Not Started prospect → red/destructive "Hot, not started" chip + "start a first-touch sequence today" action
+- [ ] **C2.** <768px → chips wrap (`flex flex-wrap gap-1.5`); suggested action ≤2 lines, no overflow
+- [ ] **C3.** Prospect with `competitor="Other: PowerListings"` → "On PowerListings" chip (prefix stripped)
+- [ ] **C4.** Header score+label still visible; no amber `whyActParts` paragraph beneath
+
+### Group D — ProspectSheet Activity tab (LogActivityWidget, Phase 5)
+
+- [ ] **D1.** Yellow/red aging dot prospect → log activity → toast "Activity logged"; interaction in timeline; aging dot turns green WITHOUT page reload (LOG-04 — needs live Supabase)
+- [ ] **D2.** <768px DevTools → ProspectSheet renders as bottom Drawer; Activity tab → LogActivityWidget visible, scrollable above keyboard, submit reachable
+- [ ] **D3.** *Optional:* simulated partial failure (revoke prospect_tasks insert) → "Activity logged, but follow-up task failed" toast; notes cleared; follow-up form retains task text + due date
+
+### Group E — Meeting Prep dialog (Phase 8)
+
+- [ ] **E1.** Open prospect → "Meeting Prep" → dialog opens, six section headers in order (Context / Recent History / Contacts / Open Tasks / Talking Points / Suggested Ask), markdown renders bold + bullets (no raw `**`)
+- [ ] **E2.** Talking Points bullets reference Yext positioning (AI search visibility, multi-location brand consistency, local SEO, competitive displacement)
+- [ ] **E3.** Suggested Ask is ONE sentence, not a bullet list (LLM constraint adherence)
+- [ ] **E4.** Copy → paste into notes; Export PDF → print preview opens with formatted brief
+- [ ] **E5.** <768px → Meeting Prep dialog renders cleanly inside vaul Drawer; Esc closes Dialog only (not Drawer); focus returns to trigger
 
 ---
 
-## Recommendations
+## Suggested running order (~20-25 min total)
 
-1. **Reopen Phase 01.** Update VERIFICATION.md frontmatter `status: passed-with-carry-over` with the 4 false truths moved to a Carry-Over section.
-2. **Add Phase 00.5 — Soft Delete (or kill it).** Decision required: implement properly (schema + code) or rip out the archive UI. Current half-state is worst-case.
-3. **Add Phase 1.5 — Edge Function auth.** Tighten `verify_jwt` on the 4 open functions. Add rate limiting. Add a smoke test that calls an endpoint unauthenticated and expects 401.
-4. **Don't trust future VERIFICATION.md without a Task 3 human spot-check.** The drift happened because the human-verification step was skipped and the phase was marked `verifying` in STATE.md but never actually verified.
+1. **Manual env audit** (5 min) — Items 1 + 4 (Lovable Cloud env vars + Edge Function verify_jwt) — these are blast-radius critical and don't need the app running
+2. **Desktop pass on populated territory** (10 min) — A1, A4, A5, B1, B2, B3, C1, C3, C4, E1, E2, E3, E4 in one continuous browser session
+3. **Mobile pass** (5 min) — A1, B1, C2, D2, E5 in DevTools mobile emulation
+4. **Empty-territory pass** (3 min) — A2, A3
+5. **Live Supabase pass** (5 min) — D1, plus carry-over items 2/3 (Phase 04 E2E flows)
+6. **Optional Supabase failure sim** — D3
+
+---
+
+## When you're done
+
+- Items that pass → check the box in this file
+- Items that fail → open a GitHub issue with the item ID and what you saw
+- Items unchecked after a week → demote to v2 backlog or queue a fix plan via `/gsd:debug` or `/gsd:quick`

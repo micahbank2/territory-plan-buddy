@@ -47,8 +47,8 @@ export function PipelineForecastBar({ opportunities }: PipelineForecastBarProps)
 
   return (
     <div data-testid="pipeline-forecast-bar" className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-      {/* Headline row */}
-      <div className="flex items-center gap-6 flex-wrap">
+      {/* Headline row — 2-col grid on mobile, flex w/ dividers on sm+ */}
+      <div className="grid grid-cols-2 gap-4 sm:flex sm:items-center sm:gap-6 sm:flex-wrap">
         <div>
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
             <TrendingUp className="w-3 h-3" /> Weighted Pipeline
@@ -59,7 +59,7 @@ export function PipelineForecastBar({ opportunities }: PipelineForecastBarProps)
         <div>
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Raw Open</div>
           <div className="text-xl font-black font-mono text-foreground">${f.rawOpen.toLocaleString()}</div>
-          <div className="text-[10px] text-muted-foreground">{f.openCount} deal{f.openCount !== 1 ? "s" : ""}</div>
+          <div className="text-xs text-muted-foreground">{f.openCount} deal{f.openCount !== 1 ? "s" : ""}</div>
         </div>
         {f.booked > 0 && (
           <>
@@ -70,12 +70,12 @@ export function PipelineForecastBar({ opportunities }: PipelineForecastBarProps)
             </div>
           </>
         )}
-        <div className="ml-auto text-right">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 justify-end">
+        <div className="sm:ml-auto sm:text-right">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 sm:justify-end">
             <Target className="w-3 h-3" /> % of FY27 Quota
           </div>
           <div className="text-xl font-black font-mono text-foreground">{f.pctOfQuota.toFixed(1)}%</div>
-          <div className="text-[10px] text-muted-foreground">Quota: ${quota.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground">Quota: ${quota.toLocaleString()}</div>
         </div>
       </div>
 
@@ -98,10 +98,14 @@ export function PipelineForecastBar({ opportunities }: PipelineForecastBarProps)
             return (
               <Tooltip key={b.stage}>
                 <TooltipTrigger asChild>
-                  <div
-                    className={cn("h-full transition-all duration-500", STAGE_BAR_COLORS[b.stage] ?? "bg-slate-400")}
+                  <button
+                    type="button"
+                    className={cn(
+                      "h-full transition-all duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      STAGE_BAR_COLORS[b.stage] ?? "bg-slate-400",
+                    )}
                     style={{ width: `${widthPct}%` }}
-                    aria-label={`${b.stage}: ${b.count} deals, $${b.weighted.toLocaleString()} weighted`}
+                    aria-label={`${b.stage}: ${b.count} deals, $${b.weighted.toLocaleString()} weighted (${(b.weight * 100).toFixed(0)}%)`}
                   />
                 </TooltipTrigger>
                 <TooltipContent>

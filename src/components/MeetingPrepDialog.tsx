@@ -1,6 +1,6 @@
 import { forwardRef, useImperativeHandle, useState } from "react";
 import { FileText, Copy, Loader2, RefreshCw } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -104,7 +104,7 @@ export const MeetingPrepDialog = forwardRef<MeetingPrepDialogHandle, MeetingPrep
 <style>
   @media print { body { margin: 0; } @page { margin: 0.75in; } }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; max-width: 700px; margin: 0 auto; padding: 40px 24px; line-height: 1.6; }
-  .header { border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 24px; }
+  .header { border-bottom: 2px solid #5158d3; padding-bottom: 12px; margin-bottom: 24px; }
   .header h1 { font-size: 20px; font-weight: 700; margin: 0 0 4px 0; color: #111; }
   .header .meta { font-size: 13px; color: #666; }
   .content { font-size: 14px; white-space: pre-wrap; }
@@ -134,10 +134,18 @@ export const MeetingPrepDialog = forwardRef<MeetingPrepDialogHandle, MeetingPrep
               <FileText className="w-4 h-4 text-primary" />
               Meeting Prep{prospect ? ` — ${prospect.name}` : ""}
             </DialogTitle>
+            <DialogDescription>
+              AI-generated one-pager: context, recent history, contacts, open tasks, talking points, suggested ask.
+            </DialogDescription>
           </DialogHeader>
 
           {loading ? (
-            <div className="flex items-center justify-center gap-2 py-8" data-testid="meeting-prep-loading">
+            <div
+              className="flex items-center justify-center gap-2 py-8"
+              data-testid="meeting-prep-loading"
+              role="status"
+              aria-live="polite"
+            >
               <Loader2 className="w-5 h-5 animate-spin text-primary" />
               <span className="text-sm text-muted-foreground">Generating meeting prep...</span>
             </div>

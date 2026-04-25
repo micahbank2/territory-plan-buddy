@@ -15,7 +15,7 @@ interface RecommendationCardProps {
 
 const severityClass: Record<CalloutSeverity, string> = {
   critical: "bg-destructive/15 text-destructive border-destructive/30",
-  warn: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
+  warn: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30",
   info: "bg-muted text-muted-foreground border-border",
 };
 
@@ -23,7 +23,7 @@ function CalloutChip({ c }: { c: Callout }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[11px] font-semibold",
+        "inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-xs font-bold",
         severityClass[c.severity],
       )}
     >
