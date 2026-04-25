@@ -26,12 +26,12 @@ The 2026-04-24 audit flagged 4 false-truth drifts in Phase 01 around archive/sof
 
 ## Still pending from prior audit (carry-over)
 
-| # | Item | Action |
-|---|------|--------|
-| 1 | `VITE_ANTHROPIC_API_KEY` removed from Lovable Cloud env vars | **Manual:** open Lovable Cloud Dashboard → Environment Variables → confirm key is absent. Code is clean. |
-| 2 | Phase 04 E2E Draft Emails workflow (picker → badge → mark-sent → interaction logged) | Live Supabase session needed. |
-| 3 | Phase 04 Bulk Mark Contacted stage bump persists after reload | Live Supabase session needed. |
-| 4 | 4 Edge Functions with `verify_jwt = false` (`chat`, `enrich-prospect`, `ai-readiness`, `categorize-signal`) | **Manual:** Supabase Dashboard → Edge Functions → confirm each is intentional or flip to `true`. |
+| # | Item | Action | Status |
+|---|------|--------|--------|
+| 1 | `VITE_ANTHROPIC_API_KEY` removed from Lovable Cloud env vars | Manual: deleted via Cloud → Secrets | ✅ PASS 2026-04-25 |
+| 2 | Phase 04 E2E Draft Emails workflow (picker → badge → mark-sent → interaction logged) | Live Supabase session needed. | ✅ PASS 2026-04-25 (full flow: picker → badge → PendingOutreachDialog → mark-sent → Email interaction logged + outreach stage bumped) |
+| 3 | Phase 04 Bulk Mark Contacted stage bump persists after reload | Live Supabase session needed. | ✅ PASS 2026-04-25 (stage bump survived hard reload — Supabase write confirmed) |
+| 4 | 4 Edge Functions with `verify_jwt = false` (`chat`, `enrich-prospect`, `ai-readiness`, `categorize-signal`) | PR #11 flipped all to `verify_jwt = true` in supabase/config.toml | ✅ PASS 2026-04-25 (merged) |
 
 ---
 
@@ -41,38 +41,38 @@ All items below are **active** — code shipped to main as of `c3fc049`. Group b
 
 ### Group A — `/today` (Daily Briefing, Phase 9)
 
-- [ ] **A1.** Open `/today` on populated territory → Hero row shows 4 stats; Today's Plan + Overdue + Going Stale + New Pipeline render only when populated; date label correct
+- [x] **A1.** Open `/today` on populated territory → Hero row shows 4 stats; Today's Plan + Overdue + Going Stale + New Pipeline render only when populated; date label correct ✅ PASS 2026-04-25 (header, date, 4 stats: Active 93 / Hot 0 / WP $359k / Overdue 0)
 - [ ] **A2.** Open `/today` on a fresh territory with zero prospects → "No prospects yet" empty card (NOT inbox-zero)
-- [ ] **A3.** Curated populated-but-clear territory → emerald "Inbox zero" celebration card when todayPlan + overdueTasks + goingStale all empty
-- [ ] **A4.** `Cmd+P` Print preview on `/today` → sticky header hidden, no buttons, full-width content, white bg, grey card borders
-- [ ] **A5.** Hero "Weighted Pipeline" matches headline number on `/opportunities` (cross-page consistency)
+- [x] **A3.** Curated populated-but-clear territory → emerald "Inbox zero" celebration card when todayPlan + overdueTasks + goingStale all empty ✅ PASS 2026-04-25 (verified live; **flag:** requires `priority="Hot"/"Warm"` tagging to surface anything in today-plan/stale sections — engine narrows to nothing if priority field is unused)
+- [x] **A4.** `Cmd+P` Print preview on `/today` → sticky header hidden, no buttons, full-width content, white bg, grey card borders ✅ PASS 2026-04-25 (4 stat cards + inbox-zero card render cleanly; only browser-injected page-header/footer remains)
+- [x] **A5.** Hero "Weighted Pipeline" matches headline number on `/opportunities` (cross-page consistency) ✅ PASS 2026-04-25 (`/today` $359k = `/opportunities` $359,339 rounded)
 
 ### Group B — `/opportunities` (Pipeline Forecast Bar, Phase 7)
 
-- [ ] **B1.** PipelineForecastBar renders between QuotaHeroBoxes and the table; mobile reflow OK
-- [ ] **B2.** Hover any colored segment → Tooltip shows stage / count / weighted ACV / weight %; touch-tappable on mobile
-- [ ] **B3.** Quota subline reads `$625,000` (correct DEFAULT_QUOTAS sum)
+- [x] **B1.** PipelineForecastBar renders between QuotaHeroBoxes and the table; mobile reflow OK ✅ PASS 2026-04-25 (bar between QuotaHeroBoxes and List View; mobile reflow not yet tested but desktop layout correct)
+- [x] **B2.** Hover any colored segment → Tooltip shows stage / count / weighted ACV / weight %; touch-tappable on mobile ✅ PASS 2026-04-25 (tooltip works) — but flagged: original palette (blue/indigo/violet for adjacent stages) read as one purple band → fixed in PR #12 (cold-to-hot gradient)
+- [x] **B3.** Quota subline reads `$625,000` (correct DEFAULT_QUOTAS sum) ✅ PASS 2026-04-25 (% of FY27 Quota 57.5% against $625,000 — consistent with $359,339 weighted)
 
 ### Group C — ProspectSheet Overview tab (RecommendationCard, Phase 6)
 
-- [ ] **C1.** Hot + Not Started prospect → red/destructive "Hot, not started" chip + "start a first-touch sequence today" action
-- [ ] **C2.** <768px → chips wrap (`flex flex-wrap gap-1.5`); suggested action ≤2 lines, no overflow
-- [ ] **C3.** Prospect with `competitor="Other: PowerListings"` → "On PowerListings" chip (prefix stripped)
-- [ ] **C4.** Header score+label still visible; no amber `whyActParts` paragraph beneath
+- [x] **C1.** Hot + Not Started prospect → red/destructive "Hot, not started" chip + "start a first-touch sequence today" action ✅ PASS 2026-04-25
+- [-] **C2.** <768px → chips wrap (`flex flex-wrap gap-1.5`); suggested action ≤2 lines, no overflow ⏸ DROPPED 2026-04-25 (mobile out of scope per v2 deferral)
+- [x] **C3.** Prospect with `competitor="Other: PowerListings"` → "On PowerListings" chip (prefix stripped) ✅ PASS 2026-04-25
+- [x] **C4.** Header score+label still visible; no amber `whyActParts` paragraph beneath ✅ PASS 2026-04-25
 
 ### Group D — ProspectSheet Activity tab (LogActivityWidget, Phase 5)
 
-- [ ] **D1.** Yellow/red aging dot prospect → log activity → toast "Activity logged"; interaction in timeline; aging dot turns green WITHOUT page reload (LOG-04 — needs live Supabase)
-- [ ] **D2.** <768px DevTools → ProspectSheet renders as bottom Drawer; Activity tab → LogActivityWidget visible, scrollable above keyboard, submit reachable
-- [ ] **D3.** *Optional:* simulated partial failure (revoke prospect_tasks insert) → "Activity logged, but follow-up task failed" toast; notes cleared; follow-up form retains task text + due date
+- [x] **D1.** Yellow/red aging dot prospect → log activity → toast "Activity logged"; interaction in timeline; aging dot turns green WITHOUT page reload (LOG-04 — needs live Supabase) ✅ PASS 2026-04-25 (live Supabase write confirmed; aging dot updates without reload)
+- [-] **D2.** <768px DevTools → ProspectSheet renders as bottom Drawer; Activity tab → LogActivityWidget visible, scrollable above keyboard, submit reachable ⏸ DROPPED 2026-04-25 (mobile out of scope per v2 deferral)
+- [-] **D3.** *Optional:* simulated partial failure (revoke prospect_tasks insert) → "Activity logged, but follow-up task failed" toast; notes cleared; follow-up form retains task text + due date *(skipped — optional, code path unit-tested)*
 
 ### Group E — Meeting Prep dialog (Phase 8)
 
-- [ ] **E1.** Open prospect → "Meeting Prep" → dialog opens, six section headers in order (Context / Recent History / Contacts / Open Tasks / Talking Points / Suggested Ask), markdown renders bold + bullets (no raw `**`)
-- [ ] **E2.** Talking Points bullets reference Yext positioning (AI search visibility, multi-location brand consistency, local SEO, competitive displacement)
-- [ ] **E3.** Suggested Ask is ONE sentence, not a bullet list (LLM constraint adherence)
-- [ ] **E4.** Copy → paste into notes; Export PDF → print preview opens with formatted brief
-- [ ] **E5.** <768px → Meeting Prep dialog renders cleanly inside vaul Drawer; Esc closes Dialog only (not Drawer); focus returns to trigger
+- [x] **E1.** Open prospect → "Meeting Prep" → dialog opens, six section headers in order (Context / Recent History / Contacts / Open Tasks / Talking Points / Suggested Ask), markdown renders bold + bullets (no raw `**`) ✅ PASS 2026-04-25
+- [x] **E2.** Talking Points bullets reference Yext positioning (AI search visibility, multi-location brand consistency, local SEO, competitive displacement) ✅ PASS 2026-04-25
+- [x] **E3.** Suggested Ask is ONE sentence, not a bullet list (LLM constraint adherence) ✅ PASS 2026-04-25
+- [x] **E4.** Copy → paste into notes; Export PDF → print preview opens with formatted brief ✅ PASS 2026-04-25
+- [-] **E5.** <768px → Meeting Prep dialog renders cleanly inside vaul Drawer; Esc closes Dialog only (not Drawer); focus returns to trigger ⏸ DROPPED 2026-04-25 (mobile out of scope per v2 deferral)
 
 ---
 
