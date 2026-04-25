@@ -149,3 +149,13 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 5. Log + Next Step Widget | 1/1 | Complete   | 2026-04-24 |
 | 6. Score → Recommended Action | 1/1 | Complete | 2026-04-25 |
 | 7. Weighted Pipeline Forecast | 0/1 | Planned | - |
+
+### Phase 8: Meeting Prep One Pager
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 7
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 8 to break down)

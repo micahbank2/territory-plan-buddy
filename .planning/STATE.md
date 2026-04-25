@@ -72,6 +72,7 @@ Progress: [█████████░] 86% (6 of 7 integer phases complete; 
 - 2026-04-24: Phase 5 added — Log + Next Step Widget (single-submit interaction logger in ProspectSheet Activity tab; replaces two-section workflow)
 - 2026-04-24: Phase 6 added — Score → Recommended Action (surface "why call this account" header in ProspectSheet Overview tab using score breakdown + contact gaps + staleness)
 - 2026-04-25: Phase 7 added — Weighted Pipeline Forecast (stage-weighted ACV bar + quota tracker above Opportunities table; Propose=70%, Validate=50%, Discovery=20%, Develop=10%)
+- 2026-04-25: Phase 8 added — Meeting Prep One-Pager (extract inline state + dialog from ProspectSheet to MeetingPrepDialog component, structure brief as Context / History / Contacts / Tasks / Talking Points / Suggested Ask sections)
 
 ### Decisions
 
