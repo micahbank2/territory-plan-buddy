@@ -7,6 +7,11 @@ import {
 } from "@/data/prospects";
 import { STAGE_COLORS } from "@/components/territory/agingHelpers";
 import type { FilterState } from "@/components/ProspectFilterBar";
+import {
+  FY27_MONTHS,
+  DEFAULT_QUOTAS,
+  DEFAULT_SETTINGS,
+} from "@/data/myNumbers/storage";
 
 export interface UseFilteredProspectsResult {
   enriched: EnrichedProspect[];
@@ -156,24 +161,6 @@ export function useFilteredProspects(
 // ─── Quota Summary (reads from localStorage, same keys as MyNumbersPage) ───
 export function useQuotaSummary(opportunities: any[]) {
   return useMemo(() => {
-    const FY27_MONTHS = [
-      "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07",
-      "2026-08", "2026-09", "2026-10", "2026-11", "2026-12", "2027-01",
-    ];
-    const DEFAULT_QUOTAS: Record<string, number> = {
-      "2026-02": 30000, "2026-03": 30000, "2026-04": 60000, "2026-05": 38000,
-      "2026-06": 38000, "2026-07": 77000, "2026-08": 40000, "2026-09": 40000,
-      "2026-10": 80000, "2026-11": 48000, "2026-12": 48000, "2027-01": 96000,
-    };
-    const DEFAULT_SETTINGS = {
-      annualIncrementalQuota: 615000,
-      u4r: 2924263,
-      retentionTarget: 0.86,
-      annualTI: 95000,
-      incrementalSplit: 0.65,
-      renewalSplit: 0.35,
-    };
-
     let entries: any[];
     try {
       const stored = localStorage.getItem("my_numbers_v2");
