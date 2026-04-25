@@ -171,7 +171,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 7. Weighted Pipeline Forecast | 1/1 | Complete | 2026-04-25 |
 | 8. Meeting Prep One-Pager | 1/1 | Complete | 2026-04-25 |
 | 9. Daily Briefing | 1/1 | Complete (PR #9 awaiting merge) | 2026-04-25 |
-| 10. My Numbers Polish | 0/2 | Planned | - |
+| 10. My Numbers Polish | 1/2 | In Progress|  |
 
 ### Phase 10: My Numbers Polish
 
@@ -189,8 +189,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
   7. `text-[10px]` arbitrary size at MyNumbersPage.tsx:722 is replaced with `text-xs`
   8. Full Vitest suite passes; `npx tsc --noEmit` clean; `bun run build` clean; manual UAT confirms identical numbers, identical edit-cell behavior, and identical Settings dialog before/after
 
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 10-01-PLAN.md — Tests-first foundation: extract comp.ts + storage.ts, fix navigate-in-render, wire 4 callers, add aria-label + text-xs (NUM-01..04, NUM-06, NUM-08)
+- [x] 10-01-PLAN.md — Tests-first foundation: extract comp.ts + storage.ts, fix navigate-in-render, wire 4 callers, add aria-label + text-xs (NUM-01..04, NUM-06, NUM-08)
 - [ ] 10-02-PLAN.md — Trends tab (3 charts) + sub-component decomposition to ≤400 lines (NUM-05, NUM-07)
