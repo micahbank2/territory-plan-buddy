@@ -68,6 +68,7 @@ Progress: [████████░░] 80% (4 of 5 integer phases complete; 
 ### Roadmap Evolution
 
 - 2026-04-24: Phase 5 added — Log + Next Step Widget (single-submit interaction logger in ProspectSheet Activity tab; replaces two-section workflow)
+- 2026-04-24: Phase 6 added — Score → Recommended Action (surface "why call this account" header in ProspectSheet Overview tab using score breakdown + contact gaps + staleness)
 
 ### Decisions
 

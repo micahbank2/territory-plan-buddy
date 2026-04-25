@@ -109,3 +109,13 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 3. Component Decomposition & UX Polish | 3/3 | Complete | 2026-04-24 |
 | 4. AI Capabilities | 2/2 | Complete   | 2026-03-30 |
 | 5. Log + Next Step Widget | 1/1 | Complete   | 2026-04-24 |
+
+### Phase 6: Score to Recommended Action
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 5
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 6 to break down)
