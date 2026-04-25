@@ -17,7 +17,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 3: Component Decomposition & UX Polish** - Decompose TerritoryPlanner god component, add tabbed ProspectSheet layout
 - [x] **Phase 4: AI Capabilities** - Draft emails post-outreach tracking: batch persistence, pending outreach badge, mark-as-sent dialog, bulk Mark Contacted action (completed 2026-03-30)
 - [x] **Phase 5: Log + Next Step Widget** - Extract and harden the unified Log Activity widget on ProspectSheet: +3-business-day default, partial-failure handling, test coverage (completed 2026-04-24)
-- [ ] **Phase 6: Score → Recommended Action** - Promote inline whyActParts into a tested RecommendationCard at the top of the Overview tab; pure deterministic engine surfaces score + callouts + a single suggested-action sentence
+- [x] **Phase 6: Score → Recommended Action** - Promote inline whyActParts into a tested RecommendationCard at the top of the Overview tab; pure deterministic engine surfaces score + callouts + a single suggested-action sentence (completed 2026-04-25)
+- [ ] **Phase 7: Weighted Pipeline Forecast** - Promote the inline two-column forecast on Opportunities into a tested pure engine + dedicated PipelineForecastBar with segmented stage bar, quota %, and empty-state card
 
 ## Phase Details
 
@@ -116,10 +117,28 @@ Plans:
 Plans:
 - [x] 06-01-PLAN.md — Engine + card + ProspectSheet mount + delete inline whyActParts (REC-01..REC-07)
 
+### Phase 7: Weighted Pipeline Forecast
+
+**Goal:** Promote the inline `STAGE_WEIGHTS` map + `weightedACV` memo + two-column forecast JSX from `OpportunitiesPage.tsx:45-53/274-279/340-357` into a tested pure TypeScript engine (`src/data/forecast.ts`) and a dedicated `PipelineForecastBar` component mounted above the Opportunities List View. The engine becomes deterministic and table-driven testable across all 10 OPP_STAGES (Develop=10% / Discovery=20% / Business Alignment=35% / Validate=50% / Propose=70% / Negotiate=85% / Won=Closed Won=100% booked / Closed Lost=Dead excluded). The bar adds quota %, a per-stage segmented horizontal bar with shadcn Tooltip per segment, and an empty-state card for territories with no open deals. Closes CLAUDE.md priority roadmap item #7 and the implicit "stage does not drive forecast visibility" gap.
+**Depends on:** Phase 6
+**Requirements**: FORECAST-01, FORECAST-02, FORECAST-03, FORECAST-04, FORECAST-05, FORECAST-06, FORECAST-07, FORECAST-08
+**Success Criteria** (what must be TRUE):
+  1. Visiting `/opportunities` for a territory with open deals renders `<PipelineForecastBar>` between `<QuotaHeroBoxes />` and the List View; territories with zero open deals render the "No active pipeline" empty-state card
+  2. The bar headline shows weighted total (primary color, font-mono, 2xl), raw open total + deal count, booked total (only when >0), and right-aligned "% of FY27 Quota" with quota dollar value subline (~$615k from `DEFAULT_QUOTAS` / `localStorage["my_numbers_v2"]`)
+  3. A segmented horizontal bar renders one tinted segment per active open stage with width proportional to that stage's weighted contribution; each segment exposes a hover tooltip with stage name, deal count, weighted ACV, and weight percentage
+  4. `forecastPipeline(opps, quota)` is a pure deterministic TS function — no React, no async, no clock reads, no side effects — and `STAGE_WEIGHTS` covers all 10 OPP_STAGES with correct values and classifications (open / booked / lost)
+  5. The forecast engine is covered by ≥10 table-driven unit tests in `src/test/forecast.test.ts` (per-stage weights, classification rules, sort order, pctOfQuota math including quota=0 edge case, multi-deal aggregation) and the component has ≥3 render tests in `src/test/PipelineForecastBar.test.tsx` (headline, empty state, quota % from localStorage), all passing under `bunx vitest run`
+  6. The inline `STAGE_WEIGHTS` constant, `weightedACV` `useMemo`, and two-column forecast JSX are removed from `OpportunitiesPage.tsx` (`! grep -n "STAGE_WEIGHTS\|weightedACV" src/pages/OpportunitiesPage.tsx` returns zero matches); `PipelineForecastBar` is the sole forecast surface
+  7. The bar uses ONLY existing tokens (`border-border`, `bg-muted/30`, `text-primary`, `bg-emerald-500`, `bg-amber-500`, `bg-slate-400`, etc.) and reuses the `OpportunityKanban` color palette via `STAGE_BAR_COLORS` — no new CSS classes, no new tailwind config keys, no new dependencies
+**Plans**: 1 plan
+
+Plans:
+- [ ] 07-01-PLAN.md — Engine + bar + OpportunitiesPage mount + delete inline forecast (FORECAST-01..FORECAST-08)
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -128,14 +147,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. Component Decomposition & UX Polish | 3/3 | Complete | 2026-04-24 |
 | 4. AI Capabilities | 2/2 | Complete   | 2026-03-30 |
 | 5. Log + Next Step Widget | 1/1 | Complete   | 2026-04-24 |
-| 6. Score → Recommended Action | 0/1 | Planned | - |
-
-### Phase 7: Weighted Pipeline Forecast
-
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 6
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (run /gsd:plan-phase 7 to break down)
+| 6. Score → Recommended Action | 1/1 | Complete | 2026-04-25 |
+| 7. Weighted Pipeline Forecast | 0/1 | Planned | - |
