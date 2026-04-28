@@ -339,14 +339,14 @@ export function OpportunitySheet({
                 <PopoverTrigger asChild>
                   <button className={cn(inputClass, "flex items-center gap-2 text-left", !opp.close_date && "text-muted-foreground", opp.close_date && opp.close_date < new Date().toISOString().split("T")[0] && "text-red-600 dark:text-red-400 font-medium")}>
                     <CalendarIcon className="w-4 h-4 shrink-0" />
-                    {opp.close_date ? format(new Date(opp.close_date), "PPP") : "Pick a date"}
+                    {opp.close_date ? format(parseLocalDate(opp.close_date)!, "PPP") : "Pick a date"}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 z-[60]" align="start">
                   <Calendar
                     mode="single"
-                    selected={opp.close_date ? new Date(opp.close_date) : undefined}
-                    onSelect={date => handleUpdate("close_date", date ? date.toISOString().split("T")[0] : "")}
+                    selected={parseLocalDate(opp.close_date) ?? undefined}
+                    onSelect={date => handleUpdate("close_date", date ? formatLocalDate(date) : "")}
                     initialFocus
                     className="p-3 pointer-events-auto"
                   />
