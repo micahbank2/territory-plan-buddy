@@ -21,6 +21,21 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+// Parse "YYYY-MM-DD" as a LOCAL date (avoid UTC shifting the day).
+function parseLocalDate(s?: string | null): Date | null {
+  if (!s) return null;
+  const [y, m, d] = s.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
+}
+// Format a Date as local "YYYY-MM-DD" (avoid toISOString UTC drift).
+function formatLocalDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 interface OpportunitySheetProps {
   opportunityId: string | null;
   onClose: () => void;
@@ -339,14 +354,14 @@ export function OpportunitySheet({
                 <PopoverTrigger asChild>
                   <button className={cn(inputClass, "flex items-center gap-2 text-left", !opp.close_date && "text-muted-foreground", opp.close_date && opp.close_date < new Date().toISOString().split("T")[0] && "text-red-600 dark:text-red-400 font-medium")}>
                     <CalendarIcon className="w-4 h-4 shrink-0" />
-                    {opp.close_date ? format(new Date(opp.close_date), "PPP") : "Pick a date"}
+                    {opp.close_date ? format(parseLocalDate(opp.close_date)!, "PPP") : "Pick a date"}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 z-[60]" align="start">
                   <Calendar
                     mode="single"
-                    selected={opp.close_date ? new Date(opp.close_date) : undefined}
-                    onSelect={date => handleUpdate("close_date", date ? date.toISOString().split("T")[0] : "")}
+                    selected={parseLocalDate(opp.close_date) ?? undefined}
+                    onSelect={date => handleUpdate("close_date", date ? formatLocalDate(date) : "")}
                     initialFocus
                     className="p-3 pointer-events-auto"
                   />
