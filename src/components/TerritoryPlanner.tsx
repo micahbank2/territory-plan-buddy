@@ -70,6 +70,8 @@ export default function TerritoryPlanner() {
   const [filterState, setFilterState] = useState<FilterState>(EMPTY_FILTER_STATE);
   const setFLocRange = useCallback((val: [number, number]) =>
     setFilterState((s) => ({ ...s, fLocRange: val })), []);
+  const setFStatusList = useCallback((vals: string[]) =>
+    setFilterState((s) => ({ ...s, fStatus: vals })), []);
 
   const [sK, setSK] = useState("ps");
   const [sD, setSD] = useState<"asc" | "desc">("desc");
