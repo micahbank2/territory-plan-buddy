@@ -21,6 +21,21 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+// Parse "YYYY-MM-DD" as a LOCAL date (avoid UTC shifting the day).
+function parseLocalDate(s?: string | null): Date | null {
+  if (!s) return null;
+  const [y, m, d] = s.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
+}
+// Format a Date as local "YYYY-MM-DD" (avoid toISOString UTC drift).
+function formatLocalDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 interface OpportunitySheetProps {
   opportunityId: string | null;
   onClose: () => void;
