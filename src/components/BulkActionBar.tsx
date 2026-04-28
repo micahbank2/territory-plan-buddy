@@ -31,7 +31,7 @@ export interface BulkActionBarProps {
   onSelectAllFiltered?: () => void;
   bulkUpdate: (ids: string[], changes: Partial<Prospect>) => Promise<void> | void;
   bulkRemove: (ids: string[]) => Promise<void> | void;
-  addInteractionDirect: (prospectId: string, i: Omit<InteractionLog, "id">) => Promise<void>;
+  addInteractionDirect: (prospectId: string, i: Omit<InteractionLog, "id">) => Promise<boolean | void>;
   /** Optional: when user updates outreach for "Not Started" prospects, bump to "Actively Prospecting". */
   update?: (id: string, changes: Partial<Prospect>) => Promise<void> | void;
 }

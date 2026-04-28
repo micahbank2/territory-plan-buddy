@@ -67,8 +67,8 @@ export interface TerritoryDialogGroupProps {
   addContact: (prospectId: string, contact: Omit<Contact, "id">) => Promise<void>;
 
   createTerritory: (name: string) => Promise<void>;
-  renameTerritory: (id: string, name: string) => Promise<void>;
-  inviteMember: (email: string, role: "editor" | "viewer") => Promise<void>;
+  renameTerritory: (name: string) => Promise<void> | void;
+  inviteMember: (email: string, role: "editor" | "viewer") => Promise<boolean>;
   removeMember: (userId: string) => Promise<void>;
   updateMemberRole: (userId: string, role: "editor" | "viewer") => Promise<void>;
 

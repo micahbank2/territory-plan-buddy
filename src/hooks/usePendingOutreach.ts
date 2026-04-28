@@ -11,7 +11,7 @@ import type { Prospect, InteractionLog } from "@/data/prospects";
 
 export interface UsePendingOutreachOptions {
   data: Prospect[];
-  addInteraction: (prospectId: string, i: Omit<InteractionLog, "id">) => Promise<void>;
+  addInteraction: (prospectId: string, i: Omit<InteractionLog, "id">) => Promise<boolean | void>;
   update: (id: string, changes: Partial<Prospect>) => Promise<void>;
   /** Used to refresh batch when ProspectSheet closes. */
   sheetProspectId: any;
